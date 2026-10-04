@@ -28,6 +28,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
     "prettier": "latest",
+    "supabase": "^2.119.0",
     "turbo": "latest",
     "typescript": "latest"
   },
