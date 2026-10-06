@@ -1,3 +1,4 @@
+﻿import * as React from 'react'
 import { Button as ButtonPrimitive } from '@base-ui/react/button'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '../lib/utils'
@@ -43,14 +44,33 @@ function Button({
   className,
   variant = 'default',
   size = 'default',
+  asChild = false,
+  children,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & { asChild?: boolean }) {
+  const classes = cn(buttonVariants({ variant, size, className }))
+
+  // Support the Radix-style `asChild` API used across the app by delegating to
+  // the Base UI `render` prop. This keeps the child's own props/children while
+  // merging our button styles and event handlers.
+  if (asChild && React.isValidElement(children)) {
+    const child = children as React.ReactElement<{ className?: string }>
+    return (
+      <ButtonPrimitive
+        data-slot="button"
+        className={classes}
+        nativeButton={false}
+        render={child}
+        {...props}
+      />
+    )
+  }
+
   return (
-    <ButtonPrimitive
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
+    <ButtonPrimitive data-slot="button" className={classes} {...props}>
+      {children}
+    </ButtonPrimitive>
   )
 }
 

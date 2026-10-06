@@ -1,0 +1,125 @@
+﻿▲ Next.js 16.3.8 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 122ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 24.7s
+  Running TypeScript ...
+  Finished TypeScript in 17.7s ...
+  Collecting page data using 3 workers ...
+node : ⚠ The Edge Runtime is deprecated. You can use the "nodejs" runtime instead. Learn more: 
+https://nextjs.org/docs/messages/edge-runtime-deprecated
+At line:3 char:1
++ node node_modules\next\dist\bin\next build 2>&1 | Out-File -Encoding  ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⚠ The Edge Runt...time-deprecated:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+⚠ Using edge runtime on a page currently disables static generation for that page
+  Generating static pages using 3 workers (0/76) ...
+  Generating static pages using 3 workers (19/76) 
+  Generating static pages using 3 workers (38/76) 
+  Generating static pages using 3 workers (57/76) 
+✓ Generating static pages using 3 workers (76/76) in 16.4s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /[eventId]
+├ ƒ /about
+├ ƒ /admin/analytics
+├ ƒ /admin/audit-logs
+├ ƒ /admin/communication/announcements
+├ ƒ /admin/communication/history
+├ ƒ /admin/communication/sms
+├ ƒ /admin/dashboard
+├ ƒ /admin/departments
+├ ƒ /admin/departments/[deptId]
+├ ƒ /admin/departments/new
+├ ƒ /admin/events
+├ ƒ /admin/events/[eventId]
+├ ƒ /admin/events/calendar
+├ ƒ /admin/events/new
+├ ƒ /admin/finance/campaigns
+├ ƒ /admin/finance/campaigns/new
+├ ƒ /admin/finance/expenses
+├ ƒ /admin/finance/expenses/new
+├ ƒ /admin/finance/offerings
+├ ƒ /admin/finance/offerings/new
+├ ƒ /admin/finance/pledges
+├ ƒ /admin/finance/reports
+├ ƒ /admin/members
+├ ƒ /admin/members/[memberId]
+├ ƒ /admin/members/import
+├ ƒ /admin/prayer-requests
+├ ƒ /admin/prayer-requests/[requestId]
+├ ƒ /admin/reports
+├ ƒ /admin/resources
+├ ƒ /admin/sermons
+├ ƒ /admin/sermons/[sermonId]
+├ ƒ /admin/sermons/new
+├ ƒ /admin/settings/church-profile
+├ ƒ /admin/small-groups
+├ ƒ /admin/small-groups/[groupId]
+├ ƒ /admin/small-groups/new
+├ ƒ /admin/visitors
+├ ƒ /admin/visitors/[visitorId]
+├ ƒ /admin/visitors/new
+├ ƒ /admin/volunteers
+├ ƒ /admin/volunteers/[shiftId]
+├ ƒ /admin/volunteers/new
+├ ƒ /api/contact
+├ ƒ /api/cron/birthdays
+├ ƒ /api/cron/event-reminders
+├ ƒ /api/cron/scheduled-messages
+├ ƒ /api/departments/[deptId]/promote
+├ ƒ /api/events/[eventId]/qr
+├ ƒ /api/events/register
+├ ƒ /api/finance/report
+├ ƒ /api/giving/callback
+├ ƒ /api/giving/mpesa
+├ ƒ /api/members
+├ ƒ /api/messages/send
+├ ƒ /api/og/event
+├ ƒ /api/reports/attendance
+├ ƒ /api/reports/members
+├ ƒ /auth/callback
+├ ƒ /churches
+├ ƒ /churches/[slug]
+├ ƒ /contact
+├ ƒ /events
+├ ƒ /events/[eventId]
+├ ƒ /features
+├ ƒ /focus-mode
+├ ○ /forgot-password
+├ ○ /login
+├ ƒ /member/calendar
+├ ƒ /member/events/[eventId]
+├ ƒ /member/giving
+├ ƒ /member/groups
+├ ƒ /member/home
+├ ƒ /member/new
+├ ƒ /member/prayer
+├ ƒ /member/profile
+├ ƒ /member/profile/edit
+├ ƒ /member/resources
+├ ƒ /member/scan
+├ ƒ /member/sermons
+├ ƒ /member/sermons/[sermonId]
+├ ƒ /member/volunteering
+├ ƒ /members/[membershipId]
+├ ƒ /onboarding
+├ ƒ /prayer-wall
+├ ƒ /pricing
+├ ○ /register
+├ ƒ /sermons
+├ ƒ /sermons/[sermonId]
+└ ○ /verify
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
