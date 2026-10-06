@@ -57,9 +57,10 @@ Highlights:
 │       └── next.config.ts
 ├── packages/
 │   ├── ui/                      # Shared Base UI / shadcn-style components
-│   ├── config/                  # Reserved for shared config
-│   ├── types/                   # Reserved for shared types
-│   └── utils/                   # Reserved for shared utilities
+│   ├── supabase/                # Shared Supabase client factories
+│   ├── config/                  # Shared ESLint + TypeScript config
+│   ├── types/                   # Shared types (generated Supabase schema)
+│   └── utils/                   # Shared utilities (cn)
 ├── supabase/
 │   └── migrations/              # SQL schema, enums, triggers, and RLS policies
 ├── .github/workflows/ci.yml     # Lint, typecheck, and build on pull requests
@@ -67,14 +68,26 @@ Highlights:
 └── pnpm-workspace.yaml
 ```
 
-### Route groups (`apps/web/src/app`)
+### Workspace packages
 
-| Group           | Purpose                                     | Example routes                                                                                  |
+| Package               | Purpose                                                          |
+| --------------------- | ---------------------------------------------------------------- |
+| `@workspace/ui`       | Shared Base UI / shadcn-style React components                   |
+| `@workspace/supabase` | Typed Supabase browser/server client factories                   |
+| `@workspace/types`    | Shared types, including the generated Supabase `Database` schema |
+| `@workspace/utils`    | Framework-agnostic utilities (`cn`)                              |
+| `@workspace/config`   | Shared `tsconfig.base.json` and flat ESLint base config          |
+
+Each package exposes a `typecheck` (`tsc --noEmit`) and `lint` (`eslint .`) script so `turbo typecheck` / `turbo lint` cover the whole workspace. The web app re-exports the shared `Database` types from `@/types/database` and `cn` from `@/lib/utils`, so existing app imports keep working.
+
+### Route structure (`apps/web/src/app`)
+
+| Folder          | Purpose                                     | Example routes                                                                                  |
 | --------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `(public)`      | Public, unauthenticated pages               | `/`, `/features`, `/pricing`, `/churches`, `/events`, `/sermons`, `/prayer-wall`, `/focus-mode` |
 | `(auth)`        | Authentication and onboarding               | `/login`, `/register`, `/verify`, `/forgot-password`, `/onboarding`                             |
-| `(admin)`       | Church administration (admins only)         | `/admin/dashboard`                                                                              |
-| `(member)`      | Member area                                 | `/member/home`                                                                                  |
+| `admin`         | Church administration (admins only)         | `/admin/dashboard`                                                                              |
+| `member`        | Member area                                 | `/member/home`                                                                                  |
 | `auth/callback` | Supabase auth code exchange (route handler) | `/auth/callback`                                                                                |
 
 Route protection is implemented in `apps/web/src/proxy.ts` (Next.js 16 Proxy, formerly Middleware). It guards `/admin` and `/member`, redirects unauthenticated users to `/login`, and enforces that `/admin` requires an admin role.
