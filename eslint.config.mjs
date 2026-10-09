@@ -1,44 +1,31 @@
 import js from "@eslint/js";
-import nextPlugin from "@next/eslint-plugin-next";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: [
-      "**/node_modules/**",
-      "**/.next/**",
-      "**/dist/**",
-      "**/build/**",
-      "**/.turbo/**",
-      "**/coverage/**",
-    ],
+    ignores: ["**/node_modules/**", "**/dist/**", "**/coverage/**", "**/.turbo/**"],
   },
-
   js.configs.recommended,
-
   ...tseslint.configs.recommended,
-
   {
-    files: ["**/*.{js,jsx,ts,tsx}"],
-
+    files: ["**/*.ts"],
     languageOptions: {
       globals: {
-        ...globals.browser,
         ...globals.node,
+        ...globals.jest,
+      },
+      parserOptions: {
+        sourceType: "module",
       },
     },
-
-    plugins: {
-      "@next/next": nextPlugin,
-    },
-
     rules: {
-      ...nextPlugin.configs.recommended.rules,
-
-      // Your project uses the Next.js App Router,
-      // so there is no /pages directory to check.
-      "@next/next/no-html-link-for-pages": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
+      "@typescript-eslint/no-empty-function": "off",
     },
   },
 );

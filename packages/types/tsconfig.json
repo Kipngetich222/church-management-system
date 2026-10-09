@@ -1,4 +1,0 @@
-{
-  "extends": "@workspace/config/tsconfig.base.json",
-  "include": ["src"]
-}

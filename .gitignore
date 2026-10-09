@@ -1,8 +1,24 @@
+# Dependencies
 node_modules/
-.next/
+
+# Build output
 dist/
+*.tsbuildinfo
+
+# Next.js web app
+web/.next/
+web/out/
+web/build/
+web/.vercel/
+web/next-env.d.ts
+
+# Testing
+coverage/
+
+# Env
 .env
 .env.local
 .env*.local
-.turbo/
-coverage/
+
+# Logs
+*.log

@@ -1,272 +1,365 @@
 # Church Management System
 
-A multi-tenant church management platform built for churches in Kenya/East Africa. It combines a public marketing site with authenticated admin and member dashboards, where each user can belong to one or more churches with a role that controls what they can see and do.
+A multi-tenant church management platform built for churches in Kenya / East Africa. A single
+**NestJS REST API** powers two independent clients:
+
+- the **Next.js web app** in [`web/`](./web) (public marketing site + admin & member dashboards), and
+- a future **mobile app** that talks to the same API over HTTPS.
+
+Each user can belong to one or more churches, with a role (`super_admin`, `dept_admin`, `member`)
+that controls what they can see and do.
+
+> **Note:** this repository previously used a Turborepo + pnpm-workspace monorepo. It has been
+> flattened: the repository root is now a standalone NestJS application, and the Next.js app lives
+> in `web/` as an independent project with its own dependencies.
 
 ## Table of Contents
 
-- [Overview](#overview)
+- [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Prerequisites](#prerequisites)
 - [Environment Variables](#environment-variables)
 - [Running Locally](#running-locally)
-- [Available Scripts](#available-scripts)
+- [API Reference](#api-reference)
 - [Authentication and Roles](#authentication-and-roles)
 - [Database](#database)
+- [Available Scripts](#available-scripts)
 - [Continuous Integration](#continuous-integration)
 
-## Overview
+## Architecture
 
-The app is organized around **churches** and **memberships**:
+```
+                 ┌───────────────────────┐
+   Next.js web   │                       │
+   (web/)  ─────▶│   NestJS REST API     │─────▶ Supabase (Postgres + Auth)
+   Mobile app ──▶│   (repository root)   │
+                 └───────────────────────┘
+```
 
-- A user authenticates with Supabase Auth (email + password).
-- After verifying their email, they complete onboarding by creating a church or joining an existing one.
-- Each membership carries a role: `super_admin`, `dept_admin`, or `member`.
-- Row Level Security (RLS) in Postgres enforces tenant isolation, so a user only sees the churches and memberships they belong to.
-
-Highlights:
-
-- Public site: landing page, features, pricing, church directory, events, sermons, prayer wall, focus mode, about, and contact.
-- Auth flow: register, email verification, login, forgot/reset password, onboarding.
-- Admin area: dashboard with a church switcher for users who belong to multiple churches.
-- Member area: personal home screen with a daily scripture.
-- Integrations (scaffolded): Africa's Talking (SMS), M-Pesa Daraja (payments), Google Maps, Resend (email), and Sentry.
+- The **API** authenticates requests with a Supabase access token (`Authorization: Bearer <jwt>`),
+  validates it against Supabase Auth, resolves the caller's church memberships, and talks to
+  Postgres with the service-role key. All queries are scoped explicitly to the resolved
+  church / membership. Swagger docs are served at `/docs`.
+- The **web app** renders the marketing site and dashboards.
+- The **mobile app** consumes the same `/api/v1` endpoints as the web app, so behavior stays
+  consistent across clients.
 
 ## Tech Stack
 
-| Area      | Technology                                                        |
-| --------- | ----------------------------------------------------------------- |
-| Framework | Next.js 16 (App Router, Turbopack, React Server Components)       |
-| Language  | TypeScript (strict)                                               |
-| UI        | React 19, Tailwind CSS v4, Base UI + shadcn-style components      |
-| Backend   | Supabase (Postgres, Auth, Row Level Security) via `@supabase/ssr` |
-| Monorepo  | Turborepo + pnpm workspaces                                       |
-| Tooling   | ESLint, Prettier, Husky, lint-staged                              |
+| Area          | Technology                                                                 |
+| ------------- | -------------------------------------------------------------------------- |
+| API           | NestJS 10, TypeScript, class-validator, Swagger (OpenAPI)                   |
+| Web           | Next.js 16 (App Router, React Server Components), React 19, Tailwind CSS v4 |
+| UI            | Base UI + shadcn-style components (shared kit now lives in `web/`)          |
+| Data & Auth   | Supabase (Postgres, Auth, Row Level Security)                              |
+| Integrations  | Africa's Talking (SMS), M-Pesa Daraja (payments), Resend (email), QR codes  |
+| Tooling       | ESLint, Prettier, Husky, lint-staged, Jest                                 |
 
 ## Project Structure
 
 ```
 .
-├── apps/
-│   └── web/                     # Next.js application
-│       ├── src/app/             # App Router routes (see below)
-│       ├── src/components/      # App-level components (layout, auth, public)
-│       ├── src/lib/             # Supabase clients, hooks, services, helpers
-│       ├── src/types/           # Generated Supabase database types
-│       ├── .env.example         # Template for required environment variables
-│       └── next.config.ts
-├── packages/
-│   ├── ui/                      # Shared Base UI / shadcn-style components
-│   ├── supabase/                # Shared Supabase client factories
-│   ├── config/                  # Shared ESLint + TypeScript config
-│   ├── types/                   # Shared types (generated Supabase schema)
-│   └── utils/                   # Shared utilities (cn)
-├── supabase/
-│   └── migrations/              # SQL schema, enums, triggers, and RLS policies
-├── .github/workflows/ci.yml     # Lint, typecheck, and build on pull requests
-├── turbo.json                   # Turborepo task pipeline
-└── pnpm-workspace.yaml
+├── src/                        # NestJS API source
+│   ├── main.ts                 # bootstrap (CORS, validation, Swagger, /api/v1 prefix)
+│   ├── app.module.ts           # root module + global auth guard & exception filter
+│   ├── common/                 # guards, decorators, DTOs, filters, utils
+│   ├── config/                 # typed configuration
+│   ├── supabase/               # Supabase service (service-role client + token verification)
+│   ├── types/                  # generated Supabase Database types
+│   └── modules/                # feature modules (auth, churches, events, finance, ...)
+├── web/                        # standalone Next.js web app (client of the API)
+│   └── src/
+├── supabase/migrations/        # SQL schema, enums, triggers, RLS policies, functions
+├── test/                       # e2e / integration tests
+├── .github/workflows/ci.yml    # CI: lint, typecheck and build for both projects
+├── nest-cli.json
+├── tsconfig.json
+└── package.json                # NestJS API manifest
 ```
-
-### Workspace packages
-
-| Package               | Purpose                                                          |
-| --------------------- | ---------------------------------------------------------------- |
-| `@workspace/ui`       | Shared Base UI / shadcn-style React components                   |
-| `@workspace/supabase` | Typed Supabase browser/server client factories                   |
-| `@workspace/types`    | Shared types, including the generated Supabase `Database` schema |
-| `@workspace/utils`    | Framework-agnostic utilities (`cn`)                              |
-| `@workspace/config`   | Shared `tsconfig.base.json` and flat ESLint base config          |
-
-Each package exposes a `typecheck` (`tsc --noEmit`) and `lint` (`eslint .`) script so `turbo typecheck` / `turbo lint` cover the whole workspace. The web app re-exports the shared `Database` types from `@/types/database` and `cn` from `@/lib/utils`, so existing app imports keep working.
-
-### Route structure (`apps/web/src/app`)
-
-| Folder          | Purpose                                     | Example routes                                                                                  |
-| --------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `(public)`      | Public, unauthenticated pages               | `/`, `/features`, `/pricing`, `/churches`, `/events`, `/sermons`, `/prayer-wall`, `/focus-mode` |
-| `(auth)`        | Authentication and onboarding               | `/login`, `/register`, `/verify`, `/forgot-password`, `/onboarding`                             |
-| `admin`         | Church administration (admins only)         | `/admin/dashboard`                                                                              |
-| `member`        | Member area                                 | `/member/home`                                                                                  |
-| `auth/callback` | Supabase auth code exchange (route handler) | `/auth/callback`                                                                                |
-
-Route protection is implemented in `apps/web/src/proxy.ts` (Next.js 16 Proxy, formerly Middleware). It guards `/admin` and `/member`, redirects unauthenticated users to `/login`, and enforces that `/admin` requires an admin role.
 
 ## Prerequisites
 
-- **Node.js >= 20** (see `engines` in the root `package.json`)
-- **pnpm 9** — the repo pins `packageManager: pnpm@9.0.0`
-  ```bash
-  corepack enable
-  corepack prepare pnpm@9.0.0 --activate
-  # or: npm install -g pnpm@9
-  ```
-- **Supabase** — either a hosted project or the local Supabase CLI stack
-- Optional: Docker (required by `supabase start` for the local stack)
+- Node.js >= 20
+- npm (the API and web app are installed independently)
 
 ## Environment Variables
 
-Create `apps/web/.env.local` (copy the template and fill in real values):
+### API (`./.env`)
 
 ```bash
-# macOS / Linux
-cp apps/web/.env.example apps/web/.env.local
+cp .env.example .env
 ```
 
-```powershell
-# Windows (PowerShell)
-Copy-Item apps/web/.env.example apps/web/.env.local
+| Variable                    | Description                                            |
+| --------------------------- | ------------------------------------------------------ |
+| `PORT`                      | Port the API listens on (default `4000`)               |
+| `API_PUBLIC_URL`            | Public URL of the API, used to build provider callbacks |
+| `CORS_ORIGINS`              | Comma-separated allowed origins (web app, mobile, ...) |
+| `SUPABASE_URL`              | Supabase project URL                                   |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service-role key (server only)                         |
+| `SUPABASE_ANON_KEY`         | Publishable/anon key                                   |
+| `CRON_SECRET`               | Shared secret for the `/api/v1/cron/*` endpoints        |
+| `AFRICAS_TALKING_*`         | Africa's Talking credentials (SMS)                     |
+| `MPESA_*`                   | Safaricom Daraja credentials (payments)                |
+| `RESEND_API_KEY` / `RESEND_FROM` | Resend credentials (email)                        |
+| `GOOGLE_MAPS_API_KEY`       | Google Maps key                                        |
+| `CONTACT_EMAIL`             | Destination for the public contact form                |
+
+### Web app (`./web/.env.local`)
+
+```bash
+cp web/.env.example web/.env.local
 ```
 
-| Variable                               | Required | Description                        |
-| -------------------------------------- | -------- | ---------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`             | Yes      | Supabase project URL               |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes      | Supabase publishable (anon) key    |
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`      | No       | Google Maps for church locations   |
-| `AFRICAS_TALKING_API_KEY`              | No       | Africa's Talking SMS API key       |
-| `AFRICAS_TALKING_USERNAME`             | No       | Africa's Talking username          |
-| `MPESA_CONSUMER_KEY`                   | No       | Safaricom Daraja consumer key      |
-| `MPESA_CONSUMER_SECRET`                | No       | Safaricom Daraja consumer secret   |
-| `MPESA_PASSKEY`                        | No       | Safaricom Daraja passkey           |
-| `MPESA_SHORTCODE`                      | No       | Safaricom paybill / till number    |
-| `RESEND_API_KEY`                       | No       | Resend transactional email API key |
-| `NEXT_PUBLIC_SENTRY_DSN`               | No       | Sentry DSN for error reporting     |
-| `SENTRY_AUTH_TOKEN`                    | No       | Sentry auth token for source maps  |
-
-Only the first two are needed to boot the app and sign in. The rest enable optional integrations.
+The web app currently talks to Supabase directly for its server-rendered pages; see
+`web/.env.example` for `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, etc.
 
 ## Running Locally
 
-### 1. Install dependencies
+The API and the web app are separate projects and are installed/run independently.
 
-From the repository root:
-
-```bash
-pnpm install
-```
-
-### 2. Set up the database
-
-**Option A — hosted Supabase project (quickest)**
-
-1. Create a project at https://supabase.com.
-2. Copy the Project URL and publishable/anon key into `apps/web/.env.local`.
-3. Apply the schema from `supabase/migrations/` either by pasting `0001_initial_schema.sql` into the Supabase SQL Editor, or with the CLI:
-   ```bash
-   pnpm exec supabase link --project-ref <your-project-ref>
-   pnpm exec supabase db push
-   ```
-
-**Option B — local Supabase stack (Docker required)**
+### API
 
 ```bash
-pnpm exec supabase start     # boots Postgres, Auth, Studio, etc.
-pnpm exec supabase db reset  # applies everything in supabase/migrations/
+npm install
+cp .env.example .env      # then fill in your Supabase credentials
+npm run start:dev         # http://localhost:4000  (Swagger at http://localhost:4000/docs)
 ```
 
-`supabase start` prints the local API URL and keys — use those for `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
-
-### 3. (Optional) Regenerate database types
-
-After schema changes, regenerate the TypeScript types used by the app:
+### Web app
 
 ```bash
-pnpm exec supabase gen types typescript --local > apps/web/src/types/database.ts
+cd web
+npm install
+cp .env.example .env.local
+npm run dev               # http://localhost:3000
 ```
 
-### 4. Start the development server
+## API Reference
 
-```bash
-pnpm dev
-```
+All routes are prefixed with `/api/v1`. Interactive docs are available at `/docs`.
 
-This runs the Turborepo `dev` pipeline, which starts the web app at:
+Routes that operate on a church are nested under `/churches/:churchId/...`; the caller must be a
+member of that church, and admin-only routes require the `super_admin` or `dept_admin` role.
 
-```
-http://localhost:3000
-```
+### Auth & users
 
-To run only the web app (skipping Turbo):
+| Method | Path                     | Access | Description                                  |
+| ------ | ------------------------ | ------ | -------------------------------------------- |
+| POST   | `/auth/check-email`      | public | Check whether an email already has an account |
+| GET    | `/auth/me`               | auth   | Current user + church memberships            |
+| GET    | `/users/me`              | auth   | Current user profile                         |
+| PATCH  | `/users/me`              | auth   | Update the current user profile              |
 
-```bash
-pnpm --filter web dev
-```
+### Churches & members
 
-### 5. Production build
+| Method | Path                                            | Access | Description                   |
+| ------ | ----------------------------------------------- | ------ | ----------------------------- |
+| GET    | `/churches` (`?q=`)                             | public | List / search churches        |
+| GET    | `/churches/:churchId`                           | public | Get a church                  |
+| GET    | `/churches/slug/:slug`                          | public | Get a church by slug          |
+| POST   | `/churches`                                     | auth   | Create a church (onboarding)  |
+| PATCH  | `/churches/:churchId`                           | admin  | Update church settings        |
+| GET    | `/churches/:churchId/stats`                     | member | Dashboard statistics          |
+| GET    | `/churches/:churchId/members`                   | member | List members                  |
+| POST   | `/churches/:churchId/members`                   | admin  | Add a member                  |
+| POST   | `/churches/:churchId/members/import`            | admin  | Bulk import members           |
+| GET    | `/churches/:churchId/members/me`                | member | Current membership            |
+| GET    | `/churches/:churchId/members/:membershipId`     | member | Get a membership              |
+| PATCH  | `/churches/:churchId/members/:membershipId`     | admin  | Update a membership           |
+| DELETE | `/churches/:churchId/members/:membershipId`     | admin  | Remove a member               |
 
-```bash
-pnpm build      # turbo build (runs `next build` for the web app)
-pnpm --filter web start   # serve the production build
-```
+### Departments & small groups
 
-> **Note:** `next/font/google` fetches Geist/Geist Mono from Google Fonts at build time. The build needs outbound network access for `fonts.googleapis.com`; offline builds fall back to system fonts (with a warning).
+| Method | Path                                                              | Access | Description             |
+| ------ | ----------------------------------------------------------------- | ------ | ----------------------- |
+| GET    | `/churches/:churchId/departments`                                 | member | List departments        |
+| POST   | `/churches/:churchId/departments`                                 | admin  | Create a department     |
+| PATCH  | `/churches/:churchId/departments/:departmentId`                   | admin  | Update a department     |
+| DELETE | `/churches/:churchId/departments/:departmentId`                   | admin  | Delete a department     |
+| POST   | `/churches/:churchId/departments/:departmentId/members`           | admin  | Add a member            |
+| POST   | `/churches/:churchId/departments/:departmentId/promote`           | admin  | Promote a leader        |
+| DELETE | `/churches/:churchId/departments/:departmentId/members/:membershipId` | admin | Remove a member    |
+| GET    | `/churches/:churchId/small-groups`                                | member | List small groups       |
+| POST   | `/churches/:churchId/small-groups`                                | admin  | Create a small group    |
+| PATCH  | `/churches/:churchId/small-groups/:groupId`                       | admin  | Update a small group    |
+| DELETE | `/churches/:churchId/small-groups/:groupId`                       | admin  | Delete a small group    |
+| POST   | `/churches/:churchId/small-groups/:groupId/members`               | admin  | Add a member            |
+| DELETE | `/churches/:churchId/small-groups/:groupId/members/:membershipId` | admin  | Remove a member         |
 
-## Available Scripts
+### Events, attendance & QR
 
-Root-level (Turborepo):
+| Method | Path                                                    | Access | Description                        |
+| ------ | ------------------------------------------------------- | ------ | ---------------------------------- |
+| GET    | `/churches/:churchId/events` (`?from&to&status&visibility`) | member | List church events             |
+| POST   | `/churches/:churchId/events`                            | admin  | Create an event                    |
+| PATCH  | `/churches/:churchId/events/:eventId`                   | admin  | Update an event                    |
+| DELETE | `/churches/:churchId/events/:eventId`                   | admin  | Delete an event                    |
+| GET    | `/churches/:churchId/events/:eventId/registrations`     | admin  | List registrations                 |
+| GET    | `/churches/:churchId/events/:eventId/attendance`        | member | List attendance                    |
+| POST   | `/churches/:churchId/events/:eventId/attendance`        | admin  | Mark attendance                    |
+| GET    | `/events/upcoming` (`?limit=`)                          | public | Upcoming public events             |
+| GET    | `/events/:eventId`                                      | public | Get an event                       |
+| GET    | `/events/:eventId/qr`                                   | public | Event check-in QR code (data URL)  |
+| POST   | `/events/:eventId/register`                             | public | Register for an event              |
+| GET    | `/churches/:churchId/attendance/me/qr`                  | member | Current member's QR code           |
+| POST   | `/churches/:churchId/attendance/scan`                   | member | Scan a QR code to check in         |
 
-| Command          | Description                                                  |
-| ---------------- | ------------------------------------------------------------ |
-| `pnpm dev`       | Start all apps in development mode                           |
-| `pnpm build`     | Build all apps and packages                                  |
-| `pnpm lint`      | Lint all packages                                            |
-| `pnpm typecheck` | Type-check all packages                                      |
-| `pnpm format`    | Format `ts, tsx, md` files with Prettier                     |
-| `pnpm prepare`   | Install Husky git hooks (runs automatically after `install`) |
+### Sermons
 
-Inside `apps/web`:
+| Method | Path                                            | Access | Description                     |
+| ------ | ----------------------------------------------- | ------ | ------------------------------- |
+| GET    | `/churches/:churchId/sermons`                   | public | Published sermons               |
+| GET    | `/churches/:churchId/sermons/manage`            | member | All sermons incl. drafts        |
+| POST   | `/churches/:churchId/sermons`                   | admin  | Create a sermon                 |
+| PATCH  | `/churches/:churchId/sermons/:sermonId`         | admin  | Update a sermon                 |
+| DELETE | `/churches/:churchId/sermons/:sermonId`         | admin  | Delete a sermon                 |
+| GET    | `/sermons/:sermonId`                            | public | Get a sermon                    |
 
-| Command          | Description                |
-| ---------------- | -------------------------- |
-| `pnpm dev`       | Start Next.js in dev mode  |
-| `pnpm build`     | Production build           |
-| `pnpm start`     | Serve the production build |
-| `pnpm lint`      | Run ESLint                 |
-| `pnpm typecheck` | Run `tsc --noEmit`         |
+### Finance & giving
 
-Pre-commit hooks (Husky + lint-staged) run ESLint `--fix` and Prettier on staged files.
+| Method | Path                                                          | Access | Description                 |
+| ------ | ------------------------------------------------------------- | ------ | --------------------------- |
+| GET    | `/churches/:churchId/finance/offerings`                       | admin  | List offerings              |
+| POST   | `/churches/:churchId/finance/offerings`                       | admin  | Record an offering          |
+| DELETE | `/churches/:churchId/finance/offerings/:offeringId`           | admin  | Delete an offering          |
+| GET    | `/churches/:churchId/finance/my-giving`                       | member | Current member's giving     |
+| GET    | `/churches/:churchId/finance/expenses`                        | admin  | List expenses               |
+| POST   | `/churches/:churchId/finance/expenses`                        | admin  | Record an expense           |
+| DELETE | `/churches/:churchId/finance/expenses/:expenseId`             | admin  | Delete an expense           |
+| GET    | `/churches/:churchId/finance/campaigns`                       | member | List giving campaigns       |
+| POST   | `/churches/:churchId/finance/campaigns`                       | admin  | Create a campaign           |
+| GET    | `/churches/:churchId/finance/pledges`                         | admin  | List pledges                |
+| POST   | `/churches/:churchId/finance/pledges`                         | admin  | Create a pledge             |
+| GET    | `/churches/:churchId/finance/expense-categories`              | member | List expense categories     |
+| POST   | `/churches/:churchId/finance/expense-categories`              | admin  | Create a category           |
+| GET    | `/churches/:churchId/finance/summary` (`?from&to`)            | admin  | Financial summary           |
+| POST   | `/giving/mpesa`                                               | auth   | Initiate an M-Pesa STK push |
+| POST   | `/giving/mpesa/callback`                                      | public | M-Pesa payment callback     |
+
+### Prayer, communication & engagement
+
+| Method | Path                                                                  | Access | Description                    |
+| ------ | --------------------------------------------------------------------- | ------ | ------------------------------ |
+| GET    | `/churches/:churchId/prayer-requests` (`?status`)                     | member | List visible prayer requests   |
+| POST   | `/churches/:churchId/prayer-requests`                                 | member | Submit a prayer request        |
+| GET    | `/churches/:churchId/prayer-requests/:requestId`                      | member | Get a prayer request           |
+| PATCH  | `/churches/:churchId/prayer-requests/:requestId`                      | member | Update a prayer request        |
+| POST   | `/churches/:churchId/prayer-requests/:requestId/interactions`         | member | Add an interaction             |
+| GET    | `/churches/:churchId/announcements`                                   | public | Published announcements        |
+| GET    | `/churches/:churchId/announcements/manage`                            | admin  | All announcements              |
+| POST   | `/churches/:churchId/announcements`                                   | admin  | Create an announcement         |
+| PATCH  | `/churches/:churchId/announcements/:announcementId`                   | admin  | Update an announcement         |
+| DELETE | `/churches/:churchId/announcements/:announcementId`                   | admin  | Delete an announcement         |
+| GET    | `/churches/:churchId/messages`                                        | admin  | Message history                |
+| GET    | `/churches/:churchId/messages/me`                                     | member | Messages for the current member|
+| GET    | `/churches/:churchId/message-campaigns`                               | admin  | Bulk campaign history          |
+| POST   | `/churches/:churchId/messages/send`                                   | admin  | Send an SMS/email campaign     |
+| GET    | `/churches/:churchId/volunteers/roles`                                | member | Volunteer roles                |
+| POST   | `/churches/:churchId/volunteers/roles`                                | admin  | Create a role                  |
+| GET    | `/churches/:churchId/volunteers/shifts`                               | member | Volunteer shifts               |
+| POST   | `/churches/:churchId/volunteers/shifts`                               | admin  | Create a shift                 |
+| PATCH  | `/churches/:churchId/volunteers/shifts/:shiftId`                      | admin  | Update a shift                 |
+| DELETE | `/churches/:churchId/volunteers/shifts/:shiftId`                      | admin  | Delete a shift                 |
+| POST   | `/churches/:churchId/volunteers/shifts/:shiftId/signup`               | member | Sign up for a shift            |
+| DELETE | `/churches/:churchId/volunteers/shifts/:shiftId/signup`               | member | Cancel a sign-up               |
+| GET    | `/churches/:churchId/resources`                                       | member | Bookable resources             |
+| POST   | `/churches/:churchId/resources`                                       | admin  | Create a resource              |
+| PATCH  | `/churches/:churchId/resources/:resourceId`                           | admin  | Update a resource              |
+| DELETE | `/churches/:churchId/resources/:resourceId`                           | admin  | Delete a resource              |
+| GET    | `/churches/:churchId/resources/bookings`                              | member | Resource bookings              |
+| POST   | `/churches/:churchId/resources/bookings`                              | member | Request a booking              |
+| PATCH  | `/churches/:churchId/resources/bookings/:bookingId`                   | admin  | Approve / update a booking     |
+| DELETE | `/churches/:churchId/resources/bookings/:bookingId`                   | admin  | Delete a booking               |
+| GET    | `/churches/:churchId/visitors` (`?status`)                            | admin  | List visitors                  |
+| POST   | `/churches/:churchId/visitors`                                        | admin  | Record a visitor               |
+| GET    | `/churches/:churchId/visitors/:visitorId`                             | admin  | Visitor + follow-ups           |
+| PATCH  | `/churches/:churchId/visitors/:visitorId`                             | admin  | Update a visitor               |
+| DELETE | `/churches/:churchId/visitors/:visitorId`                             | admin  | Delete a visitor               |
+| POST   | `/churches/:churchId/visitors/:visitorId/followups`                   | admin  | Add a follow-up                |
+
+### Reports, audit, contact & health
+
+| Method | Path                                          | Access | Description                     |
+| ------ | --------------------------------------------- | ------ | ------------------------------- |
+| GET    | `/churches/:churchId/reports/members`         | admin  | Member demographics             |
+| GET    | `/churches/:churchId/reports/attendance`      | admin  | Attendance by event             |
+| GET    | `/churches/:churchId/reports/member-growth`   | admin  | Member growth by month          |
+| GET    | `/churches/:churchId/reports/finance`         | admin  | Finance report                  |
+| GET    | `/churches/:churchId/audit-logs`              | admin  | Audit log                       |
+| POST   | `/contact`                                    | public | Public contact form             |
+| POST   | `/cron/birthdays`                             | secret | Birthday greetings job          |
+| POST   | `/cron/event-reminders`                       | secret | Event reminders job             |
+| POST   | `/cron/scheduled-messages`                    | secret | Scheduled message job           |
+| GET    | `/health`                                     | public | Liveness probe                  |
+
+Cron endpoints require the `x-cron-secret` header to match `CRON_SECRET`.
 
 ## Authentication and Roles
 
-Auth is handled entirely by Supabase. The relevant code lives in `apps/web/src/lib/supabase/`:
+The API trusts **Supabase Auth** tokens:
 
-- `client.ts` — browser client
-- `server.ts` — server client using Next.js `cookies()`
-- `middleware.ts` — session refresh helper used by `proxy.ts`
+1. The client signs in with Supabase (web or mobile) and receives an access token.
+2. The client sends `Authorization: Bearer <access_token>` on every request.
+3. `AuthGuard` verifies the token, loads the user profile and church memberships.
+4. `ChurchGuard` (applied to church-scoped routes) resolves the active church from the `:churchId`
+   param (or the `x-church-id` header) and enforces membership and role requirements.
 
-Roles and permissions are defined in `apps/web/src/lib/constants/roles.ts`:
+Roles and their intent:
 
-| Role          | Summary of permissions                                                      |
-| ------------- | --------------------------------------------------------------------------- |
-| `super_admin` | Full access to members, finance, events, departments, church settings, SMS  |
+| Role          | Summary                                                                    |
+| ------------- | -------------------------------------------------------------------------- |
+| `super_admin` | Full access to members, finance, events, departments, church settings, SMS |
 | `dept_admin`  | Read members; manage own department events; read attendance; department SMS |
-| `member`      | Manage own profile; read events; create giving and prayer requests          |
-
-Useful helpers:
-
-- `apps/web/src/lib/utils/church-scope.ts` — `getActiveChurch()` (resolves the current church/membership) and `requireChurchAdmin()`
-- `apps/web/src/lib/hooks/useChurch.ts`, `useRole.ts` — client-side hooks
+| `member`      | Manage own profile; read events; create giving and prayer requests         |
 
 ## Database
 
-The schema lives in `supabase/migrations/0001_initial_schema.sql` and includes:
+Schema, enums, triggers, RLS policies and analytics functions live in
+[`supabase/migrations/`](./supabase/migrations). The API uses the service-role key and bypasses RLS,
+so every service scopes its queries explicitly to the resolved church / membership.
 
-- **Enums:** `user_role` (`super_admin`, `dept_admin`, `member`), `plan_tier` (`basic`, `premium`), `badge_type`
-- **Tables:** `users` (extends `auth.users`), `churches`, `church_memberships` (join table with role, badges, baptism status)
-- **Triggers:** `handle_new_user()` creates a `users` profile row on signup
-- **Helpers:** `is_church_admin(church_id)` and `user_role_in_church(church_id)`
-- **RLS:** enabled on all tables, with policies for own-profile access, public church reads, and membership visibility
+Tables include: `users`, `churches`, `church_memberships`, `departments`, `department_members`,
+`small_groups`, `small_group_members`, `events`, `event_registrations`, `event_attendance`,
+`offerings`, `expenses`, `expense_categories`, `campaigns`, `pledges`, `message_campaigns`,
+`messages`, `announcements`, `prayer_requests`, `prayer_interactions`, `sermons`, `volunteer_roles`,
+`volunteer_shifts`, `volunteer_signups`, `resources`, `resource_bookings`, `visitors`,
+`visitor_followups`, `pastoral_notes`, `role_permissions`, and `audit_logs`.
+
+## Available Scripts
+
+### API (repository root)
+
+| Command             | Description                              |
+| ------------------- | ---------------------------------------- |
+| `npm run start:dev` | Start the API in watch mode              |
+| `npm run start`     | Start the API                            |
+| `npm run start:prod`| Run the compiled build (`dist/main.js`)  |
+| `npm run build`     | Compile with the Nest CLI                |
+| `npm run lint`      | Lint `src` and `test`                    |
+| `npm run format`    | Format with Prettier                     |
+| `npm run typecheck` | `tsc --noEmit`                           |
+| `npm test`          | Run unit tests (Jest)                    |
+
+### Web app (`web/`)
+
+| Command             | Description                |
+| ------------------- | -------------------------- |
+| `npm run dev`       | Start Next.js in dev mode  |
+| `npm run build`     | Production build           |
+| `npm run start`     | Serve the production build |
+| `npm run lint`      | Run ESLint                 |
+| `npm run typecheck` | `tsc --noEmit`             |
+
+Pre-commit hooks (Husky + lint-staged) run ESLint `--fix` and Prettier on staged files.
 
 ## Continuous Integration
 
-`.github/workflows/ci.yml` runs on pull requests to `main`:
+`.github/workflows/ci.yml` runs on pull requests and pushes to `main`, with two jobs:
 
-```bash
-pnpm install --frozen-lockfile
-pnpm lint
-pnpm typecheck
-pnpm build
-```
+- **API**: `npm install`, `npm run lint`, `npm run typecheck`, `npm run build`
+- **Web**: `npm install`, `npm run lint`, `npm run typecheck` (inside `web/`)
 
 ## License
 
