@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { resolvePostAuthPath, safeRedirect } from '@/lib/auth/redirect'
+import { friendlyAuthError } from '@/lib/auth/messages'
 import { ArrowLeft } from 'lucide-react'
 import { GoogleIcon } from '@/components/auth/GoogleIcon'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -44,58 +46,77 @@ export function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (loading) return
     setLoading(true)
     setError('')
 
-    const supabase = createClient()
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-    if (error || !data.user) {
-      const message = error?.message ?? 'Unable to sign in'
+      if (error || !data.user) {
+        const message = error?.message ?? 'Unable to sign in'
 
-      // If the email has no account yet, direct the user to sign up rather
-      // than showing a misleading invalid-credentials error.
-      if (message.toLowerCase().includes('invalid login credentials')) {
-        const exists = await accountExists(email)
-        if (exists === false) {
-          router.push(
-            '/register?email=' +
-              encodeURIComponent(email) +
-              '&reason=no_account'
-          )
-          return
+        // If the email has no account yet, direct the user to sign up rather
+        // than showing a misleading invalid-credentials error.
+        if (message.toLowerCase().includes('invalid login credentials')) {
+          const exists = await accountExists(email)
+          if (exists === false) {
+            router.push(
+              '/register?email=' +
+                encodeURIComponent(email) +
+                '&reason=no_account'
+            )
+            return
+          }
         }
+
+        setError(friendlyAuthError(message))
+        return
       }
 
-      setError(message)
+      // Return users to the page they were heading to when possible,
+      // otherwise send them to their church dashboard (or onboarding).
+      const nextParam = safeRedirect(
+        new URLSearchParams(window.location.search).get('next')
+      )
+      const destination =
+        nextParam ?? (await resolvePostAuthPath(supabase, data.user.id))
+
+      router.push(destination)
+      router.refresh()
+    } catch {
+      setError('Network error. Check your connection and try again.')
+    } finally {
       setLoading(false)
-      return
     }
-
-    // Return users to the page they were heading to when possible,
-    // otherwise send them to their church dashboard (or onboarding).
-    const nextParam = safeRedirect(
-      new URLSearchParams(window.location.search).get('next')
-    )
-    const destination =
-      nextParam ?? (await resolvePostAuthPath(supabase, data.user.id))
-
-    router.push(destination)
-    router.refresh()
   }
 
   async function handleGoogle() {
-    const supabase = createClient()
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${location.origin}/auth/callback` },
-    })
+    if (googleLoading) return
+    setGoogleLoading(true)
+    setError('')
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${location.origin}/auth/callback` },
+      })
+      if (error) {
+        setError(friendlyAuthError(error.message))
+        setGoogleLoading(false)
+      }
+    } catch {
+      setError('Network error. Check your connection and try again.')
+      setGoogleLoading(false)
+    }
   }
 
   return (
@@ -113,6 +134,7 @@ export function LoginForm() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
               required
             />
           </div>
@@ -123,14 +145,29 @@ export function LoginForm() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
               required
             />
           </div>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && (
+            <p
+              role="alert"
+              className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+              {error}
+            </p>
+          )}
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? (
+              <>
+                <Spinner className="mr-2" />
+                Signing in...
+              </>
+            ) : (
+              'Sign in'
+            )}
           </Button>
         </form>
 
@@ -143,9 +180,23 @@ export function LoginForm() {
           </div>
         </div>
 
-        <Button variant="outline" className="w-full" onClick={handleGoogle}>
-          <GoogleIcon className="h-4 w-4 mr-2" />
-          Continue with Google
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={handleGoogle}
+          disabled={googleLoading}
+        >
+          {googleLoading ? (
+            <>
+              <Spinner className="mr-2" />
+              Redirecting...
+            </>
+          ) : (
+            <>
+              <GoogleIcon className="h-4 w-4 mr-2" />
+              Continue with Google
+            </>
+          )}
         </Button>
 
         <div className="flex justify-between text-sm">
@@ -172,4 +223,3 @@ export function LoginForm() {
     </Card>
   )
 }
-

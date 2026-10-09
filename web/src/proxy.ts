@@ -39,10 +39,14 @@ export async function proxy(request: NextRequest) {
   }
 
   // Check membership
-  const { data: memberships } = await supabase
+  const { data: memberships, error: membershipError } = await supabase
     .from('church_memberships')
     .select('role')
     .eq('user_id', user.id)
+
+  // If the lookup fails, don't bounce the user back to onboarding (that is a
+  // silent redirect loop); let the page/layout surface the real error instead.
+  if (membershipError) return response
 
   if (!memberships?.length) {
     const url = request.nextUrl.clone()
