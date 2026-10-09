@@ -16,13 +16,13 @@ npm run dev                  # http://localhost:3000
 
 ## Scripts
 
-| Command             | Description                |
-| ------------------- | -------------------------- |
-| `npm run dev`       | Start Next.js in dev mode  |
-| `npm run build`     | Production build           |
-| `npm run start`     | Serve the production build |
-| `npm run lint`      | Run ESLint                 |
-| `npm run typecheck` | `tsc --noEmit`             |
+| Command             | Description                    |
+| ------------------- | ------------------------------ |
+| `npm run dev`       | Start Next.js in dev mode      |
+| `npm run build`     | Production build               |
+| `npm run start`     | Serve the production build     |
+| `npm run lint`      | Run ESLint                     |
+| `npm run typecheck` | `next typegen && tsc --noEmit` |
 
 ## Structure
 
