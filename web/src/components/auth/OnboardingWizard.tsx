@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { setActiveChurch } from '@/lib/auth/active-church'
+import { readApiError } from '@/lib/auth/messages'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -56,114 +58,124 @@ export function OnboardingWizard({
       c.slug.toLowerCase().includes(query.toLowerCase())
   )
 
-  async function createChurch() {
-    setLoading(true)
-    setError('')
+  function goToDashboard(path: string, churchId: string) {
+    // Remember the choice so every future login lands here.
+    setActiveChurch(churchId)
+    router.push(path)
+    router.refresh()
+  }
+
+  async function currentUser() {
     const supabase = createClient()
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser()
-    if (!user) return
+    if (authError || !user) {
+      setError('Your session has expired. Please sign in again.')
+      return null
+    }
+    return user
+  }
 
-    const { data: church, error: churchErr } = await supabase
-      .from('churches')
-      .insert({
-        name: form.name,
-        slug: form.slug || slugify(form.name),
-        description: form.description,
-        created_by: user.id,
-        plan: 'basic',
+  async function createChurch() {
+    if (loading) return
+    if (form.name.trim().length < 2) {
+      setError('Enter a name for your church (at least 2 characters).')
+      return
+    }
+    setLoading(true)
+    setError('')
+    try {
+      const user = await currentUser()
+      if (!user) return
+
+      const response = await fetch('/api/churches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          slug: form.slug || undefined,
+          description: form.description || undefined,
+        }),
       })
-      .select()
-      .single()
 
-    if (churchErr || !church) {
-      setError(
-        churchErr?.message.includes('duplicate')
-          ? 'That URL slug is already taken. Try another.'
-          : churchErr?.message || 'Failed to create church'
-      )
+      if (!response.ok) {
+        setError(
+          await readApiError(
+            response,
+            'We could not create your church. Please try again.'
+          )
+        )
+        return
+      }
+
+      const data = (await response.json()) as { churchId: string; path: string }
+      goToDashboard(data.path, data.churchId)
+    } catch {
+      setError('Network error. Check your connection and try again.')
+    } finally {
       setLoading(false)
-      return
     }
+  }
 
-    const { error: memberErr } = await supabase
-      .from('church_memberships')
-      .insert({ user_id: user.id, church_id: church.id, role: 'super_admin' })
+  async function joinChurch(
+    payload: { churchId?: string; slug?: string },
+    marker: string
+  ) {
+    if (loading) return
+    setLoading(true)
+    setJoiningId(marker)
+    setError('')
+    try {
+      const user = await currentUser()
+      if (!user) return
 
-    if (memberErr) {
-      setError(memberErr.message)
+      const response = await fetch('/api/churches/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        setError(
+          await readApiError(response, 'We could not join that church. Please try again.')
+        )
+        return
+      }
+
+      const data = (await response.json()) as {
+        church: { id: string; name: string }
+        role: string
+        path: string
+        alreadyMember: boolean
+      }
+      goToDashboard(data.path, data.church.id)
+    } catch {
+      setError('Network error. Check your connection and try again.')
+    } finally {
       setLoading(false)
-      return
+      setJoiningId(null)
     }
-
-    // A brand-new church: remember it and take the founder through as admin.
-    setActiveChurch(church.id)
-    router.push('/admin/dashboard?setup=1')
-    router.refresh()
   }
 
   async function joinChurchBySlug(slug: string) {
     const trimmed = slug.trim()
     if (!trimmed) {
-      setError('Enter a church slug to continue')
+      setError('Enter a church link, or pick one from the list above.')
       return
     }
-    setLoading(true)
-    setJoiningId(trimmed)
-    setError('')
-    const supabase = createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) return
-
-    const { data: church, error: findErr } = await supabase
-      .from('churches')
-      .select('id')
-      .eq('slug', trimmed)
-      .maybeSingle()
-
-    if (findErr || !church) {
-      setError('No church found with that link. Check the slug and try again.')
-      setLoading(false)
-      setJoiningId(null)
-      return
-    }
-
-    await joinChurchById(church.id)
+    await joinChurch({ slug: trimmed }, trimmed)
   }
 
-  async function joinChurchById(churchId: string) {
-    setLoading(true)
-    setJoiningId(churchId)
-    setError('')
-    const supabase = createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) return
-
-    const { error } = await supabase
-      .from('church_memberships')
-      .insert({ user_id: user.id, church_id: churchId, role: 'member' })
-
-    if (error) {
-      setError(
-        error.message.includes('duplicate')
-          ? 'You are already part of this church.'
-          : error.message
-      )
-      setLoading(false)
-      setJoiningId(null)
-      return
-    }
-
-    // Joined a church: remember it so every future login lands here.
-    setActiveChurch(churchId)
-    router.push('/member/home')
-    router.refresh()
-  }
+  const errorBanner = error ? (
+    <p
+      role="alert"
+      className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+    >
+      {error}
+    </p>
+  ) : null
 
   if (step === 'choice') {
     return (
@@ -246,14 +258,22 @@ export function OnboardingWizard({
             />
           </div>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {errorBanner}
 
           <Button className="w-full" onClick={createChurch} disabled={loading}>
-            {loading ? 'Creating...' : 'Create church'}
+            {loading ? (
+              <>
+                <Spinner className="mr-2" />
+                Creating your church...
+              </>
+            ) : (
+              'Create church'
+            )}
           </Button>
           <Button
             variant="ghost"
             className="w-full"
+            disabled={loading}
             onClick={() => {
               setError('')
               setStep('choice')
@@ -289,6 +309,7 @@ export function OnboardingWizard({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search churches..."
+              disabled={loading}
             />
             <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
               {filtered.map((church) => (
@@ -296,7 +317,7 @@ export function OnboardingWizard({
                   key={church.id}
                   type="button"
                   disabled={loading}
-                  onClick={() => joinChurchById(church.id)}
+                  onClick={() => joinChurch({ churchId: church.id }, church.id)}
                   className="flex w-full items-center gap-3 rounded-lg border p-3 text-left transition hover:bg-muted disabled:opacity-60"
                 >
                   {church.logo_url ? (
@@ -317,9 +338,13 @@ export function OnboardingWizard({
                       {church.description ?? `/${church.slug}`}
                     </div>
                   </div>
-                  <span className="text-sm text-primary">
-                    {joiningId === church.id ? 'Joining...' : 'Join'}
-                  </span>
+                  {joiningId === church.id ? (
+                    <span className="inline-flex items-center gap-1.5 text-sm text-primary">
+                      <Spinner className="size-3.5" /> Joining
+                    </span>
+                  ) : (
+                    <span className="text-sm text-primary">Join</span>
+                  )}
                 </button>
               ))}
               {filtered.length === 0 && (
@@ -337,21 +362,30 @@ export function OnboardingWizard({
             value={joinSlug}
             onChange={(e) => setJoinSlug(e.target.value)}
             placeholder="grace-chapel"
+            disabled={loading}
           />
         </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {errorBanner}
 
         <Button
           className="w-full"
           onClick={() => joinChurchBySlug(joinSlug)}
           disabled={loading || !joinSlug.trim()}
         >
-          {loading ? 'Joining...' : 'Join church'}
+          {loading && !joiningId ? (
+            <>
+              <Spinner className="mr-2" />
+              Joining...
+            </>
+          ) : (
+            'Join church'
+          )}
         </Button>
         <Button
           variant="ghost"
           className="w-full"
+          disabled={loading}
           onClick={() => {
             setError('')
             setStep('choice')

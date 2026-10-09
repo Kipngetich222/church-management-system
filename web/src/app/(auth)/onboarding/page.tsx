@@ -16,10 +16,19 @@ export default async function OnboardingPage({
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: memberships } = await supabase
+  const { data: memberships, error: membershipError } = await supabase
     .from('church_memberships')
     .select('id')
     .eq('user_id', user.id)
+
+  // If this fails we must not silently show the wizard - otherwise a user who
+  // already belongs to a church gets stuck here forever. Surface the problem.
+  if (membershipError) {
+    console.error('Failed to load memberships on onboarding:', membershipError)
+    throw new Error(
+      'We could not load your church memberships. Please refresh and try again.'
+    )
+  }
 
   // Already belongs to a church — send to the right dashboard.
   if (memberships?.length) {

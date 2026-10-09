@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { setActiveChurch } from '@/lib/auth/active-church'
 import { dashboardPathForRole } from '@/lib/auth/redirect'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import {
   Card,
   CardContent,
@@ -30,6 +31,7 @@ export function SelectChurchForm({ options }: { options: ChurchOption[] }) {
   const [selected, setSelected] = useState<string | null>(null)
 
   function choose(option: ChurchOption) {
+    if (selected) return
     setSelected(option.churchId)
     // Remember the choice so every future visit lands on this church.
     setActiveChurch(option.churchId)
@@ -75,7 +77,11 @@ export function SelectChurchForm({ options }: { options: ChurchOption[] }) {
             <Badge variant={option.role === 'member' ? 'secondary' : 'default'}>
               {option.role.replace('_', ' ')}
             </Badge>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            {selected === option.churchId ? (
+              <Spinner className="text-primary" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            )}
           </button>
         ))}
 
