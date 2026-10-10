@@ -39,12 +39,12 @@ export function BackgroundDecor({
       className={cn('absolute inset-0 overflow-hidden', className)}
     >
       {showGrid && (
-        <div className="bg-grid-faint absolute inset-0 opacity-40 [mask-image:radial-gradient(ellipse_120%_80%_at_50%_0%,black,transparent_75%)]" />
+        <div className="bg-grid-faint absolute inset-0 opacity-40 [mask-image:radial-gradient(ellipse_120%_80%_at_50%_0%,black,transparent_85%)]" />
       )}
 
       {/* Warm bloom that anchors the light source. */}
       <div className="absolute -top-40 left-1/2 h-[40rem] w-[40rem] -translate-x-1/2 rounded-full bg-primary/10 blur-[130px] dark:bg-primary/15" />
-      <div className="absolute -bottom-40 -right-24 h-[32rem] w-[32rem] rounded-full bg-primary/5 blur-[120px]" />
+      <div className="absolute -bottom-40 -right-24 h-[32rem] w-[32rem] rounded-full bg-primary/5 blur-[100px]" />
 
       {BOXES.map((box, index) => (
         <span
@@ -52,9 +52,9 @@ export function BackgroundDecor({
           className={cn(
             'animate-drift absolute rounded-lg',
             box.filled
-              ? 'bg-primary/[0.05] dark:bg-primary/[0.07]'
-              : 'border border-foreground/[0.06] dark:border-foreground/[0.08]',
-            box.gold && 'border-primary/20 dark:border-primary/25'
+              ? 'bg-primary/[0.15] dark:bg-primary/[0.17]'
+              : 'border border-foreground/[0.26] dark:border-foreground/[0.28]',
+            box.gold && 'border-primary/50 dark:border-primary/55'
           )}
           style={{
             left: box.left,
@@ -63,7 +63,7 @@ export function BackgroundDecor({
             height: box.size,
             animationDelay: box.delay,
             animationDuration: box.duration,
-            opacity: 0.6,
+            opacity: 0.9,
           }}
         />
       ))}

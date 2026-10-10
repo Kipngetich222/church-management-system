@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { HeroHeadline } from './HeroHeadline'
 
 export function Hero() {
   return (
@@ -10,10 +11,7 @@ export function Hero() {
           Built for modern churches
         </div>
 
-        <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-          Manage your church
-          <span className="text-primary"> with purpose</span>
-        </h1>
+        <HeroHeadline />
 
         <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
           Members, events, giving, departments, and communication — all in one

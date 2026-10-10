@@ -51,25 +51,47 @@ function DropdownMenuContent({
   )
 }
 
+const DropdownMenuGroupContext = React.createContext(false)
+
 function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props) {
-  return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
+  return (
+    <DropdownMenuGroupContext.Provider value={true}>
+      <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
+    </DropdownMenuGroupContext.Provider>
+  )
 }
 
 function DropdownMenuLabel({
   className,
   inset,
   ...props
-}: MenuPrimitive.GroupLabel.Props & {
+}: React.ComponentProps<'div'> & {
   inset?: boolean
 }) {
+  const classes = cn(
+    'px-1.5 py-1 text-xs font-medium text-muted-foreground data-inset:pl-7',
+    className
+  )
+  // Base UI requires a <Menu.Group> parent for GroupLabel; fall back to a
+  // plain div so standalone labels (e.g. menu headers) do not throw.
+  const inGroup = React.useContext(DropdownMenuGroupContext)
+
+  if (inGroup) {
+    return (
+      <MenuPrimitive.GroupLabel
+        data-slot="dropdown-menu-label"
+        data-inset={inset}
+        className={classes}
+        {...props}
+      />
+    )
+  }
+
   return (
-    <MenuPrimitive.GroupLabel
+    <div
       data-slot="dropdown-menu-label"
       data-inset={inset}
-      className={cn(
-        'px-1.5 py-1 text-xs font-medium text-muted-foreground data-inset:pl-7',
-        className
-      )}
+      className={classes}
       {...props}
     />
   )
