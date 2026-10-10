@@ -18,6 +18,9 @@
   --font-heading:
     ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
     Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  --font-script:
+    'Segoe Script', 'Bradley Hand', 'Brush Script MT', 'Apple Chancery',
+    'Snell Roundhand', 'Lucida Handwriting', cursive;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -196,6 +199,64 @@
 
 @media (prefers-reduced-motion: reduce) {
   .animate-drift {
+    animation: none;
+  }
+}
+
+/* Signature headline: a slow travelling wave across the letters. */
+@keyframes hero-wave {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(calc(-1 * var(--wave-amp, 0.14em))) rotate(-1.5deg);
+  }
+}
+
+@utility animate-hero-wave {
+  animation: hero-wave var(--wave-duration, 2.6s) ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Word swap: rises in with a soft blur. The opacity floor keeps the word
+   readable throughout, so swapping never leaves a visible gap. */
+@keyframes hero-word-in {
+  from {
+    opacity: 0.35;
+    transform: translateY(0.3em) scale(0.96);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@utility animate-hero-word-in {
+  animation: hero-word-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Hand-drawn stroke that redraws under each word. */
+@keyframes hero-stroke {
+  from {
+    stroke-dashoffset: var(--stroke-length, 260);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@utility animate-hero-stroke {
+  stroke-dasharray: var(--stroke-length, 260);
+  animation: hero-stroke 0.9s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-hero-wave,
+  .animate-hero-word-in,
+  .animate-hero-stroke {
     animation: none;
   }
 }

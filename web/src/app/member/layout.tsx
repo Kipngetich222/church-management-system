@@ -1,45 +1,9 @@
-// import { getActiveChurch } from '@/lib/utils/church-scope'
-// import Link from 'next/link'
-
-// export default async function MemberLayout({
-//   children,
-// }: {
-//   children: React.ReactNode
-// }) {
-//   const ctx = await getActiveChurch()
-
-//   return (
-//     <div className="min-h-screen grid grid-cols-[240px_1fr]">
-//       <aside className="border-r bg-muted/30 p-4 space-y-4">
-//         <div className="font-bold text-lg">{ctx.church?.name}</div>
-//         <nav className="space-y-1 text-sm">
-//           <Link href="/member/home" className="block px-3 py-2 rounded hover:bg-muted">
-//             Home
-//           </Link>
-//           <Link href="/member/calendar" className="block px-3 py-2 rounded hover:bg-muted">
-//             Calendar
-//           </Link>
-//           <Link href="/member/giving" className="block px-3 py-2 rounded hover:bg-muted">
-//             Giving
-//           </Link>
-//           <Link href="/member/prayer" className="block px-3 py-2 rounded hover:bg-muted">
-//             Prayer
-//           </Link>
-//           <Link href="/member/profile" className="block px-3 py-2 rounded hover:bg-muted">
-//             Profile
-//           </Link>
-//         </nav>
-//       </aside>
-//       <main className="p-8">{children}</main>
-//     </div>
-//   )
-// }
-
 import { getActiveChurch } from '@/lib/utils/church-scope'
-import { MemberTopbar } from '@/components/layout/MemberTopbar'
 import { PageBackdrop } from '@/components/backgrounds/page-backdrop'
+import { MemberSidebar } from '@/components/layout/MemberSidebar'
+import { MemberTopbar } from '@/components/layout/MemberTopbar'
+import { SidebarProvider } from '@/components/layout/sidebar-context'
 import { isAdminRole } from '@/lib/auth/redirect'
-import Link from 'next/link'
 
 export default async function MemberLayout({
   children,
@@ -50,53 +14,21 @@ export default async function MemberLayout({
   const isAdmin = isAdminRole(ctx.role)
 
   return (
-    <div className="relative min-h-screen grid grid-cols-[240px_1fr]">
-      <PageBackdrop variant="dashboard" />
-      <aside className="relative z-10 border-r bg-muted/20 backdrop-blur-md p-4 space-y-4">
-        <div className="font-bold text-lg">{ctx.church?.name}</div>
-        <nav className="space-y-1 text-sm">
-          <Link
-            href="/member/home"
-            className="block px-3 py-2 rounded hover:bg-muted"
-          >
-            Home
-          </Link>
-          <Link
-            href="/member/calendar"
-            className="block px-3 py-2 rounded hover:bg-muted"
-          >
-            Calendar
-          </Link>
-          <Link
-            href="/member/giving"
-            className="block px-3 py-2 rounded hover:bg-muted"
-          >
-            Giving
-          </Link>
-          <Link
-            href="/member/prayer"
-            className="block px-3 py-2 rounded hover:bg-muted"
-          >
-            Prayer
-          </Link>
-          <Link href="/member/resources" className="block px-3 py-2 rounded hover:bg-muted">Resources</Link>
-<Link href="/member/volunteering" className="block px-3 py-2 rounded hover:bg-muted">Volunteering</Link>
-          <Link
-            href="/member/profile"
-            className="block px-3 py-2 rounded hover:bg-muted"
-          >
-            Profile
-          </Link>
-        </nav>
-      </aside>
-      <div className="relative z-10 flex flex-col">
-        <MemberTopbar
-          isAdmin={isAdmin}
-          memberships={ctx.memberships}
-          activeChurchId={ctx.churchId}
-        />
-        <main className="flex-1 p-8 bg-muted/10">{children}</main>
+    <SidebarProvider>
+      <div className="relative min-h-screen md:grid md:grid-cols-[auto_1fr]">
+        <PageBackdrop variant="dashboard" />
+
+        <MemberSidebar churchName={ctx.church?.name} />
+
+        <div className="relative z-10 flex min-h-screen flex-col">
+          <MemberTopbar
+            isAdmin={isAdmin}
+            memberships={ctx.memberships}
+            activeChurchId={ctx.churchId}
+          />
+          <main className="flex-1 bg-muted/10 p-4 md:p-8">{children}</main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   )
 }
