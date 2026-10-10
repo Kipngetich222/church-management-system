@@ -18,6 +18,7 @@ import {
   AvatarImage,
 } from '@/components/ui/avatar'
 import { ChevronsUpDown, LogOut, User, Shield, UserCircle2 } from 'lucide-react'
+import { ThemeToggle } from '@/components/theme/theme-toggle'
 
 type Props = {
   user: { email: string; full_name: string | null; avatar_url: string | null }
@@ -55,7 +56,7 @@ export function AdminTopbar({ user, memberships, activeChurchId }: Props) {
   const initials = (user.full_name || user.email).slice(0, 2).toUpperCase()
 
   return (
-    <header className="border-b bg-background flex h-14 items-center justify-between px-6">
+    <header className="border-b bg-background/80 backdrop-blur-md flex h-14 items-center justify-between px-6">
       {/* Church switcher */}
       <DropdownMenu>
         <DropdownMenuTrigger
@@ -89,6 +90,7 @@ export function AdminTopbar({ user, memberships, activeChurchId }: Props) {
 
       {/* Role switch + user menu */}
       <div className="flex items-center gap-2">
+        <ThemeToggle />
         <Button
           variant="outline"
           size="sm"

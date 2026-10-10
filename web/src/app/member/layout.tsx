@@ -37,6 +37,7 @@
 
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { MemberTopbar } from '@/components/layout/MemberTopbar'
+import { PageBackdrop } from '@/components/backgrounds/page-backdrop'
 import { isAdminRole } from '@/lib/auth/redirect'
 import Link from 'next/link'
 
@@ -49,8 +50,9 @@ export default async function MemberLayout({
   const isAdmin = isAdminRole(ctx.role)
 
   return (
-    <div className="min-h-screen grid grid-cols-[240px_1fr]">
-      <aside className="border-r bg-muted/20 p-4 space-y-4">
+    <div className="relative min-h-screen grid grid-cols-[240px_1fr]">
+      <PageBackdrop variant="dashboard" />
+      <aside className="relative z-10 border-r bg-muted/20 backdrop-blur-md p-4 space-y-4">
         <div className="font-bold text-lg">{ctx.church?.name}</div>
         <nav className="space-y-1 text-sm">
           <Link
@@ -87,7 +89,7 @@ export default async function MemberLayout({
           </Link>
         </nav>
       </aside>
-      <div className="flex flex-col">
+      <div className="relative z-10 flex flex-col">
         <MemberTopbar
           isAdmin={isAdmin}
           memberships={ctx.memberships}

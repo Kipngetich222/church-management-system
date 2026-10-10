@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Building2, CalendarDays, MapPin, Users } from 'lucide-react'
+import { Building2, CalendarDays, Coins, MapPin, Users } from 'lucide-react'
 
 const SETUP_STEPS = [
   {
@@ -99,19 +99,28 @@ export default async function AdminDashboardPage({
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+              <Users className="h-4 w-4" />
+            </span>
             <CardTitle>Members</CardTitle>
           </CardHeader>
           <CardContent>—</CardContent>
         </Card>
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+              <CalendarDays className="h-4 w-4" />
+            </span>
             <CardTitle>Upcoming Events</CardTitle>
           </CardHeader>
           <CardContent>—</CardContent>
         </Card>
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+              <Coins className="h-4 w-4" />
+            </span>
             <CardTitle>This Week&apos;s Giving</CardTitle>
           </CardHeader>
           <CardContent>—</CardContent>

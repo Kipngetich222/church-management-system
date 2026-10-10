@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ChevronsUpDown, LogOut, Shield } from 'lucide-react'
+import { ThemeToggle } from '@/components/theme/theme-toggle'
 
 type Membership = {
   church_id: string
@@ -45,7 +46,7 @@ export function MemberTopbar({
   }
 
   return (
-    <header className="border-b bg-background flex h-14 items-center justify-between px-6">
+    <header className="border-b bg-background/80 backdrop-blur-md flex h-14 items-center justify-between px-6">
       {hasMultiple ? (
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -78,6 +79,7 @@ export function MemberTopbar({
       )}
 
       <div className="flex items-center gap-2">
+        <ThemeToggle />
         {isAdmin && (
           <Button
             variant="outline"

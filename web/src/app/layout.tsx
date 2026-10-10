@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import { ThemeProvider } from '@/components/theme/theme-provider'
+import { themeInitScript } from '@/components/theme/theme-script'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -8,8 +10,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body className="min-h-full flex flex-col">
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   )
 }
