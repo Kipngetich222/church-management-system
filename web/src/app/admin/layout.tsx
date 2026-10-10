@@ -58,6 +58,7 @@
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { AdminTopbar } from '@/components/layout/AdminTopbar'
+import { PageBackdrop } from '@/components/backgrounds/page-backdrop'
 
 export default async function AdminLayout({
   children,
@@ -67,15 +68,16 @@ export default async function AdminLayout({
   const ctx = await getActiveChurch()
 
   return (
-    <div className="min-h-screen grid grid-cols-[260px_1fr]">
-      <aside className="border-r bg-muted/20 flex flex-col h-screen sticky top-0">
+    <div className="relative min-h-screen grid grid-cols-[260px_1fr]">
+      <PageBackdrop variant="dashboard" />
+      <aside className="relative z-10 border-r bg-muted/20 backdrop-blur-md flex flex-col h-screen sticky top-0">
         <div className="h-14 border-b flex items-center px-4 font-bold text-lg">
           <span className="text-primary mr-1">✝</span> ChurchMS
         </div>
         <Sidebar />
       </aside>
 
-      <div className="flex flex-col min-h-screen">
+      <div className="relative z-10 flex flex-col min-h-screen">
         <AdminTopbar
           user={{
             email: ctx.user.email!,

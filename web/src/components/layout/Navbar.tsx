@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/server'
 import { MobileNav } from './MobileNav'
+import { ThemeToggle } from '@/components/theme/theme-toggle'
 
 export async function Navbar() {
   const supabase = await createClient()
@@ -39,6 +40,7 @@ export async function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           {user ? (
             <Button
               nativeButton={false}
