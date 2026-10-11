@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { resolvePostAuthPath } from '@/lib/auth/redirect'
@@ -13,5 +14,9 @@ export default async function LoginPage() {
 
   if (user) redirect(await resolvePostAuthPath(supabase, user.id))
 
-  return <LoginForm />
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  )
 }

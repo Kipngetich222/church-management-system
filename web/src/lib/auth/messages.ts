@@ -47,3 +47,31 @@ export async function readApiError(
     return fallback
   }
 }
+
+/** Human-readable label for an OAuth provider id. */
+function providerLabel(provider: string): string {
+  switch (provider) {
+    case 'google':
+      return 'Google'
+    case 'github':
+      return 'GitHub'
+    case 'apple':
+      return 'Apple'
+    case 'facebook':
+      return 'Facebook'
+    case '':
+      return 'a linked provider'
+    default:
+      return provider.charAt(0).toUpperCase() + provider.slice(1)
+  }
+}
+
+/**
+ * Copy for an email that is only linked to an OAuth provider (e.g. Google), so
+ * a password will never work and the user should continue with that provider.
+ */
+export function oauthAccountMessage(providers: string[]): string {
+  const provider = providers.find((p) => p !== 'email') ?? providers[0] ?? ''
+  const label = providerLabel(provider)
+  return `This email is linked to ${label}. Use "Continue with ${label}" instead of a password.`
+}

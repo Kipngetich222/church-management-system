@@ -14,7 +14,11 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/select-church')
 
-  if (!isProtected) return response
+  // Onboarding needs a signed-in, email-verified user too, but it is handled
+  // separately because it must be reachable by members who have no church yet.
+  const needsVerifiedEmail = isProtected || pathname.startsWith('/onboarding')
+
+  if (!needsVerifiedEmail) return response
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,6 +41,17 @@ export async function proxy(request: NextRequest) {
     url.searchParams.set('next', pathname)
     return NextResponse.redirect(url)
   }
+
+  // Unverified users must confirm their email before going any further.
+  if (!user.email_confirmed_at) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/verify'
+    url.search = user.email ? `?email=${encodeURIComponent(user.email)}` : ''
+    return NextResponse.redirect(url)
+  }
+
+  // Onboarding only needs the two checks above.
+  if (!isProtected) return response
 
   // Check membership
   const { data: memberships, error: membershipError } = await supabase
