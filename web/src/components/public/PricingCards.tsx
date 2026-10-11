@@ -11,7 +11,7 @@ import Link from 'next/link'
 const plans = [
   {
     name: 'Basic',
-    price: 'Free',
+    price: 'KSh 2,000/mo',
     tagline: 'For small congregations getting started',
     features: [
       'Admin accounts only',
@@ -21,12 +21,12 @@ const plans = [
       'Bulk SMS to members',
       'Event calendar & reminders',
     ],
-    cta: 'Start Free',
+    cta: 'Get Started',
     href: '/register?plan=basic',
   },
   {
     name: 'Premium',
-    price: '$29/mo',
+    price: 'KSh 4,500/mo',
     tagline: 'For growing churches with departments',
     features: [
       'Everything in Basic',
@@ -51,7 +51,13 @@ export function PricingCards() {
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Simple pricing
           </h2>
-          <p className="text-muted-foreground">Start free, upgrade anytime.</p>
+          <p className="text-muted-foreground">
+            Transparent pricing in Kenyan Shillings.
+          </p>
+        </div>
+
+        <div className="max-w-4xl mx-auto mb-10 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-center text-sm">
+          Everything is free for now while the platform is in development.
         </div>
 
         <div className="grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
