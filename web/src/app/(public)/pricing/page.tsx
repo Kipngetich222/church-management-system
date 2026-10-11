@@ -32,8 +32,8 @@ const comparison = [
 
 const faqs = [
   {
-    q: 'Is there really a free plan?',
-    a: 'Yes. The Basic plan is free forever for small congregations. You only upgrade when you need member logins, departments and advanced analytics.',
+    q: 'Is it really free right now?',
+    a: 'Yes. Everything is free for now while the platform is in development. Once we launch, the Basic plan will be KSh 2,000 per month and Premium KSh 4,500 per month.',
   },
   {
     q: 'How do I pay?',
@@ -63,6 +63,9 @@ export default function PricingPage() {
           </h1>
           <p className="text-lg text-muted-foreground">
             Start free. Upgrade when your church grows. No hidden fees.
+          </p>
+          <p className="mt-4 inline-block rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm">
+            Everything is free for now while the platform is in development.
           </p>
         </div>
       </section>
