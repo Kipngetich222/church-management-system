@@ -1,14 +1,16 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { lookupAccount } from '@/lib/auth/account'
 import { resolvePostAuthPath } from '@/lib/auth/redirect'
-import { friendlyAuthError } from '@/lib/auth/messages'
+import { friendlyAuthError, oauthAccountMessage } from '@/lib/auth/messages'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import {
   Card,
@@ -31,10 +33,16 @@ export function RegisterForm() {
     fullName: '',
     email: prefilledEmail,
     password: '',
+    confirmPassword: '',
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+
+  // Live feedback so the user knows their confirmation matches before they
+  // even submit the form.
+  const passwordsMatch = form.confirmPassword === form.password
+  const showMismatch = form.confirmPassword.length > 0 && !passwordsMatch
 
   // Where to send the user once their account is ready.
   const afterAuthPath = invitedChurch
@@ -44,10 +52,29 @@ export function RegisterForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (loading) return
-    setLoading(true)
     setError('')
 
+    if (form.password !== form.confirmPassword) {
+      setError('Passwords do not match. Please re-enter your password.')
+      return
+    }
+
+    setLoading(true)
+
     try {
+      // Catch accounts that already exist before attempting sign-up, so we can
+      // explain the situation clearly (and steer Google-only users to Google)
+      // instead of relying on Supabase's generic error.
+      const existing = await lookupAccount(form.email)
+      if (existing?.exists) {
+        setError(
+          existing.hasPassword === false
+            ? oauthAccountMessage(existing.providers)
+            : 'An account with this email already exists. Try signing in instead.'
+        )
+        return
+      }
+
       const supabase = createClient()
       const callbackUrl = new URL('/auth/callback', location.origin)
       if (afterAuthPath) callbackUrl.searchParams.set('next', afterAuthPath)
@@ -66,17 +93,31 @@ export function RegisterForm() {
         return
       }
 
-      // If email confirmation is disabled, the user is signed in immediately and
-      // can go straight to onboarding. Otherwise, tell them to verify their email.
-      if (data.session && data.user) {
-        const destination =
-          afterAuthPath ?? (await resolvePostAuthPath(supabase, data.user.id))
-        router.push(destination)
-        router.refresh()
+      // Supabase returns a user with no identities when the email is already
+      // registered (a deliberate anti-enumeration measure). Treat it as such.
+      if (
+        data.user &&
+        Array.isArray(data.user.identities) &&
+        data.user.identities.length === 0
+      ) {
+        setError(
+          'An account with this email already exists. Try signing in instead.'
+        )
         return
       }
 
-      router.push('/verify')
+      // If email confirmation is enabled, there is no session yet: the user
+      // must verify their email before they can reach a dashboard.
+      if (!data.session || !data.user) {
+        router.push('/verify?email=' + encodeURIComponent(form.email))
+        return
+      }
+
+      // Confirmation disabled: the user is signed in immediately.
+      const destination =
+        afterAuthPath ?? (await resolvePostAuthPath(supabase, data.user.id))
+      router.push(destination)
+      router.refresh()
     } catch {
       setError('Network error. Check your connection and try again.')
     } finally {
@@ -173,15 +214,33 @@ export function RegisterForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               autoComplete="new-password"
               minLength={8}
               required
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm password</Label>
+            <PasswordInput
+              id="confirmPassword"
+              value={form.confirmPassword}
+              onChange={(e) =>
+                setForm({ ...form, confirmPassword: e.target.value })
+              }
+              autoComplete="new-password"
+              minLength={8}
+              required
+              aria-invalid={showMismatch}
+            />
+            {showMismatch && (
+              <p className="text-sm text-destructive">
+                Passwords do not match.
+              </p>
+            )}
           </div>
 
           {error && (

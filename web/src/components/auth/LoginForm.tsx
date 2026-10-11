@@ -1,16 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { lookupAccount } from '@/lib/auth/account'
 import { resolvePostAuthPath, safeRedirect } from '@/lib/auth/redirect'
-import { friendlyAuthError } from '@/lib/auth/messages'
+import { friendlyAuthError, oauthAccountMessage } from '@/lib/auth/messages'
 import { ArrowLeft } from 'lucide-react'
 import { GoogleIcon } from '@/components/auth/GoogleIcon'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import {
   Card,
@@ -20,39 +22,29 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 
-/**
- * Ask the server whether an email already has an account. Returns `null` when
- * the answer cannot be determined (e.g. network error), so callers can fall
- * back to the auth error rather than blocking a legitimate sign-in.
- */
-async function accountExists(email: string): Promise<boolean | null> {
-  try {
-    const res = await fetch('/api/auth/check-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    })
-    if (!res.ok) return null
-    const data = (await res.json()) as { exists?: boolean }
-    return typeof data.exists === 'boolean' ? data.exists : null
-  } catch {
-    return null
-  }
-}
-
 export function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const notice = searchParams.get('message')
+  const linkError = searchParams.get('error')
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [needsVerification, setNeedsVerification] = useState(false)
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>(
+    'idle'
+  )
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (loading) return
     setLoading(true)
     setError('')
+    setNeedsVerification(false)
+    setResendState('idle')
 
     try {
       const supabase = createClient()
@@ -63,12 +55,15 @@ export function LoginForm() {
 
       if (error || !data.user) {
         const message = error?.message ?? 'Unable to sign in'
+        const lower = message.toLowerCase()
 
-        // If the email has no account yet, direct the user to sign up rather
-        // than showing a misleading invalid-credentials error.
-        if (message.toLowerCase().includes('invalid login credentials')) {
-          const exists = await accountExists(email)
-          if (exists === false) {
+        // Password auth fails with the same generic error for a wrong password
+        // and for an account that only has an OAuth identity. Check which one
+        // it is so we can point the user in the right direction.
+        if (lower.includes('invalid login credentials')) {
+          const account = await lookupAccount(email)
+          if (account && !account.exists) {
+            // No account at all - send them to sign up.
             router.push(
               '/register?email=' +
                 encodeURIComponent(email) +
@@ -76,6 +71,14 @@ export function LoginForm() {
             )
             return
           }
+          if (account && account.exists && account.hasPassword === false) {
+            setError(oauthAccountMessage(account.providers))
+            return
+          }
+        }
+
+        if (lower.includes('email not confirmed')) {
+          setNeedsVerification(true)
         }
 
         setError(friendlyAuthError(message))
@@ -119,6 +122,33 @@ export function LoginForm() {
     }
   }
 
+  async function resendVerification() {
+    if (resendState === 'sending') return
+    if (!email) {
+      setError('Enter your email address first.')
+      return
+    }
+    setResendState('sending')
+    setError('')
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: { emailRedirectTo: `${location.origin}/auth/callback` },
+      })
+      if (error) {
+        setError(friendlyAuthError(error.message))
+        setResendState('idle')
+        return
+      }
+      setResendState('sent')
+    } catch {
+      setError('Network error. Check your connection and try again.')
+      setResendState('idle')
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -126,6 +156,21 @@ export function LoginForm() {
         <CardDescription>Sign in to your account</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {notice === 'password_updated' && (
+          <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+            Your password has been updated. Sign in with your new password.
+          </p>
+        )}
+
+        {linkError === 'auth_failed' && (
+          <p
+            role="alert"
+            className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
+            That link is invalid or has expired. Please sign in again.
+          </p>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -140,9 +185,8 @@ export function LoginForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
@@ -157,6 +201,27 @@ export function LoginForm() {
             >
               {error}
             </p>
+          )}
+
+          {needsVerification && (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={resendVerification}
+              disabled={resendState === 'sending'}
+            >
+              {resendState === 'sending' ? (
+                <>
+                  <Spinner className="mr-2" />
+                  Sending...
+                </>
+              ) : resendState === 'sent' ? (
+                'Verification email sent'
+              ) : (
+                'Resend verification email'
+              )}
+            </Button>
           )}
 
           <Button type="submit" className="w-full" disabled={loading}>
