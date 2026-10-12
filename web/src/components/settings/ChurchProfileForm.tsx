@@ -133,13 +133,8 @@ export function ChurchProfileForm({ church }: { church: Church }) {
             onPick={(lat, lng) =>
               setForm({ ...form, latitude: lat, longitude: lng })
             }
+            onAddress={(address) => setForm({ ...form, address })}
           />
-          {form.latitude && form.longitude && (
-            <p className="text-xs text-muted-foreground">
-              Coordinates: {form.latitude.toFixed(5)},{' '}
-              {form.longitude.toFixed(5)}
-            </p>
-          )}
         </CardContent>
       </Card>
 
