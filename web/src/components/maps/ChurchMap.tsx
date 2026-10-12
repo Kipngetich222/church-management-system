@@ -13,6 +13,7 @@ export type MapChurch = {
   latitude: number | null
   longitude: number | null
   address?: string | null
+  href?: string | null
 }
 
 function buildInfoContent(church: MapChurch) {
@@ -32,13 +33,17 @@ function buildInfoContent(church: MapChurch) {
     node.appendChild(address)
   }
 
-  const link = document.createElement('a')
-  link.href = `/churches/${church.slug}`
-  link.textContent = 'View church'
-  link.style.display = 'inline-block'
-  link.style.marginTop = '6px'
-  link.style.color = '#2563eb'
-  node.appendChild(link)
+  const href =
+    church.href === undefined ? `/churches/${church.slug}` : church.href
+  if (href) {
+    const link = document.createElement('a')
+    link.href = href
+    link.textContent = 'View church'
+    link.style.display = 'inline-block'
+    link.style.marginTop = '6px'
+    link.style.color = '#2563eb'
+    node.appendChild(link)
+  }
 
   return node
 }

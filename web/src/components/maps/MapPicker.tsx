@@ -27,6 +27,7 @@ type Prediction = {
 export function MapPicker({
   lat,
   lng,
+  address,
   onPick,
   onAddress,
   height = 288,
@@ -35,6 +36,7 @@ export function MapPicker({
 }: {
   lat: number | null
   lng: number | null
+  address?: string | null
   onPick: (lat: number, lng: number) => void
   onAddress?: (address: string) => void
   height?: number
@@ -58,7 +60,7 @@ export function MapPicker({
   const [ready, setReady] = useState(false)
   const [loadFailed, setLoadFailed] = useState(false)
   const failed = !googleMapsApiKey() || loadFailed
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(address ?? '')
   const [predictions, setPredictions] = useState<Prediction[]>([])
   const [loading, setLoading] = useState(false)
   const [resolving, setResolving] = useState(false)

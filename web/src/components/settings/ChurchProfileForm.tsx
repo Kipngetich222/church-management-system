@@ -130,6 +130,7 @@ export function ChurchProfileForm({ church }: { church: Church }) {
           <MapPicker
             lat={form.latitude}
             lng={form.longitude}
+            address={form.address}
             onPick={(lat, lng) =>
               setForm({ ...form, latitude: lat, longitude: lng })
             }

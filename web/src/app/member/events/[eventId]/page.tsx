@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { CalendarDays, MapPin } from 'lucide-react'
 import { ShareButton } from '@/components/shared/ShareButton'
+import { ChurchMap } from '@/components/maps/ChurchMap'
 
 export default async function MemberEventDetail({
   params,
@@ -56,6 +57,23 @@ export default async function MemberEventDetail({
           </Button>
         )}
       </div>
+
+      {event.latitude != null && event.longitude != null && (
+        <ChurchMap
+          churches={[
+            {
+              id: event.id,
+              name: event.location_name ?? event.title,
+              slug: '',
+              latitude: event.latitude,
+              longitude: event.longitude,
+              address: event.address,
+              href: null,
+            },
+          ]}
+          height={280}
+        />
+      )}
 
       {event.description && (
         <Card>
