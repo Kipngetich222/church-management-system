@@ -228,13 +228,8 @@ export function EventForm({
             lat={form.latitude}
             lng={form.longitude}
             onPick={(lat, lng) => setForm({ ...form, latitude: lat, longitude: lng })}
+            onAddress={(address) => setForm({ ...form, address })}
           />
-
-          {form.latitude && form.longitude && (
-            <p className="text-xs text-muted-foreground">
-              Pin: {form.latitude.toFixed(5)}, {form.longitude.toFixed(5)}
-            </p>
-          )}
         </CardContent>
       </Card>
 

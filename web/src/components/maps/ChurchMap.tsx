@@ -2,7 +2,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
+import { importLibrary } from '@googlemaps/js-api-loader'
+import { configureGoogleMaps, googleMapsApiKey } from '@/lib/utils/google-maps'
 import { MapPin } from 'lucide-react'
 
 export type MapChurch = {
@@ -62,7 +63,8 @@ export function ChurchMap({
   const markersRef = useRef<Map<string, google.maps.Marker>>(new Map())
   const infoRef = useRef<google.maps.InfoWindow | null>(null)
   const [ready, setReady] = useState(0)
-  const [failed, setFailed] = useState(false)
+  const [loadFailed, setLoadFailed] = useState(false)
+  const failed = !googleMapsApiKey() || loadFailed
 
   const mappable = churches.filter(
     (c) => typeof c.latitude === 'number' && typeof c.longitude === 'number'
@@ -73,14 +75,8 @@ export function ChurchMap({
 
   useEffect(() => {
     let cancelled = false
-    const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-    if (!key) {
-      setFailed(true)
-      return
-    }
+    if (!configureGoogleMaps()) return
     if (!ref.current || mappable.length === 0) return
-
-    setOptions({ key, v: 'weekly' })
 
     Promise.all([importLibrary('maps'), importLibrary('marker')])
       .then(([mapsLib, markerLib]) => {
@@ -132,7 +128,7 @@ export function ChurchMap({
         setReady((v) => v + 1)
       })
       .catch(() => {
-        if (!cancelled) setFailed(true)
+        if (!cancelled) setLoadFailed(true)
       })
 
     return () => {
