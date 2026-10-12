@@ -227,6 +227,7 @@ export function EventForm({
           <MapPicker
             lat={form.latitude}
             lng={form.longitude}
+            address={form.address}
             onPick={(lat, lng) => setForm({ ...form, latitude: lat, longitude: lng })}
             onAddress={(address) => setForm({ ...form, address })}
           />

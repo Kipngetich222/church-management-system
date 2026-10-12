@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { CalendarDays, MapPin, Ticket } from 'lucide-react'
 import { ShareButton } from '@/components/shared/ShareButton'
 import { RegisterForEvent } from '@/components/events/RegisterForEvent'
+import { ChurchMap } from '@/components/maps/ChurchMap'
 import { createClient } from '@supabase/supabase-js'
 import type { Metadata } from 'next'
 
@@ -109,6 +110,23 @@ export default async function PublicEventPage({
             </Button>
           )}
         </div>
+
+        {event.latitude != null && event.longitude != null && (
+          <ChurchMap
+            churches={[
+              {
+                id: event.id,
+                name: event.location_name ?? event.title,
+                slug: '',
+                latitude: event.latitude,
+                longitude: event.longitude,
+                address: event.address,
+                href: null,
+              },
+            ]}
+            height={280}
+          />
+        )}
 
         {event.description && (
           <Card>
