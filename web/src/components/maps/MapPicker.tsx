@@ -339,6 +339,13 @@ export function MapPicker({
           onBlur={() => {
             blurTimer.current = setTimeout(() => setOpen(false), 150)
           }}
+          onKeyDown={(e) => {
+            // Enter should pick a suggestion, not submit the surrounding form.
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              if (predictions[0]) void handleSelect(predictions[0])
+            }
+          }}
           placeholder="Search a place or address to set the coordinates"
           className="pl-9 pr-10"
           autoComplete="off"
