@@ -13,6 +13,8 @@ CardTitle,
 import { BadgeChip } from '@/components/members/BadgeChip'
 import { UpcomingEvents } from '@/components/events/UpcomingEvents'
 import { Button } from '@/components/ui/button'
+import { ChurchMap } from '@/components/maps/ChurchMap'
+import { googleMapsUrl } from '@/lib/utils/maps'
 
 import Link from 'next/link'
 
@@ -21,6 +23,7 @@ Pin,
 Heart,
 HeartHandshake,
 HandCoins,
+MapPin,
 } from 'lucide-react'
 
 export default async function MemberHomePage() {
@@ -72,6 +75,12 @@ const badges: string[] = [...(membership?.badges ?? [])]
 if (membership?.is_baptized) {
 badges.push('baptized')
 }
+
+const maps = googleMapsUrl(
+church?.latitude,
+church?.longitude,
+church?.address
+)
 
 return ( <div className="space-y-8">
 {/* ============================================
@@ -210,6 +219,55 @@ WELCOME SECTION
       </CardContent>
     </Card>
   </div>
+
+  {/* ============================================
+      CHURCH LOCATION
+      ============================================ */}
+
+  <Card>
+    <CardHeader>
+      <CardTitle>Find us</CardTitle>
+    </CardHeader>
+
+    <CardContent className="space-y-4">
+      {church?.address && (
+        <p className="text-sm text-muted-foreground flex items-center gap-2">
+          <MapPin className="h-4 w-4" /> {church.address}
+        </p>
+      )}
+
+      {church?.latitude != null && church?.longitude != null ? (
+        <>
+          <ChurchMap
+            churches={[
+              {
+                id: church.id,
+                name: church.name,
+                slug: church.slug,
+                latitude: church.latitude,
+                longitude: church.longitude,
+                address: church.address,
+                href: null,
+              },
+            ]}
+            height={320}
+          />
+
+          {maps && (
+            <Button variant="outline" asChild>
+              <a href={maps} target="_blank" rel="noreferrer">
+                <MapPin className="h-4 w-4 mr-2" /> Get directions
+              </a>
+            </Button>
+          )}
+        </>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Your church has not set a location yet.
+        </p>
+      )}
+    </CardContent>
+  </Card>
 </div>
 
 
