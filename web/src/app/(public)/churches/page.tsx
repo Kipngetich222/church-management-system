@@ -16,7 +16,7 @@ export default async function ChurchesPage() {
   const { data: churches } = await supabase
     .from('churches')
     .select(
-      'id, name, slug, description, address, logo_url, plan, latitude, longitude'
+      'id, name, username, description, address, logo_url, plan, latitude, longitude'
     )
     .order('name')
 

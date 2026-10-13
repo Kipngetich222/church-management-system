@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { setActiveChurch } from '@/lib/auth/active-church'
 import { dashboardPathForRole } from '@/lib/auth/redirect'
 import { Button } from '@/components/ui/button'
+import { ChurchLogo } from '@/components/shared/ChurchLogo'
 import { Spinner } from '@/components/ui/spinner'
 import {
   Card,
@@ -15,13 +16,13 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Church, ChevronRight } from 'lucide-react'
+import { ArrowLeft, ChevronRight } from 'lucide-react'
 
 type ChurchOption = {
   churchId: string
   role: string
   name: string
-  slug: string
+  username: string
   logoUrl: string | null
   plan: string | null
 }
@@ -56,22 +57,16 @@ export function SelectChurchForm({ options }: { options: ChurchOption[] }) {
             onClick={() => choose(option)}
             className="flex w-full items-center gap-3 rounded-lg border p-3 text-left transition hover:bg-muted disabled:opacity-60"
           >
-            {option.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={option.logoUrl}
-                alt={option.name}
-                className="h-10 w-10 rounded-lg object-cover"
-              />
-            ) : (
-              <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/10 text-primary">
-                <Church className="h-5 w-5" />
-              </div>
-            )}
+            <ChurchLogo
+              name={option.name}
+              logoUrl={option.logoUrl}
+              size="md"
+              interactive={false}
+            />
             <div className="min-w-0 flex-1">
               <div className="truncate font-medium">{option.name}</div>
               <div className="truncate text-xs text-muted-foreground">
-                /{option.slug}
+                /{option.username}
               </div>
             </div>
             <Badge variant={option.role === 'member' ? 'secondary' : 'default'}>

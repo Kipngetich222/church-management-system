@@ -25,11 +25,14 @@ export type EventRow = {
   created_at: string
 }
 
-export async function listEvents(churchId: string, opts?: {
-  from?: string
-  to?: string
-  status?: string
-}): Promise<EventRow[]> {
+export async function listEvents(
+  churchId: string,
+  opts?: {
+    from?: string
+    to?: string
+    status?: string
+  }
+): Promise<EventRow[]> {
   const supabase = await createClient()
   let q = supabase
     .from('events')
@@ -40,7 +43,10 @@ export async function listEvents(churchId: string, opts?: {
   if (opts?.from) q = q.gte('start_time', opts.from)
   if (opts?.to) q = q.lte('start_time', opts.to)
   if (opts?.status)
-    q = q.eq('status', opts.status as 'draft' | 'published' | 'cancelled' | 'completed')
+    q = q.eq(
+      'status',
+      opts.status as 'draft' | 'published' | 'cancelled' | 'completed'
+    )
 
   const { data, error } = await q
   if (error) throw error
@@ -49,17 +55,24 @@ export async function listEvents(churchId: string, opts?: {
 
 export async function getEventById(id: string): Promise<EventRow | null> {
   const supabase = await createClient()
-  const { data } = await supabase.from('events').select('*').eq('id', id).single()
+  const { data } = await supabase
+    .from('events')
+    .select('*')
+    .eq('id', id)
+    .single()
   return (data as EventRow) ?? null
 }
 
-export async function getEventBySlug(churchSlug: string, eventSlug: string) {
+export async function getEventBySlug(
+  churchUsername: string,
+  eventSlug: string
+) {
   const supabase = await createClient()
   const { data } = await supabase
     .from('events')
-    .select('*, churches!inner(name, slug, logo_url)')
+    .select('*, churches!inner(name, username, logo_url)')
     .eq('slug', eventSlug)
-    .eq('churches.slug', churchSlug)
+    .eq('churches.username', churchUsername)
     .single()
   return data
 }

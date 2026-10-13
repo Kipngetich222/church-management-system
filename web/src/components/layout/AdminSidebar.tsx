@@ -8,15 +8,24 @@ export function AdminSidebar({
   churchId,
   role,
   churchName,
+  churchLogoUrl,
 }: {
   churchId: string
   role: string
   churchName?: string
+  churchLogoUrl?: string | null
 }) {
   const { can, loading } = usePermissions(churchId, role)
   const items = ADMIN_NAV.filter(
     (item) => !item.permission || can(item.permission)
   )
 
-  return <AppSidebar items={items} title={churchName} loading={loading} />
+  return (
+    <AppSidebar
+      items={items}
+      title={churchName}
+      logoUrl={churchLogoUrl}
+      loading={loading}
+    />
+  )
 }

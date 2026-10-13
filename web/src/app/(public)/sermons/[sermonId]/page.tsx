@@ -21,7 +21,7 @@ async function loadSermon(id: string) {
   const supabase = createPublicClient()
   const { data } = await supabase
     .from('sermons')
-    .select('*, churches(name, slug)')
+    .select('*, churches(name, username)')
     .eq('id', id)
     .eq('published', true)
     .maybeSingle()
@@ -71,7 +71,7 @@ export default async function SermonPage({
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           {church && (
-            <Link href={`/churches/${church.slug}`}>
+            <Link href={`/churches/${church.username}`}>
               <Badge variant="secondary">{church.name}</Badge>
             </Link>
           )}

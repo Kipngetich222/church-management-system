@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { ChurchLogo } from '@/components/shared/ChurchLogo'
 import { notFound } from 'next/navigation'
 import {
   Avatar,
@@ -70,11 +71,11 @@ export default async function PublicMemberPage({
           {data.is_baptized && <BadgeChip badge="baptized" />}
         </div>
         {c.logo_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={c.logo_url}
-            alt={c.name}
-            className="h-12 mx-auto opacity-70"
+          <ChurchLogo
+            name={c.name}
+            logoUrl={c.logo_url}
+            size="xl"
+            className="mx-auto opacity-70"
           />
         )}
       </div>

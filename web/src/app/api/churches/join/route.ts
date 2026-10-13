@@ -7,9 +7,9 @@ import { dashboardPathForRole } from '@/lib/auth/redirect'
 const bodySchema = z
   .object({
     churchId: z.string().uuid().optional(),
-    slug: z.string().trim().min(1).max(120).optional(),
+    username: z.string().trim().min(1).max(120).optional(),
   })
-  .refine((value) => Boolean(value.churchId || value.slug), {
+  .refine((value) => Boolean(value.churchId || value.username), {
     message: 'Pick a church to join.',
   })
 
@@ -49,13 +49,13 @@ export async function POST(request: Request) {
   const { data: church, error: findError } = parsed.data.churchId
     ? await admin
         .from('churches')
-        .select('id, name, slug')
+        .select('id, name, username')
         .eq('id', parsed.data.churchId)
         .maybeSingle()
     : await admin
         .from('churches')
-        .select('id, name, slug')
-        .eq('slug', parsed.data.slug!)
+        .select('id, name, username')
+        .eq('username', parsed.data.username!)
         .maybeSingle()
 
   if (findError) {

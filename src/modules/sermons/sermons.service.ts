@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { SupabaseService } from '../../supabase/supabase.service';
-import { CreateSermonDto, UpdateSermonDto } from './sermon.dto';
+import { Injectable, NotFoundException } from '@nestjs/common'
+import { SupabaseService } from '../../supabase/supabase.service'
+import { CreateSermonDto, UpdateSermonDto } from './sermon.dto'
 
 @Injectable()
 export class SermonsService {
@@ -11,23 +11,23 @@ export class SermonsService {
       .from('sermons')
       .select('*')
       .eq('church_id', churchId)
-      .order('preached_at', { ascending: false });
+      .order('preached_at', { ascending: false })
 
-    if (publishedOnly) builder = builder.eq('published', true);
+    if (publishedOnly) builder = builder.eq('published', true)
 
-    const { data, error } = await builder;
-    return this.supabase.unwrap(data ?? [], error);
+    const { data, error } = await builder
+    return this.supabase.unwrap(data ?? [], error)
   }
 
   async getById(sermonId: string) {
     const { data, error } = await this.supabase.admin
       .from('sermons')
-      .select('*, churches(id, name, slug, logo_url)')
+      .select('*, churches(id, name, username, logo_url)')
       .eq('id', sermonId)
-      .maybeSingle();
-    const sermon = this.supabase.single(data, error);
-    if (!sermon) throw new NotFoundException('Sermon not found');
-    return sermon;
+      .maybeSingle()
+    const sermon = this.supabase.single(data, error)
+    if (!sermon) throw new NotFoundException('Sermon not found')
+    return sermon
   }
 
   async create(churchId: string, dto: CreateSermonDto, userId: string) {
@@ -49,8 +49,8 @@ export class SermonsService {
         created_by: userId,
       })
       .select()
-      .single();
-    return this.supabase.unwrap(data, error);
+      .single()
+    return this.supabase.unwrap(data, error)
   }
 
   async update(churchId: string, sermonId: string, dto: UpdateSermonDto) {
@@ -72,8 +72,8 @@ export class SermonsService {
       .eq('church_id', churchId)
       .eq('id', sermonId)
       .select()
-      .single();
-    return this.supabase.unwrap(data, error);
+      .single()
+    return this.supabase.unwrap(data, error)
   }
 
   async remove(churchId: string, sermonId: string) {
@@ -81,8 +81,8 @@ export class SermonsService {
       .from('sermons')
       .delete()
       .eq('church_id', churchId)
-      .eq('id', sermonId);
-    if (error) this.supabase.unwrap(null, error);
-    return { success: true };
+      .eq('id', sermonId)
+    if (error) this.supabase.unwrap(null, error)
+    return { success: true }
   }
 }

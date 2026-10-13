@@ -11,13 +11,14 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { ChurchLogo } from '@/components/shared/ChurchLogo'
 import { ChurchMap, type MapChurch } from '@/components/maps/ChurchMap'
 import { MapPin, Search, Church as ChurchIcon } from 'lucide-react'
 
 export type ChurchSummary = {
   id: string
   name: string
-  slug: string
+  username: string
   description: string | null
   address: string | null
   logo_url: string | null
@@ -35,7 +36,7 @@ export function ChurchesDirectory({ churches }: { churches: ChurchSummary[] }) {
     return churches.filter(
       (c) =>
         c.name.toLowerCase().includes(needle) ||
-        c.slug.toLowerCase().includes(needle) ||
+        c.username.toLowerCase().includes(needle) ||
         (c.description ?? '').toLowerCase().includes(needle) ||
         (c.address ?? '').toLowerCase().includes(needle)
     )
@@ -80,22 +81,16 @@ export function ChurchesDirectory({ churches }: { churches: ChurchSummary[] }) {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((church) => (
-            <Link key={church.id} href={`/churches/${church.slug}`}>
+            <Link key={church.id} href={`/churches/${church.username}`}>
               <Card className="h-full hover:shadow-md transition">
                 <CardHeader>
                   <div className="flex items-center gap-3">
-                    {church.logo_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={church.logo_url}
-                        alt={church.name}
-                        className="h-12 w-12 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="h-12 w-12 rounded-lg bg-primary/10 grid place-items-center text-primary font-bold">
-                        {church.name.charAt(0)}
-                      </div>
-                    )}
+                    <ChurchLogo
+                      name={church.name}
+                      logoUrl={church.logo_url}
+                      size="xl"
+                      interactive={false}
+                    />
                     <div className="min-w-0">
                       <CardTitle className="truncate">{church.name}</CardTitle>
                       {church.plan === 'premium' && (

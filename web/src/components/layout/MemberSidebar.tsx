@@ -3,6 +3,18 @@
 import { MEMBER_NAV } from '@/lib/constants/member-nav'
 import { AppSidebar } from './AppSidebar'
 
-export function MemberSidebar({ churchName }: { churchName?: string }) {
-  return <AppSidebar items={MEMBER_NAV} title={churchName} />
+export function MemberSidebar({
+  churchName,
+  churchLogoUrl,
+}: {
+  churchName?: string
+  churchLogoUrl?: string | null
+}) {
+  return (
+    <AppSidebar
+      items={MEMBER_NAV}
+      title={churchName}
+      logoUrl={churchLogoUrl}
+    />
+  )
 }

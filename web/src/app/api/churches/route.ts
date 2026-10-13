@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { slugify } from '@/lib/utils/slug'
+import { validateChurchUsername } from '@/lib/utils/church-username'
 
 const bodySchema = z.object({
   name: z
@@ -10,7 +11,7 @@ const bodySchema = z.object({
     .trim()
     .min(2, 'Church name must be at least 2 characters.')
     .max(120, 'Church name is too long.'),
-  slug: z.string().trim().max(120).optional(),
+  username: z.string().trim().max(120).optional(),
   description: z.string().trim().max(500).optional(),
 })
 
@@ -47,12 +48,23 @@ export async function POST(request: Request) {
     )
   }
 
-  const slug = slugify(parsed.data.slug?.trim() || parsed.data.name)
-  if (!slug) {
-    return NextResponse.json(
-      { error: 'Please choose a valid church URL.' },
-      { status: 400 }
-    )
+  const usernameInput = parsed.data.username
+  let username: string
+
+  if (usernameInput) {
+    const validation = validateChurchUsername(usernameInput)
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.message }, { status: 400 })
+    }
+    username = validation.username
+  } else {
+    username = slugify(parsed.data.name)
+    if (!username) {
+      return NextResponse.json(
+        { error: 'Please choose a valid church username.' },
+        { status: 400 }
+      )
+    }
   }
 
   const admin = createAdminClient()
@@ -67,12 +79,12 @@ export async function POST(request: Request) {
   const { data: existing } = await admin
     .from('churches')
     .select('id')
-    .eq('slug', slug)
+    .eq('username', username)
     .maybeSingle()
 
   if (existing) {
     return NextResponse.json(
-      { error: 'That church URL is already taken. Try a different one.' },
+      { error: 'That username is already taken. Try a different one.' },
       { status: 409 }
     )
   }
@@ -81,7 +93,7 @@ export async function POST(request: Request) {
     .from('churches')
     .insert({
       name: parsed.data.name,
-      slug,
+      username,
       description: parsed.data.description || null,
       created_by: user.id,
       plan: 'basic',

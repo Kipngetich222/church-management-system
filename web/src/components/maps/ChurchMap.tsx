@@ -9,7 +9,7 @@ import { MapPin } from 'lucide-react'
 export type MapChurch = {
   id: string
   name: string
-  slug: string
+  username: string
   latitude: number | null
   longitude: number | null
   address?: string | null
@@ -34,7 +34,7 @@ function buildInfoContent(church: MapChurch) {
   }
 
   const href =
-    church.href === undefined ? `/churches/${church.slug}` : church.href
+    church.href === undefined ? `/churches/${church.username}` : church.href
   if (href) {
     const link = document.createElement('a')
     link.href = href

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -13,12 +13,18 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { ChevronsUpDown, LogOut, Shield } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
+import { ChurchLogo } from '@/components/shared/ChurchLogo'
 import { SidebarToggle } from './SidebarToggle'
 
 type Membership = {
   church_id: string
   role: string
-  churches: { id: string; name: string; plan: string | null } | null
+  churches: {
+    id: string
+    name: string
+    plan: string | null
+    logo_url: string | null
+  } | null
 }
 
 export function MemberTopbar({
@@ -50,15 +56,17 @@ export function MemberTopbar({
     <header className="flex h-14 items-center gap-1.5 border-b bg-background/80 px-3 backdrop-blur-md md:gap-2 md:px-6">
       <SidebarToggle />
 
-      <div className="flex min-w-0 flex-1 items-center">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <ChurchLogo
+          name={active?.churches?.name}
+          logoUrl={active?.churches?.logo_url}
+          size="sm"
+        />
         {hasMultiple ? (
           <DropdownMenu>
             <DropdownMenuTrigger
               render={<Button variant="ghost" size="sm" className="min-w-0 gap-2" />}
             >
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
-                {active?.churches?.name?.[0]?.toUpperCase() ?? '?'}
-              </div>
               <span className="truncate text-sm font-medium">
                 {active?.churches?.name}
               </span>
@@ -70,9 +78,17 @@ export function MemberTopbar({
                 <DropdownMenuItem
                   key={m.church_id}
                   onClick={() => switchChurch(m.church_id)}
-                  className="flex justify-between"
+                  className="flex justify-between gap-2"
                 >
-                  <span className="truncate">{m.churches?.name}</span>
+                  <span className="flex min-w-0 items-center gap-2">
+                    <ChurchLogo
+                      name={m.churches?.name}
+                      logoUrl={m.churches?.logo_url}
+                      size="xs"
+                      interactive={false}
+                    />
+                    <span className="truncate">{m.churches?.name}</span>
+                  </span>
                   <span className="text-xs capitalize text-muted-foreground">
                     {m.role.replace('_', ' ')}
                   </span>

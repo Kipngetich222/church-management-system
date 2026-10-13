@@ -1,6 +1,6 @@
-import { Injectable } from "@nestjs/common";
-import { SupabaseService } from "../../supabase/supabase.service";
-import type { AuthUser } from "../../common/interfaces/auth-user.interface";
+import { Injectable } from '@nestjs/common'
+import { SupabaseService } from '../../supabase/supabase.service'
+import type { AuthUser } from '../../common/interfaces/auth-user.interface'
 
 @Injectable()
 export class AuthService {
@@ -8,24 +8,30 @@ export class AuthService {
 
   async emailExists(email: string): Promise<boolean> {
     const { data } = await this.supabase.admin
-      .from("users")
-      .select("id")
-      .ilike("email", email.trim())
-      .maybeSingle();
-    return Boolean(data);
+      .from('users')
+      .select('id')
+      .ilike('email', email.trim())
+      .maybeSingle()
+    return Boolean(data)
   }
 
   async getProfile(userId: string): Promise<AuthUser | null> {
-    const { admin } = this.supabase;
+    const { admin } = this.supabase
     const [{ data: profile }, { data: memberships }] = await Promise.all([
-      admin.from("users").select("id, email, full_name, phone, avatar_url").eq("id", userId).maybeSingle(),
       admin
-        .from("church_memberships")
-        .select("id, church_id, role, badges, status, is_baptized, churches(id, name, slug, logo_url)")
-        .eq("user_id", userId),
-    ]);
+        .from('users')
+        .select('id, email, full_name, phone, avatar_url')
+        .eq('id', userId)
+        .maybeSingle(),
+      admin
+        .from('church_memberships')
+        .select(
+          'id, church_id, role, badges, status, is_baptized, churches(id, name, username, logo_url)'
+        )
+        .eq('user_id', userId),
+    ])
 
-    if (!profile) return null;
+    if (!profile) return null
 
     return {
       id: profile.id,
@@ -38,9 +44,9 @@ export class AuthService {
         churchId: m.church_id,
         role: m.role,
         badges: (m.badges ?? []) as string[],
-        status: m.status ?? "active",
+        status: m.status ?? 'active',
         isBaptized: Boolean(m.is_baptized),
       })),
-    };
+    }
   }
 }

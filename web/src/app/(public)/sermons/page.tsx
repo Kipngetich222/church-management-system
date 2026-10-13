@@ -20,7 +20,7 @@ export default async function SermonsPage() {
   const supabase = createPublicClient()
   const { data: sermons } = await supabase
     .from('sermons')
-    .select('id, title, speaker, youtube_id, thumbnail_url, series, scripture_ref, preached_at, church_id, churches(name, slug)')
+    .select('id, title, speaker, youtube_id, thumbnail_url, series, scripture_ref, preached_at, church_id, churches(name, username)')
     .eq('published', true)
     .order('preached_at', { ascending: false })
     .limit(60)

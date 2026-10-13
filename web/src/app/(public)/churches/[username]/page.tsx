@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { createPublicClient } from '@/lib/supabase/public'
 import { createClient } from '@/lib/supabase/server'
+import { ChurchLogo } from '@/components/shared/ChurchLogo'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -14,16 +15,16 @@ import { Badge } from '@/components/ui/badge'
 import { formatEventDate } from '@/lib/utils/date'
 import { googleMapsUrl } from '@/lib/utils/maps'
 import { ChurchMap } from '@/components/maps/ChurchMap'
-import { MapPin, CalendarDays, Mail, Globe, Phone, Church } from 'lucide-react'
+import { MapPin, CalendarDays, Mail, Globe, Phone } from 'lucide-react'
 
 export const revalidate = 60
 
-async function loadChurch(slug: string) {
+async function loadChurch(username: string) {
   const supabase = createPublicClient()
   const { data: church } = await supabase
     .from('churches')
     .select('*')
-    .eq('slug', slug)
+    .eq('username', username)
     .maybeSingle()
   if (!church) return { church: null, events: [] }
 
@@ -43,10 +44,10 @@ async function loadChurch(slug: string) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ username: string }>
 }): Promise<Metadata> {
-  const { slug } = await params
-  const { church } = await loadChurch(slug)
+  const { username } = await params
+  const { church } = await loadChurch(username)
   if (!church) return { title: 'Church not found' }
   return {
     title: `${church.name} — ChurchMS`,
@@ -57,10 +58,10 @@ export async function generateMetadata({
 export default async function ChurchProfilePage({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ username: string }>
 }) {
-  const { slug } = await params
-  const { church, events } = await loadChurch(slug)
+  const { username } = await params
+  const { church, events } = await loadChurch(username)
   if (!church) notFound()
 
   const supabase = await createClient()
@@ -70,24 +71,13 @@ export default async function ChurchProfilePage({
 
   const maps = googleMapsUrl(church.latitude, church.longitude, church.address)
   const joinHref = user
-    ? `/onboarding?church=${church.slug}`
-    : `/register?church=${church.slug}`
+    ? `/onboarding?church=${church.username}`
+    : `/register?church=${church.username}`
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl">
       <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-10">
-        {church.logo_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={church.logo_url}
-            alt={church.name}
-            className="h-20 w-20 rounded-xl object-cover"
-          />
-        ) : (
-          <div className="h-20 w-20 rounded-xl bg-primary/10 grid place-items-center text-primary">
-            <Church className="h-10 w-10" />
-          </div>
-        )}
+        <ChurchLogo name={church.name} logoUrl={church.logo_url} size="xl" />
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-3xl font-bold">{church.name}</h1>
@@ -144,7 +134,7 @@ export default async function ChurchProfilePage({
                   {
                     id: church.id,
                     name: church.name,
-                    slug: church.slug,
+                    username: church.username,
                     latitude: church.latitude,
                     longitude: church.longitude,
                     address: church.address,

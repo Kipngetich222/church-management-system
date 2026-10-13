@@ -24,7 +24,7 @@ async function loadEvents() {
   const [upcomingRes, pastRes] = await Promise.all([
     supabase
       .from('events')
-      .select('*, churches(name, slug)')
+      .select('*, churches(name, username)')
       .eq('visibility', 'public')
       .in('status', ['published', 'completed'])
       .gte('start_time', now)
@@ -32,7 +32,7 @@ async function loadEvents() {
       .limit(60),
     supabase
       .from('events')
-      .select('*, churches(name, slug)')
+      .select('*, churches(name, username)')
       .eq('visibility', 'public')
       .in('status', ['published', 'completed'])
       .lt('start_time', now)

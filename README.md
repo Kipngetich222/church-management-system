@@ -158,7 +158,7 @@ member of that church, and admin-only routes require the `super_admin` or `dept_
 | ------ | ------------------------------------------- | ------ | ---------------------------- |
 | GET    | `/churches` (`?q=`)                         | public | List / search churches       |
 | GET    | `/churches/:churchId`                       | public | Get a church                 |
-| GET    | `/churches/slug/:slug`                      | public | Get a church by slug         |
+| GET    | `/churches/username/:username`              | public | Get a church by username     |
 | POST   | `/churches`                                 | auth   | Create a church (onboarding) |
 | PATCH  | `/churches/:churchId`                       | admin  | Update church settings       |
 | GET    | `/churches/:churchId/stats`                 | member | Dashboard statistics         |

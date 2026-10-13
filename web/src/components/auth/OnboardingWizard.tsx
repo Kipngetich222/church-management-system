@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { setActiveChurch } from '@/lib/auth/active-church'
 import { readApiError } from '@/lib/auth/messages'
 import { Button } from '@/components/ui/button'
+import { ChurchLogo } from '@/components/shared/ChurchLogo'
 import { Spinner } from '@/components/ui/spinner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,12 +18,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { ArrowLeft, Church, Plus, Search } from 'lucide-react'
+import { ArrowLeft, Plus, Search } from 'lucide-react'
+import { UsernameFeedback } from '@/components/shared/UsernameFeedback'
+import { useChurchUsername } from '@/lib/hooks/useChurchUsername'
+import { validateChurchUsername } from '@/lib/utils/church-username'
 
 type ChurchOption = {
   id: string
   name: string
-  slug: string
+  username: string
   description: string | null
   logo_url: string | null
 }
@@ -45,17 +49,20 @@ export function OnboardingWizard({
   const [step, setStep] = useState<'choice' | 'create' | 'join'>(
     initialChurch ? 'join' : 'choice'
   )
-  const [form, setForm] = useState({ name: '', slug: '', description: '' })
-  const [joinSlug, setJoinSlug] = useState(initialChurch ?? '')
+  const [form, setForm] = useState({ name: '', username: '', description: '' })
+  const [usernameEdited, setUsernameEdited] = useState(false)
+  const [joinUsername, setJoinUsername] = useState(initialChurch ?? '')
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [joiningId, setJoiningId] = useState<string | null>(null)
 
+  const username = useChurchUsername(form.username)
+
   const filtered = churches.filter(
     (c) =>
       c.name.toLowerCase().includes(query.toLowerCase()) ||
-      c.slug.toLowerCase().includes(query.toLowerCase())
+      c.username.toLowerCase().includes(query.toLowerCase())
   )
 
   function goToDashboard(path: string, churchId: string) {
@@ -84,6 +91,19 @@ export function OnboardingWizard({
       setError('Enter a name for your church (at least 2 characters).')
       return
     }
+    const usernameCheck = validateChurchUsername(form.username)
+    if (!usernameCheck.valid) {
+      setError(usernameCheck.message)
+      return
+    }
+    if (username.status === 'checking') {
+      setError('Hold on while we check username availability.')
+      return
+    }
+    if (username.status === 'taken') {
+      setError('That username is already taken. Please choose another one.')
+      return
+    }
     setLoading(true)
     setError('')
     try {
@@ -95,7 +115,7 @@ export function OnboardingWizard({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: form.name,
-          slug: form.slug || undefined,
+          username: usernameCheck.username,
           description: form.description || undefined,
         }),
       })
@@ -120,7 +140,7 @@ export function OnboardingWizard({
   }
 
   async function joinChurch(
-    payload: { churchId?: string; slug?: string },
+    payload: { churchId?: string; username?: string },
     marker: string
   ) {
     if (loading) return
@@ -159,13 +179,13 @@ export function OnboardingWizard({
     }
   }
 
-  async function joinChurchBySlug(slug: string) {
-    const trimmed = slug.trim()
+  async function joinChurchByUsername(username: string) {
+    const trimmed = username.trim()
     if (!trimmed) {
       setError('Enter a church link, or pick one from the list above.')
       return
     }
-    await joinChurch({ slug: trimmed }, trimmed)
+    await joinChurch({ username: trimmed }, trimmed)
   }
 
   const errorBanner = error ? (
@@ -230,22 +250,36 @@ export function OnboardingWizard({
             <Input
               value={form.name}
               onChange={(e) =>
-                setForm({
-                  ...form,
+                setForm((prev) => ({
+                  ...prev,
                   name: e.target.value,
-                  slug: slugify(e.target.value),
-                })
+                  username: usernameEdited
+                    ? prev.username
+                    : slugify(e.target.value),
+                }))
               }
             />
           </div>
           <div className="space-y-2">
-            <Label>URL slug</Label>
+            <Label>Username</Label>
             <Input
-              value={form.slug}
-              onChange={(e) => setForm({ ...form, slug: e.target.value })}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              value={form.username}
+              onChange={(e) => {
+                setUsernameEdited(true)
+                setForm((prev) => ({ ...prev, username: e.target.value }))
+              }}
+              placeholder="grace-chapel"
+            />
+            <UsernameFeedback
+              status={username.status}
+              message={username.message}
             />
             <p className="text-xs text-muted-foreground">
-              yoursite.com/churches/{form.slug || 'your-church'}
+              A unique identifier for your church. Its public link will be
+              /churches/{form.username || 'your-church'}
             </p>
           </div>
           <div className="space-y-2">
@@ -260,7 +294,11 @@ export function OnboardingWizard({
 
           {errorBanner}
 
-          <Button className="w-full" onClick={createChurch} disabled={loading}>
+          <Button
+            className="w-full"
+            onClick={createChurch}
+            disabled={loading || username.status === 'checking'}
+          >
             {loading ? (
               <>
                 <Spinner className="mr-2" />
@@ -320,22 +358,16 @@ export function OnboardingWizard({
                   onClick={() => joinChurch({ churchId: church.id }, church.id)}
                   className="flex w-full items-center gap-3 rounded-lg border p-3 text-left transition hover:bg-muted disabled:opacity-60"
                 >
-                  {church.logo_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={church.logo_url}
-                      alt={church.name}
-                      className="h-10 w-10 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/10 text-primary">
-                      <Church className="h-5 w-5" />
-                    </div>
-                  )}
+                  <ChurchLogo
+                    name={church.name}
+                    logoUrl={church.logo_url}
+                    size="md"
+                    interactive={false}
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{church.name}</div>
                     <div className="truncate text-xs text-muted-foreground">
-                      {church.description ?? `/${church.slug}`}
+                      {church.description ?? `/${church.username}`}
                     </div>
                   </div>
                   {joiningId === church.id ? (
@@ -357,10 +389,10 @@ export function OnboardingWizard({
         )}
 
         <div className="space-y-2 border-t pt-4">
-          <Label>Or enter a church link / slug</Label>
+          <Label>Or enter a church username or link</Label>
           <Input
-            value={joinSlug}
-            onChange={(e) => setJoinSlug(e.target.value)}
+            value={joinUsername}
+            onChange={(e) => setJoinUsername(e.target.value)}
             placeholder="grace-chapel"
             disabled={loading}
           />
@@ -370,8 +402,8 @@ export function OnboardingWizard({
 
         <Button
           className="w-full"
-          onClick={() => joinChurchBySlug(joinSlug)}
-          disabled={loading || !joinSlug.trim()}
+          onClick={() => joinChurchByUsername(joinUsername)}
+          disabled={loading || !joinUsername.trim()}
         >
           {loading && !joiningId ? (
             <>
