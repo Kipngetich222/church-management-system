@@ -224,6 +224,13 @@ export class DeletionService {
         .select('church_id')
         .eq('user_id', request.user_id)
 
+      // `churches.created_by` has no ON DELETE rule, so detach the creator
+      // before removing the account to avoid a foreign-key block.
+      await this.supabase.admin
+        .from('churches')
+        .update({ created_by: null })
+        .eq('created_by', request.user_id)
+
       const { error } = await this.supabase.admin.auth.admin.deleteUser(
         request.user_id
       )

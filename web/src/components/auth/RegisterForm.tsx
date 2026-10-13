@@ -66,6 +66,12 @@ export function RegisterForm() {
       // explain the situation clearly (and steer Google-only users to Google)
       // instead of relying on Supabase's generic error.
       const existing = await lookupAccount(form.email)
+      if (existing?.deletionPending) {
+        setError(
+          'This email is still being deleted from the system. Please wait for the deletion to finish, then try again.'
+        )
+        return
+      }
       if (existing?.exists) {
         setError(
           existing.hasPassword === false
