@@ -11,6 +11,7 @@ import { AuthModule } from './modules/auth/auth.module'
 import { UsersModule } from './modules/users/users.module'
 import { ChurchesModule } from './modules/churches/churches.module'
 import { MembersModule } from './modules/members/members.module'
+import { MembershipsModule } from './modules/memberships/memberships.module'
 import { DepartmentsModule } from './modules/departments/departments.module'
 import { SmallGroupsModule } from './modules/small-groups/small-groups.module'
 import { EventsModule } from './modules/events/events.module'
@@ -39,6 +40,7 @@ import { DeletionModule } from './modules/deletion/deletion.module'
     UsersModule,
     ChurchesModule,
     MembersModule,
+    MembershipsModule,
     DepartmentsModule,
     SmallGroupsModule,
     EventsModule,

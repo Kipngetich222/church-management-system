@@ -7,6 +7,7 @@ import {
 import { SupabaseService } from '../../supabase/supabase.service'
 import { AuditService } from '../audit/audit.service'
 import { EmailService } from '../messages/email.service'
+import { MembershipsService } from '../memberships/memberships.service'
 
 /**
  * Reversible account deletion, mirrored from the web app so the documented REST
@@ -34,7 +35,8 @@ export class DeletionService {
   constructor(
     private readonly supabase: SupabaseService,
     private readonly audit: AuditService,
-    private readonly email: EmailService
+    private readonly email: EmailService,
+    private readonly memberships: MembershipsService
   ) {}
 
   private async writeEvent(params: {
@@ -221,8 +223,29 @@ export class DeletionService {
 
       const { data: memberships } = await this.supabase.admin
         .from('church_memberships')
-        .select('church_id')
+        .select('church_id, role')
         .eq('user_id', request.user_id)
+
+      // Hand off any church where the departing member is the only super admin
+      // so it is never left without an owner (or delete it when empty).
+      const deletedChurchIds = new Set<string>()
+      for (const membership of (memberships ?? []).filter(
+        (m) => m.role === 'super_admin'
+      )) {
+        try {
+          const result = await this.memberships.withdraw(
+            request.user_id,
+            membership.church_id
+          )
+          if (result.status === 'church_deleted') {
+            deletedChurchIds.add(membership.church_id)
+          }
+        } catch (error) {
+          this.logger.error(
+            `Failed to transfer super admin on deletion: ${(error as Error).message}`
+          )
+        }
+      }
 
       // `churches.created_by` has no ON DELETE rule, so detach the creator
       // before removing the account to avoid a foreign-key block.
@@ -249,6 +272,7 @@ export class DeletionService {
         .eq('id', request.id)
 
       for (const membership of memberships ?? []) {
+        if (deletedChurchIds.has(membership.church_id)) continue
         await this.audit.log({
           churchId: membership.church_id,
           action: 'member.account_deleted',
