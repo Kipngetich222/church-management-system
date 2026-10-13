@@ -334,6 +334,201 @@ export type Database = {
           },
         ]
       }
+      church_deletion_approvals: {
+        Row: {
+          approver_id: string
+          created_at: string
+          decided_at: string | null
+          decision: string
+          id: string
+          request_id: string
+        }
+        Insert: {
+          approver_id: string
+          created_at?: string
+          decided_at?: string | null
+          decision?: string
+          id?: string
+          request_id: string
+        }
+        Update: {
+          approver_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decision?: string
+          id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'church_deletion_approvals_approver_id_fkey'
+            columns: ['approver_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'church_deletion_approvals_request_id_fkey'
+            columns: ['request_id']
+            isOneToOne: false
+            referencedRelation: 'church_deletion_requests'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      church_deletion_requests: {
+        Row: {
+          approvals_granted: number
+          approvals_required: number
+          approved_at: string | null
+          church_id: string
+          church_name: string
+          church_username: string | null
+          id: string
+          initiated_by: string | null
+          requested_at: string
+          resolved_at: string | null
+          revert_deadline: string | null
+          status: string
+          total_super_admins: number
+        }
+        Insert: {
+          approvals_granted?: number
+          approvals_required?: number
+          approved_at?: string | null
+          church_id: string
+          church_name: string
+          church_username?: string | null
+          id?: string
+          initiated_by?: string | null
+          requested_at?: string
+          resolved_at?: string | null
+          revert_deadline?: string | null
+          status?: string
+          total_super_admins?: number
+        }
+        Update: {
+          approvals_granted?: number
+          approvals_required?: number
+          approved_at?: string | null
+          church_id?: string
+          church_name?: string
+          church_username?: string | null
+          id?: string
+          initiated_by?: string | null
+          requested_at?: string
+          resolved_at?: string | null
+          revert_deadline?: string | null
+          status?: string
+          total_super_admins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'church_deletion_requests_initiated_by_fkey'
+            columns: ['initiated_by']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      deletion_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          church_id: string | null
+          church_name: string | null
+          created_at: string
+          id: string
+          kind: string
+          metadata: Json
+          subject_email: string | null
+          subject_name: string | null
+          subject_user_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          church_id?: string | null
+          church_name?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          metadata?: Json
+          subject_email?: string | null
+          subject_name?: string | null
+          subject_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          church_id?: string | null
+          church_name?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          metadata?: Json
+          subject_email?: string | null
+          subject_name?: string | null
+          subject_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'deletion_events_actor_id_fkey'
+            columns: ['actor_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      member_deletion_requests: {
+        Row: {
+          id: string
+          memberships_removed: number
+          reason: string | null
+          requested_at: string
+          resolved_at: string | null
+          revert_deadline: string
+          status: string
+          user_email: string | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          id?: string
+          memberships_removed?: number
+          reason?: string | null
+          requested_at?: string
+          resolved_at?: string | null
+          revert_deadline: string
+          status?: string
+          user_email?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          id?: string
+          memberships_removed?: number
+          reason?: string | null
+          requested_at?: string
+          resolved_at?: string | null
+          revert_deadline?: string
+          status?: string
+          user_email?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'member_deletion_requests_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       departments: {
         Row: {
           church_id: string

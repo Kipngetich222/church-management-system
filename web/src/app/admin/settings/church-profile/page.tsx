@@ -1,8 +1,9 @@
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { ChurchProfileForm } from '@/components/settings/ChurchProfileForm'
+import { ChurchDangerZone } from '@/components/settings/ChurchDangerZone'
 
 export default async function ChurchProfilePage() {
-  const { church, role } = await getActiveChurch()
+  const { church, role, user } = await getActiveChurch()
   if (role !== 'super_admin') {
     return (
       <p className="text-muted-foreground">
@@ -14,6 +15,12 @@ export default async function ChurchProfilePage() {
     <div className="max-w-3xl space-y-6">
       <h1 className="text-2xl font-bold">Church profile</h1>
       <ChurchProfileForm church={church} />
+
+      <ChurchDangerZone
+        churchId={church.id}
+        churchName={church.name}
+        currentUserId={user.id}
+      />
     </div>
   )
 }

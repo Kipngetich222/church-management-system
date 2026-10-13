@@ -279,20 +279,39 @@ member of that church, and admin-only routes require the `super_admin` or `dept_
 | DELETE | `/churches/:churchId/visitors/:visitorId`                     | admin  | Delete a visitor                |
 | POST   | `/churches/:churchId/visitors/:visitorId/followups`           | admin  | Add a follow-up                 |
 
+### Account deletion
+
+| Method | Path                                    | Access      | Description                                        |
+| ------ | --------------------------------------- | ----------- | -------------------------------------------------- |
+| GET    | `/account/deletion`                     | auth        | Current user's pending deletion request            |
+| POST   | `/account/deletion`                     | auth        | Request account deletion (10 minute revert window) |
+| DELETE | `/account/deletion`                     | auth        | Revert a pending account deletion                  |
+| GET    | `/churches/:churchId/deletion`          | super_admin | Church deletion request + super-admin approvals    |
+| POST   | `/churches/:churchId/deletion`          | super_admin | Start church deletion (all super admins accept)    |
+| POST   | `/churches/:churchId/deletion/decision` | super_admin | Accept (`approve`) or reject the deletion          |
+| DELETE | `/churches/:churchId/deletion`          | super_admin | Revert the deletion during the grace period        |
+
+Deleting a member account cascades to their church memberships, so each
+affected church's member count adjusts automatically. Deleting a church
+cascades to its memberships, detaching every member. Both flows write to
+`deletion_events` (a permanent tracker that survives deletion) and, while the
+church still exists, to its `audit_logs`.
+
 ### Reports, audit, contact & health
 
-| Method | Path                                        | Access | Description            |
-| ------ | ------------------------------------------- | ------ | ---------------------- |
-| GET    | `/churches/:churchId/reports/members`       | admin  | Member demographics    |
-| GET    | `/churches/:churchId/reports/attendance`    | admin  | Attendance by event    |
-| GET    | `/churches/:churchId/reports/member-growth` | admin  | Member growth by month |
-| GET    | `/churches/:churchId/reports/finance`       | admin  | Finance report         |
-| GET    | `/churches/:churchId/audit-logs`            | admin  | Audit log              |
-| POST   | `/contact`                                  | public | Public contact form    |
-| POST   | `/cron/birthdays`                           | secret | Birthday greetings job |
-| POST   | `/cron/event-reminders`                     | secret | Event reminders job    |
-| POST   | `/cron/scheduled-messages`                  | secret | Scheduled message job  |
-| GET    | `/health`                                   | public | Liveness probe         |
+| Method | Path                                        | Access | Description                 |
+| ------ | ------------------------------------------- | ------ | --------------------------- |
+| GET    | `/churches/:churchId/reports/members`       | admin  | Member demographics         |
+| GET    | `/churches/:churchId/reports/attendance`    | admin  | Attendance by event         |
+| GET    | `/churches/:churchId/reports/member-growth` | admin  | Member growth by month      |
+| GET    | `/churches/:churchId/reports/finance`       | admin  | Finance report              |
+| GET    | `/churches/:churchId/audit-logs`            | admin  | Audit log                   |
+| POST   | `/contact`                                  | public | Public contact form         |
+| POST   | `/cron/birthdays`                           | secret | Birthday greetings job      |
+| POST   | `/cron/event-reminders`                     | secret | Event reminders job         |
+| POST   | `/cron/scheduled-messages`                  | secret | Scheduled message job       |
+| POST   | `/cron/finalize-deletions`                  | secret | Apply due account deletions |
+| GET    | `/health`                                   | public | Liveness probe              |
 
 Cron endpoints require the `x-cron-secret` header to match `CRON_SECRET`.
 
@@ -325,7 +344,9 @@ Tables include: `users`, `churches`, `church_memberships`, `departments`, `depar
 `offerings`, `expenses`, `expense_categories`, `campaigns`, `pledges`, `message_campaigns`,
 `messages`, `announcements`, `prayer_requests`, `prayer_interactions`, `sermons`, `volunteer_roles`,
 `volunteer_shifts`, `volunteer_signups`, `resources`, `resource_bookings`, `visitors`,
-`visitor_followups`, `pastoral_notes`, `role_permissions`, and `audit_logs`.
+`visitor_followups`, `pastoral_notes`, `role_permissions`, `audit_logs`,
+`member_deletion_requests`, `church_deletion_requests`, `church_deletion_approvals`, and
+`deletion_events`.
 
 ## Available Scripts
 

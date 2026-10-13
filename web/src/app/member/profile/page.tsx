@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Pencil } from 'lucide-react'
 import { format } from 'date-fns'
+import { MemberDangerZone } from '@/components/account/MemberDangerZone'
 
 export default async function MemberProfilePage() {
   const { churchId, church } = await getActiveChurch()
@@ -75,6 +76,8 @@ export default async function MemberProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      <MemberDangerZone />
     </div>
   )
 }
