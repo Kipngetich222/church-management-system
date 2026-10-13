@@ -26,7 +26,7 @@ import { validateChurchUsername } from '@/lib/utils/church-username'
 type ChurchOption = {
   id: string
   name: string
-  slug: string
+  username: string
   description: string | null
   logo_url: string | null
 }
@@ -51,7 +51,7 @@ export function OnboardingWizard({
   )
   const [form, setForm] = useState({ name: '', username: '', description: '' })
   const [usernameEdited, setUsernameEdited] = useState(false)
-  const [joinSlug, setJoinSlug] = useState(initialChurch ?? '')
+  const [joinUsername, setJoinUsername] = useState(initialChurch ?? '')
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -62,7 +62,7 @@ export function OnboardingWizard({
   const filtered = churches.filter(
     (c) =>
       c.name.toLowerCase().includes(query.toLowerCase()) ||
-      c.slug.toLowerCase().includes(query.toLowerCase())
+      c.username.toLowerCase().includes(query.toLowerCase())
   )
 
   function goToDashboard(path: string, churchId: string) {
@@ -140,7 +140,7 @@ export function OnboardingWizard({
   }
 
   async function joinChurch(
-    payload: { churchId?: string; slug?: string },
+    payload: { churchId?: string; username?: string },
     marker: string
   ) {
     if (loading) return
@@ -179,13 +179,13 @@ export function OnboardingWizard({
     }
   }
 
-  async function joinChurchBySlug(slug: string) {
-    const trimmed = slug.trim()
+  async function joinChurchByUsername(username: string) {
+    const trimmed = username.trim()
     if (!trimmed) {
       setError('Enter a church link, or pick one from the list above.')
       return
     }
-    await joinChurch({ slug: trimmed }, trimmed)
+    await joinChurch({ username: trimmed }, trimmed)
   }
 
   const errorBanner = error ? (
@@ -367,7 +367,7 @@ export function OnboardingWizard({
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{church.name}</div>
                     <div className="truncate text-xs text-muted-foreground">
-                      {church.description ?? `/${church.slug}`}
+                      {church.description ?? `/${church.username}`}
                     </div>
                   </div>
                   {joiningId === church.id ? (
@@ -391,8 +391,8 @@ export function OnboardingWizard({
         <div className="space-y-2 border-t pt-4">
           <Label>Or enter a church username or link</Label>
           <Input
-            value={joinSlug}
-            onChange={(e) => setJoinSlug(e.target.value)}
+            value={joinUsername}
+            onChange={(e) => setJoinUsername(e.target.value)}
             placeholder="grace-chapel"
             disabled={loading}
           />
@@ -402,8 +402,8 @@ export function OnboardingWizard({
 
         <Button
           className="w-full"
-          onClick={() => joinChurchBySlug(joinSlug)}
-          disabled={loading || !joinSlug.trim()}
+          onClick={() => joinChurchByUsername(joinUsername)}
+          disabled={loading || !joinUsername.trim()}
         >
           {loading && !joiningId ? (
             <>

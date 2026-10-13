@@ -12,7 +12,6 @@ const bodySchema = z.object({
     .min(2, 'Church name must be at least 2 characters.')
     .max(120, 'Church name is too long.'),
   username: z.string().trim().max(120).optional(),
-  slug: z.string().trim().max(120).optional(),
   description: z.string().trim().max(500).optional(),
 })
 
@@ -49,18 +48,18 @@ export async function POST(request: Request) {
     )
   }
 
-  const usernameInput = parsed.data.username ?? parsed.data.slug
-  let slug: string
+  const usernameInput = parsed.data.username
+  let username: string
 
   if (usernameInput) {
     const validation = validateChurchUsername(usernameInput)
     if (!validation.valid) {
       return NextResponse.json({ error: validation.message }, { status: 400 })
     }
-    slug = validation.username
+    username = validation.username
   } else {
-    slug = slugify(parsed.data.name)
-    if (!slug) {
+    username = slugify(parsed.data.name)
+    if (!username) {
       return NextResponse.json(
         { error: 'Please choose a valid church username.' },
         { status: 400 }
@@ -80,7 +79,7 @@ export async function POST(request: Request) {
   const { data: existing } = await admin
     .from('churches')
     .select('id')
-    .eq('slug', slug)
+    .eq('username', username)
     .maybeSingle()
 
   if (existing) {
@@ -94,7 +93,7 @@ export async function POST(request: Request) {
     .from('churches')
     .insert({
       name: parsed.data.name,
-      slug,
+      username,
       description: parsed.data.description || null,
       created_by: user.id,
       plan: 'basic',

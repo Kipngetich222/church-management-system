@@ -9,15 +9,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { LogoUpload } from '@/components/shared/LogoUpload'
-import { UsernameFeedback } from '@/components/shared/UsernameFeedback'
-import { useChurchUsername } from '@/lib/hooks/useChurchUsername'
-import { validateChurchUsername } from '@/lib/utils/church-username'
 import { MapPicker } from '@/components/maps/MapPicker'
 
 type Church = {
   id: string
   name: string
-  slug: string
+  username: string
   description: string | null
   logo_url: string | null
   address: string | null
@@ -48,7 +45,6 @@ export function ChurchProfileForm({ church }: { church: Church }) {
   const router = useRouter()
   const [form, setForm] = useState({
     name: church.name,
-    username: church.slug,
     description: church.description ?? '',
     logo_url: church.logo_url ?? '',
     address: church.address ?? '',
@@ -62,10 +58,6 @@ export function ChurchProfileForm({ church }: { church: Church }) {
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
 
-  const username = useChurchUsername(form.username, {
-    excludeChurchId: church.id,
-  })
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -73,7 +65,6 @@ export function ChurchProfileForm({ church }: { church: Church }) {
 
     const missing: string[] = []
     if (!form.name.trim()) missing.push('church name')
-    if (!form.username.trim()) missing.push('username')
     if (!form.description.trim()) missing.push('description')
     if (!form.phone.trim()) missing.push('phone')
     if (!form.email.trim()) missing.push('email')
@@ -86,27 +77,12 @@ export function ChurchProfileForm({ church }: { church: Church }) {
       return
     }
 
-    const validation = validateChurchUsername(form.username)
-    if (!validation.valid) {
-      setError(validation.message)
-      return
-    }
-    if (username.status === 'checking') {
-      setError('Hold on while we check username availability.')
-      return
-    }
-    if (username.status === 'taken') {
-      setError('That username is already taken. Please choose another one.')
-      return
-    }
-
     setLoading(true)
     const supabase = createClient()
     const { error: err } = await supabase
       .from('churches')
       .update({
         name: form.name.trim(),
-        slug: validation.username,
         description: form.description.trim(),
         logo_url: form.logo_url || null,
         address: form.address.trim(),
@@ -119,11 +95,7 @@ export function ChurchProfileForm({ church }: { church: Church }) {
       .eq('id', church.id)
 
     if (err) {
-      setError(
-        err.code === '23505'
-          ? 'That username is already taken. Please choose another one.'
-          : err.message
-      )
+      setError(err.message)
       setLoading(false)
       return
     }
@@ -161,28 +133,20 @@ export function ChurchProfileForm({ church }: { church: Church }) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="church-username">
-                Username <Required />
-              </Label>
+              <Label htmlFor="church-username">Username</Label>
               <Input
                 id="church-username"
-                required
+                readOnly
+                disabled
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
-                value={form.username}
-                onChange={(e) =>
-                  setForm({ ...form, username: e.target.value })
-                }
-                placeholder="grace-chapel"
-              />
-              <UsernameFeedback
-                status={username.status}
-                message={username.message}
+                value={church.username}
               />
               <p className="text-xs text-muted-foreground">
-                Your church&apos;s unique identifier. Used for its public link:
-                /churches/{form.username || 'your-church'}
+                Your church&apos;s unique identifier and public link:
+                /churches/{church.username}. It was set when the church was
+                created and cannot be changed.
               </p>
             </div>
             <div className="space-y-2">
@@ -273,7 +237,7 @@ export function ChurchProfileForm({ church }: { church: Church }) {
 
       <Button
         type="submit"
-        disabled={loading || username.status === 'checking'}
+        disabled={loading}
       >
         {loading ? 'Saving...' : 'Save changes'}
       </Button>

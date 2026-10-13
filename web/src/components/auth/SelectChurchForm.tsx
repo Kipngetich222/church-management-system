@@ -22,7 +22,7 @@ type ChurchOption = {
   churchId: string
   role: string
   name: string
-  slug: string
+  username: string
   logoUrl: string | null
   plan: string | null
 }
@@ -66,7 +66,7 @@ export function SelectChurchForm({ options }: { options: ChurchOption[] }) {
             <div className="min-w-0 flex-1">
               <div className="truncate font-medium">{option.name}</div>
               <div className="truncate text-xs text-muted-foreground">
-                /{option.slug}
+                /{option.username}
               </div>
             </div>
             <Badge variant={option.role === 'member' ? 'secondary' : 'default'}>

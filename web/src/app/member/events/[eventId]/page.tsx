@@ -64,7 +64,7 @@ export default async function MemberEventDetail({
             {
               id: event.id,
               name: event.location_name ?? event.title,
-              slug: '',
+              username: '',
               latitude: event.latitude,
               longitude: event.longitude,
               address: event.address,

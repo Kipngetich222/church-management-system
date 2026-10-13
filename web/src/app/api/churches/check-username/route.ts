@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   const { data, error } = await supabase
     .from('churches')
     .select('id')
-    .eq('slug', validation.username)
+    .eq('username', validation.username)
     .limit(1)
 
   if (error) {

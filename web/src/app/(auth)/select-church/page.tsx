@@ -13,7 +13,7 @@ export default async function SelectChurchPage() {
 
   const { data: memberships } = await supabase
     .from('church_memberships')
-    .select('church_id, role, churches(id, name, slug, logo_url, plan)')
+    .select('church_id, role, churches(id, name, username, logo_url, plan)')
     .eq('user_id', user.id)
 
   if (!memberships?.length) redirect('/onboarding')
@@ -29,7 +29,7 @@ export default async function SelectChurchPage() {
       churchId: m.church_id,
       role: m.role,
       name: church?.name ?? 'Church',
-      slug: church?.slug ?? '',
+      username: church?.username ?? '',
       logoUrl: church?.logo_url ?? null,
       plan: church?.plan ?? 'basic',
     }

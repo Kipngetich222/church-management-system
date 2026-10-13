@@ -247,7 +247,7 @@ export type Database = {
           name: string
           phone: string | null
           plan: Database['public']['Enums']['plan_tier'] | null
-          slug: string
+          username: string
           updated_at: string | null
           website: string | null
         }
@@ -264,7 +264,7 @@ export type Database = {
           name: string
           phone?: string | null
           plan?: Database['public']['Enums']['plan_tier'] | null
-          slug: string
+          username: string
           updated_at?: string | null
           website?: string | null
         }
@@ -281,7 +281,7 @@ export type Database = {
           name?: string
           phone?: string | null
           plan?: Database['public']['Enums']['plan_tier'] | null
-          slug?: string
+          username?: string
           updated_at?: string | null
           website?: string | null
         }

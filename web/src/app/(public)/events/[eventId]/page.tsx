@@ -18,7 +18,7 @@ async function loadEvent(id: string) {
   )
   const { data } = await supabase
     .from('events')
-    .select('*, churches(name, slug, logo_url)')
+    .select('*, churches(name, username, logo_url)')
     .eq('id', id)
     .single()
   return data
@@ -117,7 +117,7 @@ export default async function PublicEventPage({
               {
                 id: event.id,
                 name: event.location_name ?? event.title,
-                slug: '',
+                username: '',
                 latitude: event.latitude,
                 longitude: event.longitude,
                 address: event.address,

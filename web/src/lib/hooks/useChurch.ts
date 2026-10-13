@@ -8,7 +8,7 @@ export function useChurch() {
   const [church, setChurch] = useState<{
     id: string
     name: string
-    slug: string
+    username: string
     plan: 'basic' | 'premium'
   } | null>(null)
   const [loading, setLoading] = useState(true)
@@ -24,7 +24,7 @@ export function useChurch() {
 
       const query = supabase
         .from('church_memberships')
-        .select('church_id, churches(id, name, slug, plan)')
+        .select('church_id, churches(id, name, username, plan)')
         .eq('user_id', user.id)
 
       const { data } = await query

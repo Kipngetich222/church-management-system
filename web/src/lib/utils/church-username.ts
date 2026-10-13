@@ -14,7 +14,7 @@ export function normalizeChurchUsername(value: string): string {
 
 /**
  * Validate a church username (the church's unique public identifier, stored in
- * the `slug` column). Returns the normalised value when valid.
+ * the `username` column). Returns the normalised value when valid.
  */
 export function validateChurchUsername(
   value: string

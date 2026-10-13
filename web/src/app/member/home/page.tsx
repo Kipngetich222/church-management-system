@@ -243,7 +243,7 @@ WELCOME SECTION
               {
                 id: church.id,
                 name: church.name,
-                slug: church.slug,
+                username: church.username,
                 latitude: church.latitude,
                 longitude: church.longitude,
                 address: church.address,

@@ -38,7 +38,7 @@ export default async function OnboardingPage({
   const publicClient = createPublicClient()
   const { data: churches } = await publicClient
     .from('churches')
-    .select('id, name, slug, description, logo_url')
+    .select('id, name, username, description, logo_url')
     .order('name')
 
   return (

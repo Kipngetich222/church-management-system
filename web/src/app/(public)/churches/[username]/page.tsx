@@ -19,12 +19,12 @@ import { MapPin, CalendarDays, Mail, Globe, Phone } from 'lucide-react'
 
 export const revalidate = 60
 
-async function loadChurch(slug: string) {
+async function loadChurch(username: string) {
   const supabase = createPublicClient()
   const { data: church } = await supabase
     .from('churches')
     .select('*')
-    .eq('slug', slug)
+    .eq('username', username)
     .maybeSingle()
   if (!church) return { church: null, events: [] }
 
@@ -44,10 +44,10 @@ async function loadChurch(slug: string) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ username: string }>
 }): Promise<Metadata> {
-  const { slug } = await params
-  const { church } = await loadChurch(slug)
+  const { username } = await params
+  const { church } = await loadChurch(username)
   if (!church) return { title: 'Church not found' }
   return {
     title: `${church.name} — ChurchMS`,
@@ -58,10 +58,10 @@ export async function generateMetadata({
 export default async function ChurchProfilePage({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ username: string }>
 }) {
-  const { slug } = await params
-  const { church, events } = await loadChurch(slug)
+  const { username } = await params
+  const { church, events } = await loadChurch(username)
   if (!church) notFound()
 
   const supabase = await createClient()
@@ -71,8 +71,8 @@ export default async function ChurchProfilePage({
 
   const maps = googleMapsUrl(church.latitude, church.longitude, church.address)
   const joinHref = user
-    ? `/onboarding?church=${church.slug}`
-    : `/register?church=${church.slug}`
+    ? `/onboarding?church=${church.username}`
+    : `/register?church=${church.username}`
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl">
@@ -134,7 +134,7 @@ export default async function ChurchProfilePage({
                   {
                     id: church.id,
                     name: church.name,
-                    slug: church.slug,
+                    username: church.username,
                     latitude: church.latitude,
                     longitude: church.longitude,
                     address: church.address,
