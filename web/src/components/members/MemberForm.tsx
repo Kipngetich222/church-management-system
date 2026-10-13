@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -68,32 +67,24 @@ export function MemberForm({
     setLoading(true)
     setError('')
 
-    const supabase = createClient()
-
     if (isEdit && existing) {
-      // Update users table
-      await supabase
-        .from('users')
-        .update({
+      const res = await fetch(`/api/members/${existing.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           full_name: form.full_name,
           phone: form.phone,
-        })
-        .eq('id', existing.user_id)
-
-      // Update membership
-      const { error: err } = await supabase
-        .from('church_memberships')
-        .update({
+          date_of_birth: form.date_of_birth,
+          gender: form.gender,
+          address: form.address,
           badges: form.badges,
-          is_baptized: isSuperAdmin ? form.is_baptized : existing.is_baptized,
-          date_of_birth: form.date_of_birth || null,
-          gender: form.gender || null,
-          address: form.address || null,
-        })
-        .eq('id', existing.id)
+          ...(isSuperAdmin ? { is_baptized: form.is_baptized } : {}),
+        }),
+      })
 
-      if (err) {
-        setError(err.message)
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        setError(data?.error || 'Failed to save changes')
         setLoading(false)
         return
       }
