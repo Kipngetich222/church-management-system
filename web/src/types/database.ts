@@ -1955,6 +1955,14 @@ export type Database = {
         }[]
       }
       is_church_admin: { Args: { church_uuid: string }; Returns: boolean }
+      select_super_admin_successor: {
+        Args: { p_church_id: string; p_exclude_user_id: string }
+        Returns: string | null
+      }
+      withdraw_membership: {
+        Args: { p_church_id: string; p_user_id: string }
+        Returns: Json
+      }
       member_growth_by_month: {
         Args: { p_church_id: string }
         Returns: {

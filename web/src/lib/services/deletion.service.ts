@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database, Json } from '@/types/database'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/services/email.service'
+import { withdrawMembership } from '@/lib/services/membership.service'
 
 /**
  * Two-step, reversible account deletion.
@@ -253,8 +254,33 @@ async function applyMemberDeletion(
 
   const { data: memberships } = await admin
     .from('church_memberships')
-    .select('church_id')
+    .select('church_id, role')
     .eq('user_id', request.user_id)
+
+  // If the departing member is a church's only super admin, hand ownership to
+  // another leader first (or delete the church if they were the last member) so
+  // no church is left without an owner. Non-super memberships are detached by
+  // the auth-user cascade below.
+  const deletedChurchIds = new Set<string>()
+  for (const membership of (memberships ?? []).filter(
+    (m) => m.role === 'super_admin'
+  )) {
+    try {
+      const result = await withdrawMembership({
+        userId: request.user_id,
+        churchId: membership.church_id,
+        actorId: request.user_id,
+      })
+      if (result.status === 'church_deleted') {
+        deletedChurchIds.add(membership.church_id)
+      }
+    } catch (error) {
+      console.error(
+        'Failed to transfer super admin on account deletion:',
+        error
+      )
+    }
+  }
 
   // `churches.created_by` references `users` without an ON DELETE rule, so a
   // user who created a church cannot be removed while that row still points at
@@ -281,6 +307,8 @@ async function applyMemberDeletion(
     .eq('id', request.id)
 
   for (const membership of memberships ?? []) {
+    // Skip churches that were removed along with this member.
+    if (deletedChurchIds.has(membership.church_id)) continue
     await writeAudit(admin, {
       churchId: membership.church_id,
       actorId: null,

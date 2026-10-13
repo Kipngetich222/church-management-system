@@ -8,9 +8,10 @@ import Link from 'next/link'
 import { Pencil } from 'lucide-react'
 import { format } from 'date-fns'
 import { MemberDangerZone } from '@/components/account/MemberDangerZone'
+import { MembershipSection } from '@/components/account/MembershipSection'
 
 export default async function MemberProfilePage() {
-  const { churchId, church } = await getActiveChurch()
+  const { churchId, church, role, memberships } = await getActiveChurch()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -76,6 +77,13 @@ export default async function MemberProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      <MembershipSection
+        churchId={churchId}
+        churchName={church?.name ?? 'Your church'}
+        role={role}
+        membershipCount={memberships.length}
+      />
 
       <MemberDangerZone />
     </div>

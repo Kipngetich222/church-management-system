@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { formatEventDate } from '@/lib/utils/date'
 import { googleMapsUrl } from '@/lib/utils/maps'
 import { ChurchMap } from '@/components/maps/ChurchMap'
+import { JoinChurchButton } from '@/components/churches/JoinChurchButton'
 import { MapPin, CalendarDays, Mail, Globe, Phone } from 'lucide-react'
 
 export const revalidate = 60
@@ -70,9 +71,7 @@ export default async function ChurchProfilePage({
   } = await supabase.auth.getUser()
 
   const maps = googleMapsUrl(church.latitude, church.longitude, church.address)
-  const joinHref = user
-    ? `/onboarding?church=${church.username}`
-    : `/register?church=${church.username}`
+  const joinHref = `/register?church=${church.username}`
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl">
@@ -87,9 +86,17 @@ export default async function ChurchProfilePage({
             {church.description ?? 'A church community on ChurchMS.'}
           </p>
         </div>
-        <Button size="lg" nativeButton={false} render={<Link href={joinHref} />}>
-          Join this church
-        </Button>
+        {user ? (
+          <JoinChurchButton churchId={church.id} />
+        ) : (
+          <Button
+            size="lg"
+            nativeButton={false}
+            render={<Link href={joinHref} />}
+          >
+            Join this church
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">

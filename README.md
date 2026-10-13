@@ -297,6 +297,23 @@ cascades to its memberships, detaching every member. Both flows write to
 `deletion_events` (a permanent tracker that survives deletion) and, while the
 church still exists, to its `audit_logs`.
 
+When a departing member - whether they withdraw or delete their account - is a
+church's **only** super admin, the role is handed off first so the church is
+never orphaned: a department admin/leader, then a small-group leader, then any
+other active member. If nobody else belongs to the church, the church itself is
+deleted.
+
+### Membership withdrawal
+
+| Method | Path                                 | Access | Description                                   |
+| ------ | ------------------------------------ | ------ | --------------------------------------------- |
+| DELETE | `/churches/:churchId/memberships/me` | auth   | Withdraw from this church (keep your account) |
+
+A member can leave one church without deleting their account, then browse and
+join another church at any time. The super-admin hand-off (or empty-church
+cleanup) described above applies. The member profile exposes this just above the
+Danger zone.
+
 ### Reports, audit, contact & health
 
 | Method | Path                                        | Access | Description                 |
