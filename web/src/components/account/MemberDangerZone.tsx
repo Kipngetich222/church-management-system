@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AlertTriangle, ChevronDown, Loader2, Trash2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -24,10 +25,18 @@ type DeletionRequest = {
   revert_deadline: string
 }
 
-async function fetchDeletionRequest(): Promise<DeletionRequest | null> {
+type DeletionStatus = {
+  request: DeletionRequest | null
+  finalized: boolean
+}
+
+async function fetchDeletionStatus(): Promise<DeletionStatus> {
   const res = await fetch('/api/account/deletion', { cache: 'no-store' })
   const data = await res.json()
-  return (data.request as DeletionRequest | null) ?? null
+  return {
+    request: (data.request as DeletionRequest | null) ?? null,
+    finalized: Boolean(data.finalized),
+  }
 }
 
 function countdown(deadline: string, now: number) {
@@ -40,7 +49,8 @@ function countdown(deadline: string, now: number) {
 
 /**
  * Collapsed-by-default account deletion control for the member profile.
- * Clicking the header reveals the destructive actions.
+ * Clicking the header reveals the destructive actions. When the revert window
+ * elapses the account is deleted and the member is signed out.
  */
 export function MemberDangerZone() {
   const router = useRouter()
@@ -50,12 +60,29 @@ export function MemberDangerZone() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [now, setNow] = useState(() => Date.now())
+  const finalizingRef = useRef(false)
+
+  async function leaveAfterDeletion() {
+    setBusy(true)
+    try {
+      await createClient().auth.signOut()
+    } catch {
+      // The session is already invalid once the account is gone.
+    }
+    router.push('/login?message=' + encodeURIComponent('Your account has been deleted. You can sign up again another time.'))
+    router.refresh()
+  }
 
   useEffect(() => {
     let active = true
-    fetchDeletionRequest()
-      .then((value) => {
-        if (active) setRequest(value)
+    fetchDeletionStatus()
+      .then((data) => {
+        if (!active) return
+        if (data.finalized) {
+          leaveAfterDeletion()
+          return
+        }
+        setRequest(data.request)
       })
       .catch(() => {
         // Ignore: the danger zone simply shows the delete button.
@@ -66,12 +93,40 @@ export function MemberDangerZone() {
     return () => {
       active = false
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(id)
   }, [])
+
+  // Delete the account as soon as the revert window elapses. The server applies
+  // the deletion and tells us whether the account is actually gone; only then do
+  // we sign the member out. If it fails we keep retrying on each tick instead of
+  // leaving the member signed in with a stuck request.
+  useEffect(() => {
+    if (!request || finalizingRef.current) return
+    if (new Date(request.revert_deadline).getTime() > now) return
+    finalizingRef.current = true
+    fetch('/api/account/deletion/finalize', { method: 'POST' })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.finalized) {
+          leaveAfterDeletion()
+          return
+        }
+        finalizingRef.current = false
+        setError(
+          'We could not finish deleting your account yet. Retrying shortly...'
+        )
+      })
+      .catch(() => {
+        finalizingRef.current = false
+        setError('Network error while deleting your account. Retrying...')
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [request, now])
 
   async function requestDeletion() {
     setBusy(true)
@@ -135,8 +190,9 @@ export function MemberDangerZone() {
               </p>
               <p className="text-sm text-muted-foreground">
                 You will be removed from every church you belong to, and each
-                church&apos;s member count adjusts automatically. You can still
-                change your mind.
+                church&apos;s member count adjusts automatically. You will be
+                signed out when the window ends. You can still change your mind
+                until then.
               </p>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button variant="outline" onClick={revert} disabled={busy}>
@@ -149,7 +205,8 @@ export function MemberDangerZone() {
               <p className="text-sm text-muted-foreground">
                 Deleting your account removes you from every church you belong
                 to. You have 10 minutes to change your mind afterwards, after
-                which it becomes permanent.
+                which the account is deleted and you are signed out. You can
+                sign up again afterwards.
               </p>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <AlertDialog>
@@ -165,9 +222,8 @@ export function MemberDangerZone() {
                       Are you sure you want to delete your account?
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      You will be removed from all churches. You have 10 minutes
-                      to revert this from your profile before it becomes
-                      permanent.
+                      You will be removed from all churches, then signed out
+                      after 10 minutes unless you revert this from your profile.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

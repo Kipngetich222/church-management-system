@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { ACTIVE_CHURCH_COOKIE } from '@/lib/constants/church'
 import { isAdminRole } from '@/lib/auth/redirect'
+import { finalizeMemberDeletionIfDue } from '@/lib/services/deletion.service'
 
 /**
  * Resolve the active church for the current user.
@@ -18,6 +19,17 @@ export async function getActiveChurch(explicitChurchId?: string) {
   } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
+
+  // If the member's deletion window has elapsed, delete the account and send
+  // them to sign-in instead of letting them continue on a dead session.
+  if (await finalizeMemberDeletionIfDue(user.id)) {
+    redirect(
+      '/login?message=' +
+        encodeURIComponent(
+          'Your account has been deleted. You can sign up again another time.'
+        )
+    )
+  }
 
   const storedChurchId = cookieStore.get(ACTIVE_CHURCH_COOKIE)?.value
 

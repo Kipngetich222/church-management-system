@@ -30,11 +30,22 @@ export async function POST(request: Request) {
     .ilike('email', email)
     .maybeSingle()
 
+  // Block sign-up while an account deletion for this email is still being
+  // processed (from request until the account is fully removed).
+  const { data: pendingDeletion } = await admin
+    .from('member_deletion_requests')
+    .select('id')
+    .ilike('user_email', email)
+    .eq('status', 'pending')
+    .maybeSingle()
+  const deletionPending = Boolean(pendingDeletion)
+
   if (!profile) {
     return NextResponse.json({
       exists: false,
       hasPassword: null,
       providers: [],
+      deletionPending,
     })
   }
 
@@ -44,6 +55,7 @@ export async function POST(request: Request) {
     exists: true,
     hasPassword: providers ? providers.includes('email') : null,
     providers: providers ?? [],
+    deletionPending,
   })
 }
 

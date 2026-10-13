@@ -238,12 +238,101 @@ export async function revertMemberDeletion(userId: string): Promise<boolean> {
   return true
 }
 
+/** Apply a single member deletion request; returns true once the account is gone. */
+async function applyMemberDeletion(
+  admin: Admin,
+  request: MemberDeletionRequest
+): Promise<boolean> {
+  if (!request.user_id) {
+    await admin
+      .from('member_deletion_requests')
+      .update({ status: 'completed', resolved_at: new Date().toISOString() })
+      .eq('id', request.id)
+    return true
+  }
+
+  const { data: memberships } = await admin
+    .from('church_memberships')
+    .select('church_id')
+    .eq('user_id', request.user_id)
+
+  // `churches.created_by` references `users` without an ON DELETE rule, so a
+  // user who created a church cannot be removed while that row still points at
+  // them. Detach the creator first (the church itself stays intact) so the
+  // account deletion never gets stuck behind a foreign key.
+  await admin
+    .from('churches')
+    .update({ created_by: null })
+    .eq('created_by', request.user_id)
+
+  const { error } = await admin.auth.admin.deleteUser(request.user_id)
+  if (error) {
+    console.error('Failed to delete member account:', error.message)
+    return false
+  }
+
+  await admin
+    .from('member_deletion_requests')
+    .update({
+      status: 'completed',
+      resolved_at: new Date().toISOString(),
+      memberships_removed: memberships?.length ?? 0,
+    })
+    .eq('id', request.id)
+
+  for (const membership of memberships ?? []) {
+    await writeAudit(admin, {
+      churchId: membership.church_id,
+      actorId: null,
+      action: 'member.account_deleted',
+      entityType: 'member',
+      entityId: request.user_id,
+      metadata: {
+        member_name: request.user_name,
+        member_email: request.user_email,
+        member_count_delta: -1,
+      },
+    })
+  }
+
+  await writeEvent(admin, {
+    kind: 'member',
+    action: 'completed',
+    subjectUserId: request.user_id,
+    subjectName: request.user_name,
+    subjectEmail: request.user_email,
+    actorId: null,
+    metadata: { memberships_removed: memberships?.length ?? 0 },
+  })
+
+  return true
+}
+
+/**
+ * Finalize a specific member's deletion when their revert window has elapsed.
+ * Used on access so the account is removed (and the person signed out) even when
+ * no scheduler is running.
+ */
+export async function finalizeMemberDeletionIfDue(
+  userId: string
+): Promise<boolean> {
+  const admin = createAdminClient()
+  const { data: request } = await admin
+    .from('member_deletion_requests')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('status', 'pending')
+    .lte('revert_deadline', new Date().toISOString())
+    .maybeSingle()
+  if (!request) return false
+  return applyMemberDeletion(admin, request)
+}
+
 /** Permanently delete member accounts whose revert window has elapsed. */
 export async function finalizeMemberDeletions(): Promise<{
   finalized: number
 }> {
   const admin = createAdminClient()
-
   const { data: due } = await admin
     .from('member_deletion_requests')
     .select('*')
@@ -252,65 +341,10 @@ export async function finalizeMemberDeletions(): Promise<{
 
   let finalized = 0
   for (const request of due ?? []) {
-    if (!request.user_id) {
-      await admin
-        .from('member_deletion_requests')
-        .update({ status: 'completed', resolved_at: new Date().toISOString() })
-        .eq('id', request.id)
-      continue
-    }
-
-    const { data: memberships } = await admin
-      .from('church_memberships')
-      .select('church_id')
-      .eq('user_id', request.user_id)
-
-    const { error } = await admin.auth.admin.deleteUser(request.user_id)
-    if (error) {
-      console.error('Failed to delete member account:', error.message)
-      continue
-    }
-
-    await admin
-      .from('member_deletion_requests')
-      .update({
-        status: 'completed',
-        resolved_at: new Date().toISOString(),
-        memberships_removed: memberships?.length ?? 0,
-      })
-      .eq('id', request.id)
-
-    for (const membership of memberships ?? []) {
-      await writeAudit(admin, {
-        churchId: membership.church_id,
-        actorId: null,
-        action: 'member.account_deleted',
-        entityType: 'member',
-        entityId: request.user_id,
-        metadata: {
-          member_name: request.user_name,
-          member_email: request.user_email,
-          member_count_delta: -1,
-        },
-      })
-    }
-
-    await writeEvent(admin, {
-      kind: 'member',
-      action: 'completed',
-      subjectUserId: request.user_id,
-      subjectName: request.user_name,
-      subjectEmail: request.user_email,
-      actorId: null,
-      metadata: { memberships_removed: memberships?.length ?? 0 },
-    })
-
-    finalized += 1
+    if (await applyMemberDeletion(admin, request)) finalized += 1
   }
-
   return { finalized }
 }
-
 // ---------------------------------------------------------------------------
 // Church deletion
 // ---------------------------------------------------------------------------

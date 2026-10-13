@@ -5,6 +5,11 @@ export type AccountLookup = {
   hasPassword: boolean | null
   /** Sign-in providers linked to the account (e.g. ["google"]). */
   providers: string[]
+  /**
+   * True while an account deletion for this email is still being processed.
+   * The email cannot be used to sign up again until the deletion completes.
+   */
+  deletionPending: boolean
 }
 
 /**
@@ -35,6 +40,7 @@ export async function lookupAccount(
       hasPassword:
         typeof data.hasPassword === 'boolean' ? data.hasPassword : null,
       providers: Array.isArray(data.providers) ? data.providers : [],
+      deletionPending: data.deletionPending === true,
     }
   } catch {
     return null

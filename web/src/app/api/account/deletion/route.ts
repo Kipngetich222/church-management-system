@@ -1,13 +1,20 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import {
+  finalizeMemberDeletionIfDue,
   getMemberDeletionRequest,
   requestMemberDeletion,
   revertMemberDeletion,
   MEMBER_REVERT_WINDOW_MS,
 } from '@/lib/services/deletion.service'
 
-/** Current pending deletion request for the signed-in member (if any). */
+/**
+ * Current pending deletion request for the signed-in member (if any).
+ *
+ * If the revert window has already elapsed, the deletion is applied right here
+ * so the account is removed even when no scheduler is running. The client sees
+ * `finalized: true` and signs the user out.
+ */
 export async function GET() {
   const supabase = await createClient()
   const {
@@ -16,8 +23,21 @@ export async function GET() {
   if (!user)
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const finalized = await finalizeMemberDeletionIfDue(user.id)
+  if (finalized) {
+    return NextResponse.json({
+      request: null,
+      finalized: true,
+      windowMs: MEMBER_REVERT_WINDOW_MS,
+    })
+  }
+
   const request = await getMemberDeletionRequest(user.id)
-  return NextResponse.json({ request, windowMs: MEMBER_REVERT_WINDOW_MS })
+  return NextResponse.json({
+    request,
+    finalized: false,
+    windowMs: MEMBER_REVERT_WINDOW_MS,
+  })
 }
 
 /** Request deletion of the signed-in account (starts the revert window). */
