@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { slugify } from '@/lib/utils/slug'
+import { validateChurchUsername } from '@/lib/utils/church-username'
 
 const bodySchema = z.object({
   name: z
@@ -10,6 +11,7 @@ const bodySchema = z.object({
     .trim()
     .min(2, 'Church name must be at least 2 characters.')
     .max(120, 'Church name is too long.'),
+  username: z.string().trim().max(120).optional(),
   slug: z.string().trim().max(120).optional(),
   description: z.string().trim().max(500).optional(),
 })
@@ -47,12 +49,23 @@ export async function POST(request: Request) {
     )
   }
 
-  const slug = slugify(parsed.data.slug?.trim() || parsed.data.name)
-  if (!slug) {
-    return NextResponse.json(
-      { error: 'Please choose a valid church URL.' },
-      { status: 400 }
-    )
+  const usernameInput = parsed.data.username ?? parsed.data.slug
+  let slug: string
+
+  if (usernameInput) {
+    const validation = validateChurchUsername(usernameInput)
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.message }, { status: 400 })
+    }
+    slug = validation.username
+  } else {
+    slug = slugify(parsed.data.name)
+    if (!slug) {
+      return NextResponse.json(
+        { error: 'Please choose a valid church username.' },
+        { status: 400 }
+      )
+    }
   }
 
   const admin = createAdminClient()
@@ -72,7 +85,7 @@ export async function POST(request: Request) {
 
   if (existing) {
     return NextResponse.json(
-      { error: 'That church URL is already taken. Try a different one.' },
+      { error: 'That username is already taken. Try a different one.' },
       { status: 409 }
     )
   }

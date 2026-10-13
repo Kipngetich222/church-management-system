@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { PanelLeftClose, PanelLeftOpen, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ChurchLogo } from '@/components/shared/ChurchLogo'
 import { useSidebar } from './sidebar-context'
 
 export type SidebarNavItem = {
@@ -94,10 +95,12 @@ function SidebarBrand() {
 export function AppSidebar({
   items,
   title,
+  logoUrl,
   loading = false,
 }: {
   items: SidebarNavItem[]
   title?: string
+  logoUrl?: string | null
   loading?: boolean
 }) {
   const { collapsed, toggleCollapsed, mobileOpen, setMobileOpen } = useSidebar()
@@ -169,9 +172,12 @@ export function AppSidebar({
         </div>
 
         {title && !collapsed && (
-          <p className="shrink-0 truncate px-4 pt-3 text-xs text-muted-foreground">
-            {title}
-          </p>
+          <div className="flex shrink-0 items-center gap-2 px-4 pt-3">
+            <ChurchLogo name={title} logoUrl={logoUrl} size="xs" />
+            <span className="truncate text-xs text-muted-foreground">
+              {title}
+            </span>
+          </div>
         )}
 
         {nav}
@@ -207,9 +213,12 @@ export function AppSidebar({
         </div>
 
         {title && (
-          <p className="shrink-0 truncate px-4 pt-3 text-xs text-muted-foreground">
-            {title}
-          </p>
+          <div className="flex shrink-0 items-center gap-2 px-4 pt-3">
+            <ChurchLogo name={title} logoUrl={logoUrl} size="xs" />
+            <span className="truncate text-xs text-muted-foreground">
+              {title}
+            </span>
+          </div>
         )}
 
         {loading ? (

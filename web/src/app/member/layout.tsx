@@ -18,7 +18,10 @@ export default async function MemberLayout({
       <div className="relative min-h-screen md:grid md:grid-cols-[auto_1fr]">
         <PageBackdrop variant="dashboard" />
 
-        <MemberSidebar churchName={ctx.church?.name} />
+        <MemberSidebar
+          churchName={ctx.church?.name}
+          churchLogoUrl={ctx.church?.logo_url}
+        />
 
         <div className="relative z-10 flex min-h-screen flex-col">
           <MemberTopbar

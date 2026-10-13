@@ -20,6 +20,7 @@ export default async function AdminLayout({
           churchId={ctx.churchId}
           role={ctx.role}
           churchName={ctx.church?.name}
+          churchLogoUrl={ctx.church?.logo_url}
         />
 
         <div className="relative z-10 flex min-h-screen flex-col">
