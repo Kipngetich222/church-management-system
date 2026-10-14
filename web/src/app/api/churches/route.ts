@@ -13,6 +13,7 @@ const bodySchema = z.object({
     .max(120, 'Church name is too long.'),
   username: z.string().trim().max(120).optional(),
   description: z.string().trim().max(500).optional(),
+  plan: z.enum(['starter', 'growth']).optional(),
 })
 
 /**
@@ -96,7 +97,7 @@ export async function POST(request: Request) {
       username,
       description: parsed.data.description || null,
       created_by: user.id,
-      plan: 'basic',
+      plan: parsed.data.plan ?? 'starter',
     })
     .select('id')
     .single()

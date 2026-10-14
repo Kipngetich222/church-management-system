@@ -2,6 +2,7 @@ import { createClient as createAdmin } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { getPlanUsage, isMemberLimitError } from '@/lib/services/plan.service'
 
 const bodySchema = z.object({
   churchId: z.string().uuid(),
@@ -40,6 +41,21 @@ export async function POST(req: Request) {
 
   if (!membership || !['super_admin', 'dept_admin'].includes(membership.role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  // Respect the church's plan cap before inviting anyone.
+  const usage = await getPlanUsage(input.churchId)
+  if (usage.atLimit && usage.memberLimit !== null) {
+    return NextResponse.json(
+      {
+        code: 'member_limit_reached',
+        error:
+          `Your church has reached its ${usage.memberLimit}-member limit on the ` +
+          `Starter plan. Upgrade to the Growth plan in Plan and Billing to add ` +
+          `more members.`,
+      },
+      { status: 409 }
+    )
   }
 
   const admin = createAdmin(
@@ -83,6 +99,17 @@ export async function POST(req: Request) {
   })
 
   if (memErr) {
+    if (isMemberLimitError(memErr)) {
+      return NextResponse.json(
+        {
+          code: 'member_limit_reached',
+          error:
+            'Your church has reached the member limit of its current plan. ' +
+            'Upgrade to the Growth plan to add more members.',
+        },
+        { status: 409 }
+      )
+    }
     return NextResponse.json({ error: memErr.message }, { status: 400 })
   }
 

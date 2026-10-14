@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
@@ -10,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { ChurchLogo } from '@/components/shared/ChurchLogo'
 import { ChurchMap, type MapChurch } from '@/components/maps/ChurchMap'
 import { MapPin, Search, Church as ChurchIcon } from 'lucide-react'
@@ -93,11 +92,6 @@ export function ChurchesDirectory({ churches }: { churches: ChurchSummary[] }) {
                     />
                     <div className="min-w-0">
                       <CardTitle className="truncate">{church.name}</CardTitle>
-                      {church.plan === 'premium' && (
-                        <Badge variant="secondary" className="mt-1">
-                          Premium
-                        </Badge>
-                      )}
                     </div>
                   </div>
                 </CardHeader>

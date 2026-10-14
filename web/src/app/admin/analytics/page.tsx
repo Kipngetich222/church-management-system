@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+﻿import { createClient } from '@/lib/supabase/server'
 import { requirePermission } from '@/lib/auth/guard'
 import { getFinanceSummary } from '@/lib/services/finance.service'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -6,15 +6,6 @@ import { AnalyticsCharts } from '@/components/analytics/AnalyticsCharts'
 
 export default async function AnalyticsPage() {
   const ctx = await requirePermission('analytics:*')
-  if (ctx.church?.plan !== 'premium') {
-    return (
-      <Card>
-        <CardContent className="py-12 text-center text-muted-foreground">
-          Analytics is a <strong>Premium</strong> feature. Upgrade to unlock insights.
-        </CardContent>
-      </Card>
-    )
-  }
 
   const supabase = await createClient()
   const from = new Date(new Date().getFullYear(), 0, 1).toISOString()

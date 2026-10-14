@@ -3,13 +3,14 @@
 import { createClient } from '@/lib/supabase/client'
 import { getActiveChurchId } from '@/lib/auth/active-church'
 import { useEffect, useState } from 'react'
+import type { PlanTier } from '@/lib/constants/plans'
 
 export function useChurch() {
   const [church, setChurch] = useState<{
     id: string
     name: string
     username: string
-    plan: 'basic' | 'premium'
+    plan: PlanTier
   } | null>(null)
   const [loading, setLoading] = useState(true)
 

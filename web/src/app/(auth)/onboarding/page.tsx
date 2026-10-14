@@ -7,9 +7,10 @@ import { resolvePostAuthPath } from '@/lib/auth/redirect'
 export default async function OnboardingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ church?: string }>
+  searchParams: Promise<{ church?: string; plan?: string }>
 }) {
-  const { church: initialChurch } = await searchParams
+  const { church: initialChurch, plan } = await searchParams
+  const initialPlan = plan === 'growth' || plan === 'starter' ? plan : undefined
   const supabase = await createClient()
   const {
     data: { user },
@@ -42,6 +43,10 @@ export default async function OnboardingPage({
     .order('name')
 
   return (
-    <OnboardingWizard churches={churches ?? []} initialChurch={initialChurch} />
+    <OnboardingWizard
+      churches={churches ?? []}
+      initialChurch={initialChurch}
+      initialPlan={initialPlan}
+    />
   )
 }

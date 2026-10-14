@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -22,6 +22,7 @@ import { ArrowLeft, Plus, Search } from 'lucide-react'
 import { UsernameFeedback } from '@/components/shared/UsernameFeedback'
 import { useChurchUsername } from '@/lib/hooks/useChurchUsername'
 import { validateChurchUsername } from '@/lib/utils/church-username'
+import { PLANS, formatPlanPrice, type PlanTier } from '@/lib/constants/plans'
 
 type ChurchOption = {
   id: string
@@ -41,15 +42,18 @@ function slugify(name: string) {
 export function OnboardingWizard({
   churches = [],
   initialChurch,
+  initialPlan,
 }: {
   churches?: ChurchOption[]
   initialChurch?: string
+  initialPlan?: PlanTier
 }) {
   const router = useRouter()
   const [step, setStep] = useState<'choice' | 'create' | 'join'>(
     initialChurch ? 'join' : 'choice'
   )
   const [form, setForm] = useState({ name: '', username: '', description: '' })
+  const [plan, setPlan] = useState<PlanTier>(initialPlan ?? 'starter')
   const [usernameEdited, setUsernameEdited] = useState(false)
   const [joinUsername, setJoinUsername] = useState(initialChurch ?? '')
   const [query, setQuery] = useState('')
@@ -117,6 +121,7 @@ export function OnboardingWizard({
           name: form.name,
           username: usernameCheck.username,
           description: form.description || undefined,
+          plan,
         }),
       })
 
@@ -290,6 +295,38 @@ export function OnboardingWizard({
                 setForm({ ...form, description: e.target.value })
               }
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Which plan fits your church?</Label>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {PLANS.map((option) => (
+                <button
+                  key={option.tier}
+                  type="button"
+                  onClick={() => setPlan(option.tier)}
+                  className={
+                    'rounded-lg border p-3 text-left text-sm transition ' +
+                    (plan === option.tier
+                      ? 'border-primary bg-primary/5'
+                      : 'hover:bg-muted')
+                  }
+                >
+                  <span className="flex items-center justify-between font-medium">
+                    {option.name}
+                    <span>{formatPlanPrice(option.price)}</span>
+                  </span>
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    {option.memberLimit
+                      ? 'Up to ' + option.memberLimit + ' members'
+                      : 'Unlimited members'}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Every plan includes every feature. You can change plans any time
+              from your admin dashboard.
+            </p>
           </div>
 
           {errorBanner}

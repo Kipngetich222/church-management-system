@@ -1,4 +1,4 @@
-import Link from 'next/link'
+﻿import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { createPublicClient } from '@/lib/supabase/public'
@@ -11,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { formatEventDate } from '@/lib/utils/date'
 import { googleMapsUrl } from '@/lib/utils/maps'
 import { ChurchMap } from '@/components/maps/ChurchMap'
@@ -51,7 +50,7 @@ export async function generateMetadata({
   const { church } = await loadChurch(username)
   if (!church) return { title: 'Church not found' }
   return {
-    title: `${church.name} — ChurchOnline`,
+    title: `${church.name} â€” ChurchOnline`,
     description: church.description ?? undefined,
   }
 }
@@ -80,7 +79,6 @@ export default async function ChurchProfilePage({
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-3xl font-bold">{church.name}</h1>
-            {church.plan === 'premium' && <Badge>Premium</Badge>}
           </div>
           <p className="text-muted-foreground">
             {church.description ?? 'A church community on ChurchOnline.'}

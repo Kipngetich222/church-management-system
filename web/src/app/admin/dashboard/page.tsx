@@ -1,6 +1,7 @@
 ﻿import Link from 'next/link'
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { getChurchSetup } from '@/lib/utils/church-setup'
+import { getPlanUsage } from '@/lib/services/plan.service'
 import type { SetupStepKey } from '@/lib/constants/setup-steps'
 import { ChurchLogo } from '@/components/shared/ChurchLogo'
 import { Button } from '@/components/ui/button'
@@ -11,6 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import {
+  AlertTriangle,
   Building2,
   CalendarDays,
   CheckCircle2,
@@ -33,6 +35,7 @@ const STEP_ICONS: Record<
 export default async function AdminDashboardPage() {
   const { church, churchId, role } = await getActiveChurch()
   const setup = await getChurchSetup(churchId, church)
+  const planUsage = await getPlanUsage(churchId)
 
   return (
     <div className="space-y-6">
@@ -103,6 +106,19 @@ export default async function AdminDashboardPage() {
         </Card>
       )}
 
+        {planUsage.atLimit && (
+          <Card className="border-destructive/40 bg-destructive/5">
+            <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4 text-sm">
+              <span className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                <span>{church?.name ?? 'Your church'} has reached the {planUsage.memberLimit}-member limit on the {planUsage.planName} plan. Nobody new can join until you upgrade to the Growth plan.</span>
+              </span>
+              <Button render={<Link href="/admin/settings/plan" />}>
+                Upgrade plan
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center gap-3">
