@@ -1,4 +1,4 @@
-import Link from 'next/link'
+﻿import Link from 'next/link'
 import type { Metadata } from 'next'
 import { PricingCards } from '@/components/public/PricingCards'
 import { Button } from '@/components/ui/button'
@@ -8,44 +8,34 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Check, Minus } from 'lucide-react'
+import { Check } from 'lucide-react'
+import { PLAN_FEATURES, PLANS, formatPlanPrice } from '@/lib/constants/plans'
 
 export const metadata: Metadata = {
-  title: 'Pricing — ChurchOnline',
+  title: 'Pricing - ChurchOnline',
   description:
-    'Simple, transparent pricing for churches of every size. Start free and upgrade when you grow.',
+    'Simple, transparent pricing for churches of every size. Every plan includes every feature.',
 }
 
-const comparison = [
-  { feature: 'Member records & CSV import', basic: true, premium: true },
-  { feature: 'Offerings & expense tracking', basic: true, premium: true },
-  { feature: 'Event calendar & reminders', basic: true, premium: true },
-  { feature: 'Bulk SMS to members', basic: true, premium: true },
-  { feature: 'PDF report export', basic: true, premium: true },
-  { feature: 'Member login & dashboard', basic: false, premium: true },
-  { feature: 'Departments with leaders', basic: false, premium: true },
-  { feature: 'Finance analytics & charts', basic: false, premium: true },
-  { feature: 'In-app messaging', basic: false, premium: true },
-  { feature: 'Role switching (admin ? member)', basic: false, premium: true },
-  { feature: 'Pledge & campaign tracking', basic: false, premium: true },
-]
+const starter = PLANS[0]
+const growth = PLANS[1]
 
 const faqs = [
   {
-    q: 'Is it really free right now?',
-    a: 'Yes. Everything is free for now while the platform is in development. Once we launch, the Basic plan will be KSh 2,000 per month and Premium KSh 4,500 per month.',
+    q: 'What is the difference between the plans?',
+    a: 'Your church size. The Starter plan supports up to 200 members, while the Growth plan allows unlimited members. Every feature in the system is available on both plans.',
   },
   {
-    q: 'How do I pay?',
-    a: 'Premium can be paid by M-Pesa or card. Kenyan churches can pay in KES and get a receipt for their records.',
+    q: 'What happens when we reach 200 members on Starter?',
+    a: 'Everything keeps working - your records, giving and events stay safe. The only change is that no new members can join until an admin upgrades the church to the Growth plan. Anyone who tries to join a full church is told why, and your admins are notified.',
   },
   {
-    q: 'Can I change plans later?',
-    a: 'Absolutely. Upgrade, downgrade or cancel at any time from your church settings — your data stays with you.',
+    q: 'How do we upgrade?',
+    a: 'Any super admin can upgrade any time from Plan and Billing in the admin dashboard - you do not have to wait until you are full.',
   },
   {
-    q: 'Do you support multiple churches?',
-    a: 'Yes. One account can belong to multiple churches with a different role in each, and switch between them from the dashboard.',
+    q: 'How much does it cost?',
+    a: 'Starter is KSh 2,500 per month and Growth is KSh 5,500 per month. Kenyan churches can pay by M-Pesa or card and get a receipt for their records.',
   },
   {
     q: 'What about data privacy?',
@@ -62,7 +52,8 @@ export default function PricingPage() {
             Simple, honest pricing
           </h1>
           <p className="text-lg text-muted-foreground">
-            Start free. Upgrade when your church grows. No hidden fees.
+            Every plan includes every feature. You only pay for how many members
+            your church can hold.
           </p>
           <p className="mt-4 inline-block rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm">
             Everything is free for now while the platform is in development.
@@ -74,38 +65,53 @@ export default function PricingPage() {
 
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4 max-w-4xl">
-          <h2 className="text-3xl font-bold mb-8 text-center">
-            Compare plans
+          <h2 className="text-3xl font-bold mb-3 text-center">
+            What actually changes between plans?
           </h2>
-          <Card className="overflow-hidden">
-            <div className="grid grid-cols-[1fr_auto_auto] md:grid-cols-[1fr_120px_120px] text-sm">
-              <div className="p-4 font-medium border-b bg-muted/50">Feature</div>
+          <p className="text-center text-muted-foreground mb-8">
+            Just one thing: church size. Everything else is the same.
+          </p>
+          <Card className="overflow-hidden mb-10">
+            <div className="grid grid-cols-[1fr_auto_auto] md:grid-cols-[1fr_160px_160px] text-sm">
+              <div className="p-4 font-medium border-b bg-muted/50">&nbsp;</div>
               <div className="p-4 font-medium border-b text-center bg-muted/50">
-                Basic
+                {starter.name}
               </div>
               <div className="p-4 font-medium border-b text-center bg-muted/50">
-                Premium
+                {growth.name}
               </div>
-              {comparison.map((row) => (
-                <div key={row.feature} className="contents">
-                  <div className="p-4 border-b">{row.feature}</div>
-                  <div className="p-4 border-b flex justify-center">
-                    {row.basic ? (
-                      <Check className="h-4 w-4 text-primary" />
-                    ) : (
-                      <Minus className="h-4 w-4 text-muted-foreground/50" />
-                    )}
-                  </div>
-                  <div className="p-4 border-b flex justify-center">
-                    {row.premium ? (
-                      <Check className="h-4 w-4 text-primary" />
-                    ) : (
-                      <Minus className="h-4 w-4 text-muted-foreground/50" />
-                    )}
-                  </div>
+              <div className="p-4 border-b font-medium">Monthly price</div>
+              <div className="p-4 border-b text-center">
+                {formatPlanPrice(starter.price)}
+              </div>
+              <div className="p-4 border-b text-center">
+                {formatPlanPrice(growth.price)}
+              </div>
+              <div className="p-4 border-b font-medium">Members</div>
+              <div className="p-4 border-b text-center">Up to 200</div>
+              <div className="p-4 border-b text-center">Unlimited</div>
+              <div className="p-4 border-b font-medium">All features</div>
+              <div className="p-4 border-b flex justify-center">
+                <Check className="h-4 w-4 text-primary" />
+              </div>
+              <div className="p-4 border-b flex justify-center">
+                <Check className="h-4 w-4 text-primary" />
+              </div>
+            </div>
+          </Card>
+
+          <h3 className="text-xl font-semibold mb-4 text-center">
+            Included in both plans
+          </h3>
+          <Card>
+            <CardContent className="grid gap-3 pt-6 sm:grid-cols-2">
+              {PLAN_FEATURES.map((feature) => (
+                <div key={feature} className="flex items-start gap-2 text-sm">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  {feature}
                 </div>
               ))}
-            </div>
+            </CardContent>
           </Card>
         </div>
       </section>

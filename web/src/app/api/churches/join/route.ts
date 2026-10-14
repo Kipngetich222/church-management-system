@@ -3,6 +3,12 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { dashboardPathForRole } from '@/lib/auth/redirect'
+import { STARTER_MEMBER_LIMIT } from '@/lib/constants/plans'
+import {
+  getPlanUsage,
+  isMemberLimitError,
+  notifyMemberLimitReached,
+} from '@/lib/services/plan.service'
 
 const bodySchema = z
   .object({
@@ -97,6 +103,29 @@ export async function POST(request: Request) {
       .upsert({ id: user.id, email: user.email }, { onConflict: 'id' })
   }
 
+  // Starter churches hold at most 200 member seats. When a church is full
+  // nobody new can join until it is upgraded to the Growth plan - so explain
+  // that clearly and let its admins know someone tried to join.
+  const usage = await getPlanUsage(church.id)
+  if (usage.atLimit && usage.memberLimit !== null) {
+    await notifyMemberLimitReached({
+      churchId: church.id,
+      churchName: church.name,
+      memberLimit: usage.memberLimit,
+      attemptedEmail: user.email ?? null,
+    })
+    return NextResponse.json(
+      {
+        code: 'member_limit_reached',
+        error:
+          `${church.name} is currently full. It is on the Starter plan, which ` +
+          `supports up to ${usage.memberLimit} members, so no new members can ` +
+          `join until the church upgrades to the Growth plan.`,
+      },
+      { status: 409 }
+    )
+  }
+
   const { error: insertError } = await admin
     .from('church_memberships')
     .insert({ user_id: user.id, church_id: church.id, role: 'member' })
@@ -117,6 +146,24 @@ export async function POST(request: Request) {
         alreadyMember: true,
         path: dashboardPathForRole(role),
       })
+    }
+    // Raced past the check above and hit the database cap: calm, same message.
+    if (isMemberLimitError(insertError)) {
+      await notifyMemberLimitReached({
+        churchId: church.id,
+        churchName: church.name,
+        memberLimit: usage.memberLimit ?? STARTER_MEMBER_LIMIT,
+        attemptedEmail: user.email ?? null,
+      })
+      return NextResponse.json(
+        {
+          code: 'member_limit_reached',
+          error:
+            `${church.name} is currently full and cannot accept new members ` +
+            `until it upgrades to the Growth plan.`,
+        },
+        { status: 409 }
+      )
     }
     console.error('Failed to join church:', insertError)
     return NextResponse.json(

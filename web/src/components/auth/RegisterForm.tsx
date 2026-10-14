@@ -26,6 +26,7 @@ export function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const invitedChurch = searchParams.get('church')
+  const planParam = searchParams.get('plan')
   const reason = searchParams.get('reason')
   const prefilledEmail = searchParams.get('email') ?? ''
 
@@ -45,8 +46,11 @@ export function RegisterForm() {
   const showMismatch = form.confirmPassword.length > 0 && !passwordsMatch
 
   // Where to send the user once their account is ready.
-  const afterAuthPath = invitedChurch
-    ? '/onboarding?church=' + encodeURIComponent(invitedChurch)
+  const onboardingParams = new URLSearchParams()
+  if (invitedChurch) onboardingParams.set('church', invitedChurch)
+  if (planParam) onboardingParams.set('plan', planParam)
+  const afterAuthPath = onboardingParams.toString()
+    ? '/onboarding?' + onboardingParams.toString()
     : undefined
 
   async function handleSubmit(e: React.FormEvent) {

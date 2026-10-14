@@ -31,7 +31,7 @@ export default async function SelectChurchPage() {
       name: church?.name ?? 'Church',
       username: church?.username ?? '',
       logoUrl: church?.logo_url ?? null,
-      plan: church?.plan ?? 'basic',
+      plan: church?.plan ?? 'starter',
     }
   })
 

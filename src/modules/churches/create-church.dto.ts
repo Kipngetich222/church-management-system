@@ -1,56 +1,62 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import {
   IsEmail,
+  IsIn,
   IsNumber,
   IsOptional,
   IsString,
   IsUrl,
   MaxLength,
-} from "class-validator";
+} from 'class-validator'
 
 export class CreateChurchDto {
   @ApiProperty()
   @IsString()
   @MaxLength(160)
-  name!: string;
+  name!: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  description?: string;
+  description?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  address?: string;
+  address?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsNumber()
-  latitude?: number;
+  latitude?: number
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsNumber()
-  longitude?: number;
+  longitude?: number
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  phone?: string;
+  phone?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsEmail()
-  email?: string;
+  email?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsUrl()
-  website?: string;
+  website?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsUrl()
-  logoUrl?: string;
+  logoUrl?: string
+
+  @ApiPropertyOptional({ enum: ['starter', 'growth'] })
+  @IsOptional()
+  @IsIn(['starter', 'growth'])
+  plan?: 'starter' | 'growth'
 }

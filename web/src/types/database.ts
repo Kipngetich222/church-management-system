@@ -1954,6 +1954,14 @@ export type Database = {
           event_title: string
         }[]
       }
+      get_church_plan_usage: {
+        Args: { p_church_id: string }
+        Returns: {
+          member_count: number
+          member_limit: number | null
+          plan: Database['public']['Enums']['plan_tier']
+        }[]
+      }
       is_church_admin: { Args: { church_uuid: string }; Returns: boolean }
       select_super_admin_successor: {
         Args: { p_church_id: string; p_exclude_user_id: string }
@@ -2008,7 +2016,7 @@ export type Database = {
         | 'card'
         | 'online'
         | 'other'
-      plan_tier: 'basic' | 'premium'
+      plan_tier: 'starter' | 'growth'
       prayer_request_status: 'open' | 'in_progress' | 'closed' | 'answered'
       prayer_request_type: 'prayer' | 'counseling'
       prayer_visibility:
@@ -2174,7 +2182,7 @@ export const Constants = {
         'online',
         'other',
       ],
-      plan_tier: ['basic', 'premium'],
+      plan_tier: ['starter', 'growth'],
       prayer_request_status: ['open', 'in_progress', 'closed', 'answered'],
       prayer_request_type: ['prayer', 'counseling'],
       prayer_visibility: [

@@ -60,6 +60,7 @@ export class ChurchesService {
         email: dto.email,
         website: dto.website,
         logo_url: dto.logoUrl,
+        plan: dto.plan ?? 'starter',
         created_by: user.id,
       })
       .select()
