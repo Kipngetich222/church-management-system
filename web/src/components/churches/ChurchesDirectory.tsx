@@ -103,7 +103,7 @@ export function ChurchesDirectory({ churches }: { churches: ChurchSummary[] }) {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-sm text-muted-foreground line-clamp-2">
-                    {church.description ?? 'A church community on ChurchMS.'}
+                    {church.description ?? 'A church community on ChurchOnline.'}
                   </p>
                   {church.address && (
                     <p className="text-xs text-muted-foreground flex items-center gap-1">

@@ -4,7 +4,7 @@ import { themeInitScript } from '@/components/theme/theme-script'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'ChurchMS',
+  title: 'ChurchOnline',
   description: 'Modern church management for growing congregations.',
 }
 

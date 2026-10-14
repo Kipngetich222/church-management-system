@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button'
 import { BookOpen } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Sermons — ChurchMS',
-  description: 'Watch and listen to recent sermons from churches on ChurchMS.',
+  title: 'Sermons — ChurchOnline',
+  description: 'Watch and listen to recent sermons from churches on ChurchOnline.',
 }
 
 export const revalidate = 60

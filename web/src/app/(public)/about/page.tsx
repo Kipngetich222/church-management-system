@@ -8,9 +8,9 @@ import {
 import { HeartHandshake, Users, ShieldCheck, Sparkles } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'About — ChurchMS',
+  title: 'About — ChurchOnline',
   description:
-    'ChurchMS helps churches across East Africa care for their people and steward their resources well.',
+    'ChurchOnline helps churches across East Africa care for their people and steward their resources well.',
 }
 
 const values = [
@@ -45,7 +45,7 @@ export default function AboutPage() {
             Built to help the Church thrive
           </h1>
           <p className="text-lg text-muted-foreground">
-            ChurchMS started with a simple observation: church leaders spend too
+            ChurchOnline started with a simple observation: church leaders spend too
             much time wrestling with spreadsheets, WhatsApp groups and paper
             records. We are changing that.
           </p>
@@ -67,7 +67,7 @@ export default function AboutPage() {
           </p>
           <p>
             Whether you are planting a new church or managing a multi-branch
-            congregation, ChurchMS grows with you.
+            congregation, ChurchOnline grows with you.
           </p>
         </div>
       </section>
@@ -92,7 +92,7 @@ export default function AboutPage() {
       <section className="py-20 text-center">
         <div className="container mx-auto px-4 max-w-2xl">
           <h2 className="text-3xl font-bold mb-4">
-            Join the churches already using ChurchMS
+            Join the churches already using ChurchOnline
           </h2>
           <p className="text-muted-foreground mb-6">
             Start free today — no credit card required.

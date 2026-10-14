@@ -37,7 +37,7 @@ export async function generateMetadata({
   const sermon = await loadSermon(sermonId)
   if (!sermon) return { title: 'Sermon not found' }
   return {
-    title: `${sermon.title} — ChurchMS`,
+    title: `${sermon.title} — ChurchOnline`,
     description: sermon.description ?? undefined,
   }
 }

@@ -24,7 +24,7 @@ import {
 } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Features — ChurchMS',
+  title: 'Features — ChurchOnline',
   description:
     'Members, giving, events, departments, communication and analytics — everything your church needs in one platform.',
 }

@@ -1,4 +1,4 @@
-# Church Management System
+# ChurchOnline
 
 A multi-tenant church management platform built for churches in Kenya / East Africa. A single
 **NestJS REST API** powers two independent clients:

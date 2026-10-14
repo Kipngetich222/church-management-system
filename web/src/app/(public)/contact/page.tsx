@@ -9,9 +9,9 @@ import {
 import { Mail, MessageSquare, MapPin } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Contact — ChurchMS',
+  title: 'Contact — ChurchOnline',
   description:
-    'Get in touch with the ChurchMS team. We are here to help your church get set up and thriving.',
+    'Get in touch with the ChurchOnline team. We are here to help your church get set up and thriving.',
 }
 
 export default function ContactPage() {

@@ -1,6 +1,6 @@
-# Church Management Web
+# ChurchOnline Web
 
-The Next.js 16 (App Router) web client for the Church Management System. It contains the public
+The Next.js 16 (App Router) web client for ChurchOnline. It contains the public
 marketing site plus the authenticated admin and member dashboards.
 
 This project is independent from the NestJS API that lives at the repository root. The API exposes
