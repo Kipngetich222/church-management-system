@@ -201,7 +201,7 @@ export function OnboardingWizard({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Welcome to ChurchMS</CardTitle>
+          <CardTitle>Welcome to ChurchOnline</CardTitle>
           <CardDescription>
             Join your church, or start a new one if you are a leader.
           </CardDescription>

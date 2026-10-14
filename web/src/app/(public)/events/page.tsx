@@ -10,7 +10,7 @@ import { formatEventDate } from '@/lib/utils/date'
 import { CalendarDays, MapPin, Ticket } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Events — ChurchMS',
+  title: 'Events — ChurchOnline',
   description:
     'Discover upcoming church events, services, conferences and gatherings near you.',
 }

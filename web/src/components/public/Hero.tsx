@@ -1,13 +1,14 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { HeroHeadline } from './HeroHeadline'
+import { SystemLogo } from '@/components/shared/SystemLogo'
 
 export function Hero() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 to-background py-24">
       <div className="container mx-auto px-4 text-center max-w-3xl">
         <div className="inline-flex items-center gap-2 rounded-full border bg-background px-4 py-1 text-sm mb-6">
-          <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+          <SystemLogo className="h-4 w-4 animate-pulse" />
           Built for modern churches
         </div>
 

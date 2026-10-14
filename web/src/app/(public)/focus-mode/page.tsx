@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Focus Mode — ChurchMS',
+  title: 'Focus Mode — ChurchOnline',
   description:
     'A mobile companion that removes distractions so members can engage fully with the Word.',
 }
@@ -141,7 +141,7 @@ export default function FocusModePage() {
             Ready to bring focus back?
           </h2>
           <p className="text-muted-foreground mb-6">
-            Focus Mode is rolling out to churches on ChurchMS. Get an early
+            Focus Mode is rolling out to churches on ChurchOnline. Get an early
             look by joining the waitlist or exploring the platform today.
           </p>
           <div className="flex gap-4 justify-center flex-wrap">

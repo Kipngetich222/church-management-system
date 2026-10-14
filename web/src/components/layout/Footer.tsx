@@ -1,11 +1,15 @@
 import Link from 'next/link'
+import { SystemLogo } from '@/components/shared/SystemLogo'
 
 export function Footer() {
   return (
     <footer className="border-t bg-muted/30">
       <div className="container mx-auto px-4 py-12 grid gap-8 md:grid-cols-4">
         <div>
-          <h3 className="font-bold mb-4">ChurchMS</h3>
+          <h3 className="flex items-center gap-2 font-bold mb-4">
+            <SystemLogo className="h-5 w-5" />
+            ChurchOnline
+          </h3>
           <p className="text-sm text-muted-foreground">
             Modern church management for growing congregations.
           </p>
@@ -51,7 +55,7 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t py-4 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} ChurchMS. All rights reserved.
+        © {new Date().getFullYear()} ChurchOnline. All rights reserved.
       </div>
     </footer>
   )

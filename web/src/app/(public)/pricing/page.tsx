@@ -11,7 +11,7 @@ import {
 import { Check, Minus } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Pricing — ChurchMS',
+  title: 'Pricing — ChurchOnline',
   description:
     'Simple, transparent pricing for churches of every size. Start free and upgrade when you grow.',
 }

@@ -1,7 +1,7 @@
 {
   "name": "church-management-api",
   "version": "0.1.0",
-  "description": "NestJS REST API for the Church Management System (web + mobile clients)",
+  "description": "NestJS REST API for ChurchOnline (web + mobile clients)",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
@@ -69,7 +69,11 @@
     "typescript-eslint": "^8.18.0"
   },
   "jest": {
-    "moduleFileExtensions": ["js", "json", "ts"],
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {

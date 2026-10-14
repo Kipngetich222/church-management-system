@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/server'
 import { MobileNav } from './MobileNav'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
+import { SystemLogo } from '@/components/shared/SystemLogo'
 
 export async function Navbar() {
   const supabase = await createClient()
@@ -14,8 +15,8 @@ export async function Navbar() {
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
       <nav className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-          <span className="text-primary">?</span>
-          ChurchMS
+          <SystemLogo className="h-5 w-5" />
+          ChurchOnline
         </Link>
 
         <div className="hidden md:flex items-center gap-6">

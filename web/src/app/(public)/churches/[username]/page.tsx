@@ -51,7 +51,7 @@ export async function generateMetadata({
   const { church } = await loadChurch(username)
   if (!church) return { title: 'Church not found' }
   return {
-    title: `${church.name} — ChurchMS`,
+    title: `${church.name} — ChurchOnline`,
     description: church.description ?? undefined,
   }
 }
@@ -83,7 +83,7 @@ export default async function ChurchProfilePage({
             {church.plan === 'premium' && <Badge>Premium</Badge>}
           </div>
           <p className="text-muted-foreground">
-            {church.description ?? 'A church community on ChurchMS.'}
+            {church.description ?? 'A church community on ChurchOnline.'}
           </p>
         </div>
         {user ? (

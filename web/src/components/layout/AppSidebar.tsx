@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { PanelLeftClose, PanelLeftOpen, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ChurchLogo } from '@/components/shared/ChurchLogo'
+import { SystemLogo } from '@/components/shared/SystemLogo'
 import { useSidebar } from './sidebar-context'
 
 export type SidebarNavItem = {
@@ -85,9 +86,9 @@ function SidebarBrand() {
   return (
     <Link href="/" className="flex min-w-0 items-center gap-2">
       <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 font-bold text-primary">
-        ✝
+        <SystemLogo className="h-4 w-4" />
       </span>
-      <span className="truncate font-bold">ChurchMS</span>
+      <span className="truncate font-bold">ChurchOnline</span>
     </Link>
   )
 }
