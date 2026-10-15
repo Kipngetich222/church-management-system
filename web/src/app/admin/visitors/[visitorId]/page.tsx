@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requirePermission } from '@/lib/auth/guard'
 import { notFound } from 'next/navigation'
 import { VisitorDetail } from '@/components/visitors/VisitorDetail'
+import { BackLink } from '@/components/shared/BackLink'
 
 export default async function VisitorDetailPage({
   params,
@@ -29,6 +30,8 @@ export default async function VisitorDetailPage({
 
   return (
     <div className="max-w-3xl space-y-6">
+      <BackLink href="/admin/visitors" label="Visitors" />
+
       <VisitorDetail
         churchId={ctx.churchId}
         visitor={visitor as any}

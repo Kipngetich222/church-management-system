@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { CalendarDays, MapPin } from 'lucide-react'
 import { ShareButton } from '@/components/shared/ShareButton'
 import { ChurchMap } from '@/components/maps/ChurchMap'
+import { BackLink } from '@/components/shared/BackLink'
 
 export default async function MemberEventDetail({
   params,
@@ -23,6 +24,8 @@ export default async function MemberEventDetail({
 
   return (
     <div className="max-w-3xl space-y-6">
+      <BackLink href="/member/calendar" label="Calendar" />
+
       {event.poster_url && (
         <div className="aspect-video rounded-xl overflow-hidden border">
           {/* eslint-disable-next-line @next/next/no-img-element */}

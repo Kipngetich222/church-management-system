@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { MemberSelfEditForm } from '@/components/members/MemberSelfEditForm'
 import { notFound } from 'next/navigation'
+import { BackLink } from '@/components/shared/BackLink'
 
 type RawMembership = {
   id: string
@@ -50,6 +51,8 @@ export default async function EditProfilePage() {
 
   return (
     <div className="max-w-2xl space-y-6">
+      <BackLink href="/member/profile" label="Profile" />
+
       <h1 className="text-2xl font-bold">Edit profile</h1>
       <MemberSelfEditForm
         membership={{

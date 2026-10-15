@@ -3,6 +3,7 @@ import { getActiveChurch } from '@/lib/utils/church-scope'
 import { MemberForm } from '@/components/members/MemberForm'
 import { notFound } from 'next/navigation'
 import { PastoralNotesPanel } from '@/components/members/PastoralNotesPanel'
+import { BackLink } from '@/components/shared/BackLink'
 
 export default async function MemberDetailPage({
   params,
@@ -36,6 +37,8 @@ const { data: pastoralNotes } = canSeePastoral
 
   return (
     <div className="max-w-2xl space-y-6">
+      <BackLink href="/admin/members" label="Members" />
+
       <h1 className="text-2xl font-bold">Edit member</h1>
       <MemberForm
         churchId={churchId}

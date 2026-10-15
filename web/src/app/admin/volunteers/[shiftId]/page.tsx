@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { ShiftForm } from '@/components/volunteers/ShiftForm'
 import { ShiftRoster } from '@/components/volunteers/ShiftRoster'
 import { ShiftDangerZone } from '@/components/volunteers/ShiftDangerZone'
+import { BackLink } from '@/components/shared/BackLink'
 
 export default async function EditShiftPage({
   params,
@@ -31,6 +32,8 @@ export default async function EditShiftPage({
 
   return (
     <div className="max-w-2xl space-y-8">
+      <BackLink href="/admin/volunteers" label="Volunteers" />
+
       <h1 className="text-2xl font-bold">Edit shift</h1>
 
       <ShiftForm churchId={ctx.churchId} existing={shift as any} />

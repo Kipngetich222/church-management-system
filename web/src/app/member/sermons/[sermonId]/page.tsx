@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { SermonPlayer } from '@/components/sermons/SermonPlayer'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
+import { BackLink } from '@/components/shared/BackLink'
 
 export default async function SermonDetail({
   params,
@@ -25,6 +26,8 @@ export default async function SermonDetail({
 
   return (
     <div className="max-w-3xl space-y-6">
+      <BackLink href="/member/sermons" label="Sermons" />
+
       <SermonPlayer youtubeId={sermon.youtube_id} />
       <div>
         <h1 className="text-2xl font-bold">{sermon.title}</h1>

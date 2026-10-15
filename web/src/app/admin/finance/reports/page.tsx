@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FinanceChart } from '@/components/finance/FinanceChart'
 import { Download } from 'lucide-react'
+import { BackLink } from '@/components/shared/BackLink'
 
 export default async function FinanceReportsPage() {
   const { churchId } = await getActiveChurch()
@@ -13,6 +14,8 @@ export default async function FinanceReportsPage() {
 
   return (
     <div className="space-y-6">
+      <BackLink href="/admin/finance/offerings" label="Finance" />
+
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Finance reports</h1>
         <Button variant="outline" asChild>

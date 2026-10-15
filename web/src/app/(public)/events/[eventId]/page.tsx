@@ -10,6 +10,7 @@ import { RegisterForEvent } from '@/components/events/RegisterForEvent'
 import { ChurchMap } from '@/components/maps/ChurchMap'
 import { createClient } from '@supabase/supabase-js'
 import type { Metadata } from 'next'
+import { BackLink } from '@/components/shared/BackLink'
 
 async function loadEvent(id: string) {
   const supabase = createClient(
@@ -68,6 +69,8 @@ export default async function PublicEventPage({
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl">
+      <BackLink href="/events" label="All events" />
+
       {event.poster_url && (
         <div className="aspect-video rounded-xl overflow-hidden mb-8 border">
           {/* eslint-disable-next-line @next/next/no-img-element */}

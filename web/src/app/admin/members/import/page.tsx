@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Upload, CheckCircle2, XCircle } from 'lucide-react'
+import { BackLink } from '@/components/shared/BackLink'
 
 export default function ImportPage() {
   const [rows, setRows] = useState<Record<string, string>[]>([])
@@ -60,6 +61,8 @@ export default function ImportPage() {
 
   return (
     <div className="max-w-3xl space-y-6">
+      <BackLink href="/admin/members" label="Members" />
+
       <h1 className="text-2xl font-bold">Import members from CSV</h1>
 
       <Card>
