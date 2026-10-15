@@ -6,6 +6,7 @@ import {
   HeartHandshake,
   Home,
   UserCircle2,
+  Users,
 } from 'lucide-react'
 import type { SidebarNavItem } from '@/components/layout/AppSidebar'
 
@@ -34,6 +35,12 @@ export const MEMBER_NAV: SidebarNavItem[] = [
     label: 'Volunteering',
     href: '/member/volunteering',
     icon: ClipboardList,
+    section: 'Community',
+  },
+  {
+    label: 'Leadership',
+    href: '/member/leadership',
+    icon: Users,
     section: 'Community',
   },
   {
