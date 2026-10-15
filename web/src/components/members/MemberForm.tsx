@@ -8,6 +8,15 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent } from '@/components/ui/card'
 import { BADGES } from '@/lib/constants/badges'
+import { BadgeChip } from '@/components/members/BadgeChip'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { CATEGORY_OPTIONS, GENDER_OPTIONS } from '@/lib/auth/profile'
 import { cn } from '@/lib/utils'
 import { ShareButton } from '@/components/shared/ShareButton'
 import type { Database } from '@/types/database'
@@ -24,6 +33,7 @@ type Existing = {
   is_baptized: boolean
   date_of_birth: string | null
   gender: string | null
+  category: string | null
   address: string | null
 }
 
@@ -45,6 +55,7 @@ export function MemberForm({
     phone: existing?.phone ?? '',
     date_of_birth: existing?.date_of_birth ?? '',
     gender: existing?.gender ?? '',
+    category: existing?.category ?? '',
     address: existing?.address ?? '',
     is_baptized: existing?.is_baptized ?? false,
     badges: existing?.badges ?? ([] as BadgeType[]),
@@ -76,6 +87,7 @@ export function MemberForm({
           phone: form.phone,
           date_of_birth: form.date_of_birth,
           gender: form.gender,
+          category: form.category || null,
           address: form.address,
           badges: form.badges,
           ...(isSuperAdmin ? { is_baptized: form.is_baptized } : {}),
@@ -165,11 +177,14 @@ export function MemberForm({
             </div>
 
             <div className="space-y-2">
-              <Label>Phone</Label>
+              <Label>
+                Phone <span className="text-destructive">*</span>
+              </Label>
               <Input
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 placeholder="+254..."
+                required
               />
             </div>
 
@@ -186,11 +201,42 @@ export function MemberForm({
 
             <div className="space-y-2">
               <Label>Gender</Label>
-              <Input
+              <Select
                 value={form.gender}
-                onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                placeholder="male / female / other"
-              />
+                onValueChange={(v) => setForm({ ...form, gender: v as string })}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GENDER_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select
+                value={form.category}
+                onValueChange={(v) =>
+                  setForm({ ...form, category: v as string })
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -205,23 +251,43 @@ export function MemberForm({
           <div className="space-y-3">
             <Label>Badges</Label>
 
-            <div className="flex flex-wrap gap-2">
-              {BADGES.map((b) => (
-                <button
-                  type="button"
-                  key={b}
-                  onClick={() => toggleBadge(b)}
-                  className={cn(
-                    'rounded-full border px-3 py-1.5 text-xs capitalize transition',
-                    form.badges.includes(b)
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'bg-background hover:bg-muted'
-                  )}
-                >
-                  {b}
-                </button>
-              ))}
-            </div>
+            {isSuperAdmin ? (
+              <>
+                <div className="flex flex-wrap gap-2">
+                  {BADGES.map((b) => (
+                    <button
+                      type="button"
+                      key={b}
+                      onClick={() => toggleBadge(b)}
+                      className={cn(
+                        'rounded-full border px-3 py-1.5 text-xs capitalize transition',
+                        form.badges.includes(b)
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'bg-background hover:bg-muted'
+                      )}
+                    >
+                      {b}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Badges are assigned by the church super admin.
+                </p>
+              </>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {form.badges.length ? (
+                  form.badges.map((b) => <BadgeChip key={b} badge={b} />)
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No badges yet.
+                  </p>
+                )}
+                <p className="w-full text-xs text-muted-foreground">
+                  Only a super admin can assign badges.
+                </p>
+              </div>
+            )}
           </div>
 
           {isSuperAdmin && (

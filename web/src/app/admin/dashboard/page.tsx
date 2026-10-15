@@ -1,4 +1,4 @@
-﻿import Link from 'next/link'
+import Link from 'next/link'
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { getChurchSetup } from '@/lib/utils/church-setup'
 import { getPlanUsage } from '@/lib/services/plan.service'
@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   Circle,
   Coins,
+  Crown,
   MapPin,
   Users,
 } from 'lucide-react'
@@ -27,6 +28,7 @@ const STEP_ICONS: Record<
   React.ComponentType<{ className?: string }>
 > = {
   profile: MapPin,
+  leadership: Crown,
   members: Users,
   departments: Building2,
   events: CalendarDays,

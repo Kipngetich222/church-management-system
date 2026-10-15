@@ -1,8 +1,12 @@
-﻿import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { createPublicClient } from '@/lib/supabase/public'
 import { redirect } from 'next/navigation'
 import { OnboardingWizard } from '@/components/auth/OnboardingWizard'
 import { resolvePostAuthPath } from '@/lib/auth/redirect'
+import {
+  isProfileCompleteForUser,
+  PROFILE_COMPLETION_PATH,
+} from '@/lib/auth/profile'
 
 export default async function OnboardingPage({
   searchParams,
@@ -16,6 +20,11 @@ export default async function OnboardingPage({
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  // The personal-details widget comes first, even for brand-new accounts.
+  if (!(await isProfileCompleteForUser(supabase, user.id))) {
+    redirect(PROFILE_COMPLETION_PATH)
+  }
 
   const { data: memberships, error: membershipError } = await supabase
     .from('church_memberships')

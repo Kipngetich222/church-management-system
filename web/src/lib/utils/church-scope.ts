@@ -4,6 +4,10 @@ import { redirect } from 'next/navigation'
 import { ACTIVE_CHURCH_COOKIE } from '@/lib/constants/church'
 import { isAdminRole } from '@/lib/auth/redirect'
 import { finalizeMemberDeletionIfDue } from '@/lib/services/deletion.service'
+import {
+  isProfileCompleteForUser,
+  PROFILE_COMPLETION_PATH,
+} from '@/lib/auth/profile'
 
 /**
  * Resolve the active church for the current user.
@@ -29,6 +33,12 @@ export async function getActiveChurch(explicitChurchId?: string) {
           'Your account has been deleted. You can sign up again another time.'
         )
     )
+  }
+
+  // Everyone must complete their personal details (phone, gender, category)
+  // before they can use any church area.
+  if (!(await isProfileCompleteForUser(supabase, user.id))) {
+    redirect(PROFILE_COMPLETION_PATH)
   }
 
   const storedChurchId = cookieStore.get(ACTIVE_CHURCH_COOKIE)?.value

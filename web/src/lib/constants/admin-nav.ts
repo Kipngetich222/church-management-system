@@ -16,6 +16,7 @@ import {
   PlayCircle,
   FolderOpen,
   CreditCard,
+  Crown,
 } from 'lucide-react'
 
 export type NavItem = {
@@ -135,6 +136,13 @@ export const ADMIN_NAV: NavItem[] = [
     label: 'Settings',
     href: '/admin/settings/church-profile',
     icon: Settings,
+    permission: 'settings:*',
+    section: 'System',
+  },
+  {
+    label: 'Leadership',
+    href: '/admin/settings/leadership',
+    icon: Crown,
     permission: 'settings:*',
     section: 'System',
   },

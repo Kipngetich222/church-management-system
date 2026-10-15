@@ -1,4 +1,4 @@
-﻿import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { SETUP_STEPS, type SetupStepKey } from '@/lib/constants/setup-steps'
 
 export type ChurchSetupStep = {
@@ -35,22 +35,32 @@ export async function getChurchSetup(
 ): Promise<ChurchSetup> {
   const supabase = await createClient()
 
-  const [membersResult, departmentsResult, eventsResult] = await Promise.all([
-    supabase
-      .from('church_memberships')
-      .select('id', { count: 'exact', head: true })
-      .eq('church_id', churchId),
-    supabase
-      .from('departments')
-      .select('id', { count: 'exact', head: true })
-      .eq('church_id', churchId),
-    supabase
-      .from('events')
-      .select('id', { count: 'exact', head: true })
-      .eq('church_id', churchId),
-  ])
+  const [membersResult, departmentsResult, eventsResult, leadersResult] =
+    await Promise.all([
+      supabase
+        .from('church_memberships')
+        .select('id', { count: 'exact', head: true })
+        .eq('church_id', churchId),
+      supabase
+        .from('departments')
+        .select('id', { count: 'exact', head: true })
+        .eq('church_id', churchId),
+      supabase
+        .from('events')
+        .select('id', { count: 'exact', head: true })
+        .eq('church_id', churchId),
+      supabase
+        .from('church_leaders')
+        .select('id', { count: 'exact', head: true })
+        .eq('church_id', churchId),
+    ])
 
-  for (const result of [membersResult, departmentsResult, eventsResult]) {
+  for (const result of [
+    membersResult,
+    departmentsResult,
+    eventsResult,
+    leadersResult,
+  ]) {
     if (result.error) console.error('Failed to count setup rows:', result.error)
   }
 
@@ -62,6 +72,7 @@ export async function getChurchSetup(
 
   const doneByKey: Record<SetupStepKey, boolean> = {
     profile: profileDone,
+    leadership: (leadersResult.count ?? 0) > 0,
     members: (membersResult.count ?? 0) > 0,
     departments: (departmentsResult.count ?? 0) > 0,
     events: (eventsResult.count ?? 0) > 0,

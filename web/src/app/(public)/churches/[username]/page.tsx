@@ -1,4 +1,4 @@
-﻿import Link from 'next/link'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { createPublicClient } from '@/lib/supabase/public'
@@ -15,6 +15,7 @@ import { formatEventDate } from '@/lib/utils/date'
 import { googleMapsUrl } from '@/lib/utils/maps'
 import { ChurchMap } from '@/components/maps/ChurchMap'
 import { JoinChurchButton } from '@/components/churches/JoinChurchButton'
+import { LeadershipSection } from '@/components/churches/LeadershipSection'
 import { MapPin, CalendarDays, Mail, Globe, Phone } from 'lucide-react'
 
 export const revalidate = 60
@@ -26,7 +27,7 @@ async function loadChurch(username: string) {
     .select('*')
     .eq('username', username)
     .maybeSingle()
-  if (!church) return { church: null, events: [] }
+  if (!church) return { church: null, events: [], leaders: [] }
 
   const { data: events } = await supabase
     .from('events')
@@ -38,7 +39,14 @@ async function loadChurch(username: string) {
     .order('start_time')
     .limit(6)
 
-  return { church, events: events ?? [] }
+  const { data: leaders } = await supabase
+    .from('church_leaders')
+    .select('id, name, title, email, phone, image_url')
+    .eq('church_id', church.id)
+    .order('sort_order')
+    .order('created_at')
+
+  return { church, events: events ?? [], leaders: leaders ?? [] }
 }
 
 export async function generateMetadata({
@@ -61,7 +69,7 @@ export default async function ChurchProfilePage({
   params: Promise<{ username: string }>
 }) {
   const { username } = await params
-  const { church, events } = await loadChurch(username)
+  const { church, events, leaders } = await loadChurch(username)
   if (!church) notFound()
 
   const supabase = await createClient()
@@ -182,6 +190,12 @@ export default async function ChurchProfilePage({
           </CardContent>
         </Card>
       </div>
+
+      {leaders.length > 0 && (
+        <div className="mt-6">
+          <LeadershipSection leaders={leaders} />
+        </div>
+      )}
     </div>
   )
 }

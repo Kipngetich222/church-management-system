@@ -10,6 +10,29 @@ import { format } from 'date-fns'
 import { MemberDangerZone } from '@/components/account/MemberDangerZone'
 import { MembershipSection } from '@/components/account/MembershipSection'
 
+type MembershipProfile = {
+  id: string
+  badges: string[] | null
+  is_baptized: boolean | null
+  joined_at: string
+  address: string | null
+  users: {
+    full_name: string | null
+    email: string
+    phone: string | null
+    avatar_url: string | null
+    date_of_birth: string | null
+    gender: string | null
+    category: string | null
+  } | null
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  men: 'Men',
+  women: 'Women',
+  youth: 'Youth',
+}
+
 export default async function MemberProfilePage() {
   const { churchId, church, role, memberships } = await getActiveChurch()
   const supabase = await createClient()
@@ -18,14 +41,14 @@ export default async function MemberProfilePage() {
   const { data: membership } = await supabase
     .from('church_memberships')
     .select(`
-      id, badges, is_baptized, joined_at, date_of_birth, address,
-      users(full_name, email, phone, avatar_url)
+      id, badges, is_baptized, joined_at, address,
+      users(full_name, email, phone, avatar_url, date_of_birth, gender, category)
     `)
     .eq('user_id', user!.id)
     .eq('church_id', churchId)
     .single()
 
-  const m = membership as any
+  const m = membership as unknown as MembershipProfile | null
   const badges = [...(m?.badges ?? [])]
   if (m?.is_baptized) badges.push('baptized')
 
@@ -60,12 +83,20 @@ export default async function MemberProfilePage() {
             <p>{m?.users?.phone ?? '—'}</p>
           </div>
           <div>
+            <p className="text-sm text-muted-foreground">Gender</p>
+            <p className="capitalize">{m?.users?.gender ?? '—'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Category</p>
+            <p>{m?.users?.category ? CATEGORY_LABELS[m.users.category] ?? m.users.category : '—'}</p>
+          </div>
+          <div>
             <p className="text-sm text-muted-foreground">Date of birth</p>
-            <p>{m?.date_of_birth ? format(new Date(m.date_of_birth), 'MMMM d') : '—'}</p>
+            <p>{m?.users?.date_of_birth ? format(new Date(m.users.date_of_birth), 'MMMM d') : '—'}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Member since</p>
-            <p>{format(new Date(m?.joined_at), 'MMMM yyyy')}</p>
+            <p>{m ? format(new Date(m.joined_at), 'MMMM yyyy') : '—'}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground mb-2">Badges</p>
@@ -89,5 +120,3 @@ export default async function MemberProfilePage() {
     </div>
   )
 }
-
-
