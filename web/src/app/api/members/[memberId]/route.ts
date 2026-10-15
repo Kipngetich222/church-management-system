@@ -21,6 +21,7 @@ const bodySchema = z.object({
     })
     .nullish(),
   gender: z.string().trim().max(40).nullish(),
+  category: z.enum(['men', 'women', 'youth']).nullish(),
   address: z.string().trim().max(300).nullish(),
   badges: z.array(z.string()).optional(),
   is_baptized: z.boolean().optional(),

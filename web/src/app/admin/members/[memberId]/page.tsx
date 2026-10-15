@@ -17,8 +17,8 @@ export default async function MemberDetailPage({
     .from('church_memberships')
     .select(
       `
-      id, user_id, badges, is_baptized, date_of_birth, gender, address,
-      users!inner(full_name, email, phone)
+      id, user_id, badges, is_baptized, address,
+      users!inner(full_name, email, phone, date_of_birth, gender, category)
     `
     )
     .eq('id', memberId)
@@ -48,8 +48,9 @@ const { data: pastoralNotes } = canSeePastoral
           phone: u.phone ?? '',
           badges: membership.badges ?? [],
           is_baptized: membership.is_baptized ?? false,
-          date_of_birth: membership.date_of_birth,
-          gender: membership.gender,
+          date_of_birth: u.date_of_birth,
+          gender: u.gender,
+          category: u.category,
           address: membership.address,
         }}
       />

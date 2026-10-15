@@ -6,18 +6,22 @@ import { notFound } from 'next/navigation'
 type RawMembership = {
   id: string
   address: string | null
-  date_of_birth: string | null
-  gender: string | null
   users:
     | {
         full_name: string | null
         phone: string | null
         avatar_url: string | null
+        date_of_birth: string | null
+        gender: string | null
+        category: string | null
       }
     | {
         full_name: string | null
         phone: string | null
         avatar_url: string | null
+        date_of_birth: string | null
+        gender: string | null
+        category: string | null
       }[]
     | null
 }
@@ -32,7 +36,7 @@ export default async function EditProfilePage() {
   const { data } = await supabase
     .from('church_memberships')
     .select(
-      'id, address, date_of_birth, gender, users(full_name, phone, avatar_url)'
+      'id, address, users(full_name, phone, avatar_url, date_of_birth, gender, category)'
     )
     .eq('user_id', user!.id)
     .eq('church_id', churchId)
@@ -51,8 +55,6 @@ export default async function EditProfilePage() {
         membership={{
           id: raw.id,
           address: raw.address,
-          date_of_birth: raw.date_of_birth,
-          gender: raw.gender,
           users: userProfile,
         }}
       />

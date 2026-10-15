@@ -53,6 +53,7 @@ export type MemberProfileInput = {
   phone?: string | null
   date_of_birth?: string | null
   gender?: string | null
+  category?: string | null
   address?: string | null
   badges?: string[]
   is_baptized?: boolean
@@ -108,13 +109,23 @@ export async function updateMemberProfile(params: {
     actorRole = actor.role
   }
 
-  const isAdmin = isAdminRole(actorRole ?? '')
   const { input } = params
 
-  // Profile fields that live on the shared users row.
+  // Person-level fields live on the shared users row: a person is the same
+  // person across every church, and the membership copies are kept in sync by
+  // a database trigger.
   const userUpdate: UserUpdate = {}
   if (input.full_name !== undefined) userUpdate.full_name = input.full_name
-  if (input.phone !== undefined) userUpdate.phone = input.phone || null
+  if (input.phone !== undefined) {
+    const phone = (input.phone ?? '').trim()
+    if (!phone) throw new Error('A phone number is required.')
+    userUpdate.phone = phone
+  }
+  if (input.date_of_birth !== undefined)
+    userUpdate.date_of_birth = input.date_of_birth || null
+  if (input.gender !== undefined) userUpdate.gender = input.gender || null
+  if (input.category !== undefined)
+    userUpdate.category = (input.category || null) as UserUpdate['category']
 
   if (Object.keys(userUpdate).length) {
     const { error } = await admin
@@ -124,15 +135,12 @@ export async function updateMemberProfile(params: {
     if (error) throw new Error(error.message)
   }
 
-  // Membership-scoped fields. Admins may additionally set badges, and only
-  // super admins can change the baptized flag (mirrors the admin UI).
+  // Membership-scoped fields. Badges are assigned by a church's super admin,
+  // and only super admins may change the baptized flag (mirrors the UI).
   const membershipUpdate: MembershipUpdate = {}
-  if (input.date_of_birth !== undefined)
-    membershipUpdate.date_of_birth = input.date_of_birth || null
-  if (input.gender !== undefined) membershipUpdate.gender = input.gender || null
   if (input.address !== undefined)
     membershipUpdate.address = input.address || null
-  if (isAdmin && input.badges !== undefined)
+  if (actorRole === 'super_admin' && input.badges !== undefined)
     membershipUpdate.badges = input.badges as BadgeType[]
   if (actorRole === 'super_admin' && input.is_baptized !== undefined)
     membershipUpdate.is_baptized = input.is_baptized

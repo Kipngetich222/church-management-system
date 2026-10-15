@@ -1,4 +1,5 @@
-﻿export type SetupStepKey = 'profile' | 'members' | 'departments' | 'events'
+export type SetupStepKey =
+  'profile' | 'leadership' | 'members' | 'departments' | 'events'
 
 export type SetupStep = {
   key: SetupStepKey
@@ -17,6 +18,13 @@ export const SETUP_STEPS: SetupStep[] = [
     label: 'Complete your church profile',
     description: 'Add contact details and set your location on the map.',
     href: '/admin/settings/church-profile',
+  },
+  {
+    key: 'leadership',
+    label: 'Set up your church leadership',
+    description:
+      'Add your leadership team so members and visitors can see who leads your church.',
+    href: '/admin/settings/leadership',
   },
   {
     key: 'members',

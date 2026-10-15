@@ -233,6 +233,53 @@ export type Database = {
           },
         ]
       }
+      church_leaders: {
+        Row: {
+          church_id: string
+          created_at: string | null
+          email: string | null
+          id: string
+          image_url: string | null
+          name: string
+          phone: string | null
+          sort_order: number
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          church_id: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          phone?: string | null
+          sort_order?: number
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          church_id?: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          phone?: string | null
+          sort_order?: number
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'church_leaders_church_id_fkey'
+            columns: ['church_id']
+            isOneToOne: false
+            referencedRelation: 'churches'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       churches: {
         Row: {
           address: string | null
@@ -1657,29 +1704,41 @@ export type Database = {
       users: {
         Row: {
           avatar_url: string | null
+          category: Database['public']['Enums']['member_category'] | null
           created_at: string | null
+          date_of_birth: string | null
           email: string
           full_name: string | null
+          gender: string | null
           id: string
           phone: string | null
+          profile_completed_at: string | null
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
+          category?: Database['public']['Enums']['member_category'] | null
           created_at?: string | null
+          date_of_birth?: string | null
           email: string
           full_name?: string | null
+          gender?: string | null
           id: string
           phone?: string | null
+          profile_completed_at?: string | null
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
+          category?: Database['public']['Enums']['member_category'] | null
           created_at?: string | null
+          date_of_birth?: string | null
           email?: string
           full_name?: string | null
+          gender?: string | null
           id?: string
           phone?: string | null
+          profile_completed_at?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1999,6 +2058,7 @@ export type Database = {
       communication_channel: 'sms' | 'email' | 'in_app'
       event_status: 'draft' | 'published' | 'cancelled' | 'completed'
       event_visibility: 'public' | 'members_only'
+      member_category: 'men' | 'women' | 'youth'
       offering_type:
         | 'tithe'
         | 'general'
@@ -2163,6 +2223,7 @@ export const Constants = {
       communication_channel: ['sms', 'email', 'in_app'],
       event_status: ['draft', 'published', 'cancelled', 'completed'],
       event_visibility: ['public', 'members_only'],
+      member_category: ['men', 'women', 'youth'],
       offering_type: [
         'tithe',
         'general',

@@ -11,6 +11,7 @@ const bodySchema = z.object({
   phone: z.string().optional().default(''),
   date_of_birth: z.string().optional().default(''),
   gender: z.string().optional().default(''),
+  category: z.enum(['men', 'women', 'youth']).nullish(),
   address: z.string().optional().default(''),
   badges: z.array(z.string()).default([]),
   is_baptized: z.boolean().default(false),
@@ -42,6 +43,9 @@ export async function POST(req: Request) {
   if (!membership || !['super_admin', 'dept_admin'].includes(membership.role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+
+  // Badges (and the baptized flag) are assigned by a church's super admin only.
+  const isSuperAdmin = membership.role === 'super_admin'
 
   // Respect the church's plan cap before inviting anyone.
   const usage = await getPlanUsage(input.churchId)
@@ -83,6 +87,9 @@ export async function POST(req: Request) {
     .update({
       full_name: input.full_name,
       phone: input.phone,
+      date_of_birth: input.date_of_birth || null,
+      gender: input.gender || null,
+      category: input.category ?? null,
     })
     .eq('id', invited.user.id)
 
@@ -91,8 +98,8 @@ export async function POST(req: Request) {
     user_id: invited.user.id,
     church_id: input.churchId,
     role: 'member',
-    badges: input.badges,
-    is_baptized: input.is_baptized,
+    badges: isSuperAdmin ? input.badges : [],
+    is_baptized: isSuperAdmin ? input.is_baptized : false,
     date_of_birth: input.date_of_birth || null,
     gender: input.gender || null,
     address: input.address || null,
