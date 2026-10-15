@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { GroupForm } from '@/components/small-groups/GroupForm'
 import { GroupMembers } from '@/components/small-groups/GroupMembers'
 import { GroupDangerZone } from '@/components/small-groups/GroupDangerZone'
+import { BackLink } from '@/components/shared/BackLink'
 
 export default async function GroupDetailPage({
   params,
@@ -34,6 +35,8 @@ export default async function GroupDetailPage({
 
   return (
     <div className="space-y-8 max-w-4xl">
+      <BackLink href="/admin/small-groups" label="Small groups" />
+
       <div>
         <h1 className="text-2xl font-bold">Edit small group</h1>
         <p className="text-sm text-muted-foreground">{group.name}</p>

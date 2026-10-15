@@ -2,6 +2,7 @@ import { getActiveChurch } from '@/lib/utils/church-scope'
 import { getEventById } from '@/lib/services/events.service'
 import { EventForm } from '@/components/events/EventForm'
 import { EventQrPanel } from '@/components/events/EventQrPanel'
+import { BackLink } from '@/components/shared/BackLink'
 import { notFound } from 'next/navigation'
 
 export default async function EditEventPage({
@@ -16,6 +17,8 @@ export default async function EditEventPage({
 
   return (
     <div className="max-w-3xl space-y-8">
+      <BackLink href="/admin/events" label="Events" />
+
       <h1 className="text-2xl font-bold">Edit event</h1>
 
       <EventForm churchId={churchId} existing={event as any} />

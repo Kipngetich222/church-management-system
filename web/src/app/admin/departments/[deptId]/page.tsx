@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { DepartmentForm } from '@/components/departments/DepartmentForm'
 import { DepartmentMembers } from '@/components/departments/DepartmentMembers'
 import { DepartmentDangerZone } from '@/components/departments/DepartmentDangerZone'
+import { BackLink } from '@/components/shared/BackLink'
 
 export default async function DepartmentDetailPage({
   params,
@@ -37,6 +38,8 @@ export default async function DepartmentDetailPage({
 
   return (
     <div className="space-y-8 max-w-4xl">
+      <BackLink href="/admin/departments" label="Departments" />
+
       <h1 className="text-2xl font-bold">Edit department</h1>
 
       <DepartmentForm churchId={churchId} existing={dept} />

@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
+import { BackLink } from '@/components/shared/BackLink'
 
 export default async function PledgesPage() {
   const { churchId } = await getActiveChurch()
@@ -12,6 +13,8 @@ export default async function PledgesPage() {
 
   return (
     <div className="space-y-6">
+      <BackLink href="/admin/finance/offerings" label="Finance" />
+
       <h1 className="text-2xl font-bold">Pledges</h1>
       <Card>
         <CardContent className="pt-6">

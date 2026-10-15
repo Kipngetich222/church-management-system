@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { QRScanner } from '@/components/qr/QRScanner'
+import { BackLink } from '@/components/shared/BackLink'
 
 export default async function ScanPage() {
   const { churchId } = await getActiveChurch()
@@ -16,6 +17,8 @@ export default async function ScanPage() {
 
   return (
     <div className="max-w-md mx-auto space-y-4">
+      <BackLink href="/member/home" label="Home" />
+
       <h1 className="text-2xl font-bold">Scan attendance</h1>
       <p className="text-sm text-muted-foreground">
         Point your camera at the event QR code to check in.

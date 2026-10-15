@@ -11,9 +11,9 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { format } from 'date-fns'
-import { ArrowLeft, BookOpen, User } from 'lucide-react'
+import { BackLink } from '@/components/shared/BackLink'
+import { BookOpen, User } from 'lucide-react'
 
 export const revalidate = 60
 
@@ -57,14 +57,7 @@ export default async function SermonPage({
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-3xl space-y-6">
-      <Button
-        variant="ghost"
-        size="sm"
-        nativeButton={false}
-        render={<Link href="/sermons" />}
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" /> All sermons
-      </Button>
+      <BackLink href="/sermons" label="All sermons" />
 
       <SermonPlayer youtubeId={sermon.youtube_id} />
 

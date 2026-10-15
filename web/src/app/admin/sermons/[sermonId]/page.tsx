@@ -6,6 +6,7 @@ import { SermonPlayer } from '@/components/sermons/SermonPlayer'
 import { SermonDangerZone } from '@/components/sermons/SermonDangerZone'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Play } from 'lucide-react'
+import { BackLink } from '@/components/shared/BackLink'
 
 export default async function EditSermonPage({
   params,
@@ -29,6 +30,8 @@ export default async function EditSermonPage({
 
   return (
     <div className="max-w-2xl space-y-8">
+      <BackLink href="/admin/sermons" label="Sermons" />
+
       <h1 className="text-2xl font-bold">Edit sermon</h1>
 
       <Card>

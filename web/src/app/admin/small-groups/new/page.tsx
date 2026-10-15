@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { GroupForm } from '@/components/small-groups/GroupForm'
+import { BackLink } from '@/components/shared/BackLink'
 
 export default async function NewGroupPage() {
   const { churchId } = await getActiveChurch()
@@ -14,6 +15,8 @@ export default async function NewGroupPage() {
 
   return (
     <div className="max-w-2xl space-y-6">
+      <BackLink href="/admin/small-groups" label="Small groups" />
+
       <div>
         <h1 className="text-2xl font-bold">New small group</h1>
         <p className="text-sm text-muted-foreground">

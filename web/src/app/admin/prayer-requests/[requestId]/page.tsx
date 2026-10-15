@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { notFound } from 'next/navigation'
 import { PrayerRequestDetail } from '@/components/prayer/PrayerRequestDetail'
+import { BackLink } from '@/components/shared/BackLink'
 
 export default async function AdminPrayerDetail({
   params,
@@ -25,5 +26,11 @@ export default async function AdminPrayerDetail({
     .single()
 
   if (!req) notFound()
-  return <PrayerRequestDetail request={req as any} />
+
+  return (
+    <div className="space-y-6">
+      <BackLink href="/admin/prayer-requests" label="Prayer requests" />
+      <PrayerRequestDetail request={req as any} />
+    </div>
+  )
 }

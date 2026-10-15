@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { MapPin, CalendarDays, Crown, Users } from 'lucide-react'
 import { JoinGroupButton } from '@/components/small-groups/JoinGroupButton'
+import { BackLink } from '@/components/shared/BackLink'
 
 export default async function MemberGroupsPage() {
   const { churchId } = await getActiveChurch()
@@ -30,6 +31,8 @@ export default async function MemberGroupsPage() {
 
   return (
     <div className="space-y-6">
+      <BackLink href="/member/home" label="Home" />
+
       <h1 className="text-2xl font-bold">Small groups</h1>
 
       <div className="grid gap-4 md:grid-cols-2">

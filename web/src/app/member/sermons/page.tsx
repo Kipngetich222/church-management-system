@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { SermonCard } from '@/components/sermons/SermonCard'
+import { BackLink } from '@/components/shared/BackLink'
 
 export default async function SermonsPage() {
   const { churchId } = await getActiveChurch()
@@ -15,6 +16,8 @@ export default async function SermonsPage() {
 
   return (
     <div className="space-y-6">
+      <BackLink href="/member/home" label="Home" />
+
       <h1 className="text-2xl font-bold">Sermons</h1>
       {(sermons?.length ?? 0) === 0 ? (
         <p className="text-muted-foreground">No sermons published yet.</p>

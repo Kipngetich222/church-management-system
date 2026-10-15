@@ -17,6 +17,7 @@ import { ChurchMap } from '@/components/maps/ChurchMap'
 import { JoinChurchButton } from '@/components/churches/JoinChurchButton'
 import { LeadershipSection } from '@/components/churches/LeadershipSection'
 import { MapPin, CalendarDays, Mail, Globe, Phone } from 'lucide-react'
+import { BackLink } from '@/components/shared/BackLink'
 
 export const revalidate = 60
 
@@ -82,6 +83,8 @@ export default async function ChurchProfilePage({
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl">
+      <BackLink href="/churches" label="All churches" />
+
       <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-10">
         <ChurchLogo name={church.name} logoUrl={church.logo_url} size="xl" />
         <div className="flex-1">
