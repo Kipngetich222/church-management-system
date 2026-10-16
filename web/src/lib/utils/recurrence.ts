@@ -19,6 +19,13 @@ export function todayKey(): string {
   return toDateKey(new Date())
 }
 
+/** Shift a `YYYY-MM-DD` key by a number of days, using local-date maths. */
+export function addDaysToKey(key: string, days: number): string {
+  const d = new Date(`${key}T00:00:00`)
+  d.setDate(d.getDate() + days)
+  return toDateKey(d)
+}
+
 /** A stable key for one occurrence, used to look up hidden dates. */
 export function occurrenceKey(serviceId: string, date: string): string {
   return `${serviceId}|${date}`
@@ -75,6 +82,22 @@ export function expandManyOccurrences(
   return services
     .filter((service) => service.is_active)
     .flatMap((service) => expandOccurrences(service, fromKey, toKey, hidden))
+}
+
+/**
+ * The soonest occurrences across a set of services, ordered by date. Used by
+ * the member dashboard to surface what is next without opening the calendar.
+ */
+export function nextOccurrences(
+  services: RecurringServiceRow[],
+  limit: number,
+  fromKey?: string,
+  hidden?: Set<string>
+): ServiceOccurrence[] {
+  const start = fromKey ?? todayKey()
+  return expandManyOccurrences(services, start, addDaysToKey(start, 60), hidden)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, limit)
 }
 
 /**
