@@ -1,29 +1,18 @@
 import { notFound } from 'next/navigation'
-import { formatEventDate, isUpcoming } from '@/lib/utils/date'
+import { formatEventDate } from '@/lib/utils/date'
 import { googleMapsUrl } from '@/lib/utils/maps'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { CalendarDays, MapPin, Ticket } from 'lucide-react'
+import { CalendarDays, MapPin, Ticket, Globe, Video, ArrowRight } from 'lucide-react'
 import { ShareButton } from '@/components/shared/ShareButton'
 import { RegisterForEvent } from '@/components/events/RegisterForEvent'
 import { ChurchMap } from '@/components/maps/ChurchMap'
-import { createClient } from '@supabase/supabase-js'
+import { getEventForLink } from '@/lib/services/events.service'
+import type { PaymentMethod } from '@/lib/services/events.service'
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { BackLink } from '@/components/shared/BackLink'
-
-async function loadEvent(id: string) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-  )
-  const { data } = await supabase
-    .from('events')
-    .select('*, churches(name, username, logo_url)')
-    .eq('id', id)
-    .single()
-  return data
-}
 
 export async function generateMetadata({
   params,
@@ -31,14 +20,13 @@ export async function generateMetadata({
   params: Promise<{ eventId: string }>
 }): Promise<Metadata> {
   const { eventId } = await params
-  const event = await loadEvent(eventId)
+  const event = await getEventForLink(eventId)
   if (!event) return { title: 'Event not found' }
 
-  const churchRel = event.churches
-  const church = Array.isArray(churchRel) ? churchRel[0] : churchRel
+  const church = event.churches
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   return {
-    title: `${event.title} — ${church?.name}`,
+    title: `${event.title} — ${church?.name ?? 'Church event'}`,
     description: event.description?.slice(0, 155) ?? undefined,
     openGraph: {
       title: event.title,
@@ -60,27 +48,40 @@ export default async function PublicEventPage({
   params: Promise<{ eventId: string }>
 }) {
   const { eventId } = await params
-  const event = await loadEvent(eventId)
-  if (!event || event.status === 'draft') notFound()
+  const event = await getEventForLink(eventId)
+  if (!event) notFound()
 
-  const churchRel = event.churches
-  const church = Array.isArray(churchRel) ? churchRel[0] : churchRel
+  const church = event.churches
   const maps = googleMapsUrl(event.latitude, event.longitude, event.address)
+  const isOnline = event.event_type === 'online'
+  const isPast = event.status === 'completed' || new Date(event.start_time) < new Date()
+  const showRegistration =
+    event.status === 'published' && event.is_registration_required && !isPast
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl">
       <BackLink href="/events" label="All events" />
 
-      {event.poster_url && (
-        <div className="aspect-video rounded-xl overflow-hidden mb-8 border">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
+      <div className="aspect-video rounded-xl overflow-hidden mb-8 border bg-gradient-to-br from-primary/20 to-primary/5 grid place-items-center">
+        {event.poster_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img src={event.poster_url} alt={event.title} className="w-full h-full object-cover" />
-        </div>
-      )}
+        ) : (
+          <CalendarDays className="h-16 w-16 text-primary/40" />
+        )}
+      </div>
 
       <div className="space-y-6">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">{church?.name}</Badge>
+          <Badge variant="secondary">{church?.name ?? 'Church event'}</Badge>
+          {event.status === 'completed' || isPast ? (
+            <Badge variant="outline">Past event</Badge>
+          ) : null}
+          {isOnline ? (
+            <Badge><Globe className="h-3 w-3 mr-1" /> Online</Badge>
+          ) : (
+            <Badge variant="outline"><MapPin className="h-3 w-3 mr-1" /> In person</Badge>
+          )}
           {event.is_registration_required && (
             <Badge><Ticket className="h-3 w-3 mr-1" /> Registration required</Badge>
           )}
@@ -91,30 +92,45 @@ export default async function PublicEventPage({
         <div className="grid gap-3 md:grid-cols-2">
           <div className="flex items-center gap-2 text-muted-foreground">
             <CalendarDays className="h-5 w-5" />
-            {formatEventDate(event.start_time, event.end_time, event.all_day)}
+            {formatEventDate(event.start_time, event.end_time, event.all_day ?? false)}
           </div>
-          {event.location_name && (
+          {!isOnline && event.location_name && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-5 w-5" /> {event.location_name}
             </div>
           )}
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <ShareButton
-            url={`${process.env.NEXT_PUBLIC_APP_URL}/events/${event.id}`}
+            url={`${process.env.NEXT_PUBLIC_APP_URL}/e/${event.id}`}
             title={event.title}
           />
-          {maps && (
+          {isOnline && event.meeting_link && !isPast && (
+            <Button asChild>
+              <a href={event.meeting_link} target="_blank" rel="noreferrer">
+                <Video className="h-4 w-4 mr-2" /> Join online
+                {event.meeting_platform ? ` (${event.meeting_platform})` : ''}
+              </a>
+            </Button>
+          )}
+          {!isOnline && maps && (
             <Button variant="outline" asChild>
               <a href={maps} target="_blank" rel="noreferrer">
-                <MapPin className="h-4 w-4 mr-2" /> View location
+                <MapPin className="h-4 w-4 mr-2" /> View location & get directions
               </a>
+            </Button>
+          )}
+          {church?.username && (
+            <Button variant="ghost" asChild>
+              <Link href={`/churches/${church.username}`}>
+                More from {church.name} <ArrowRight className="h-4 w-4 ml-1" />
+              </Link>
             </Button>
           )}
         </div>
 
-        {event.latitude != null && event.longitude != null && (
+        {!isOnline && event.latitude != null && event.longitude != null && (
           <ChurchMap
             churches={[
               {
@@ -139,18 +155,21 @@ export default async function PublicEventPage({
           </Card>
         )}
 
-        {event.is_registration_required && isUpcoming(event.start_time) && (
+        {showRegistration && (
           <RegisterForEvent
             eventId={event.id}
             price={event.price ?? 0}
             currency={event.currency}
             deadline={event.registration_deadline}
             capacity={event.capacity}
+            paymentMethod={event.payment_method as PaymentMethod | null}
+            paymentNumber={event.payment_number}
+            paymentAccount={event.payment_account}
+            paymentInstructions={event.payment_instructions}
           />
         )}
       </div>
     </div>
   )
 }
-
 

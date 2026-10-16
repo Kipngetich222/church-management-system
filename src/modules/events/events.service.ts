@@ -67,6 +67,9 @@ export class EventsService {
         start_time: dto.startTime,
         end_time: dto.endTime,
         all_day: dto.allDay ?? false,
+        event_type: dto.eventType ?? 'physical',
+        meeting_link: dto.meetingLink,
+        meeting_platform: dto.meetingPlatform,
         location_name: dto.locationName,
         address: dto.address,
         latitude: dto.latitude,
@@ -75,8 +78,14 @@ export class EventsService {
         capacity: dto.capacity,
         status: dto.status ?? 'published',
         visibility: dto.visibility ?? 'public',
+        visibility_department_id: dto.visibilityDepartmentId,
+        visibility_group_id: dto.visibilityGroupId,
         is_registration_required: dto.isRegistrationRequired ?? false,
         registration_deadline: dto.registrationDeadline,
+        payment_method: dto.paymentMethod,
+        payment_number: dto.paymentNumber,
+        payment_account: dto.paymentAccount,
+        payment_instructions: dto.paymentInstructions,
         price: dto.price ?? 0,
         currency: dto.currency ?? 'KES',
         created_by: userId,
@@ -95,6 +104,9 @@ export class EventsService {
         start_time: dto.startTime,
         end_time: dto.endTime,
         all_day: dto.allDay,
+        event_type: dto.eventType,
+        meeting_link: dto.meetingLink,
+        meeting_platform: dto.meetingPlatform,
         location_name: dto.locationName,
         address: dto.address,
         latitude: dto.latitude,
@@ -103,8 +115,14 @@ export class EventsService {
         capacity: dto.capacity,
         status: dto.status,
         visibility: dto.visibility,
+        visibility_department_id: dto.visibilityDepartmentId,
+        visibility_group_id: dto.visibilityGroupId,
         is_registration_required: dto.isRegistrationRequired,
         registration_deadline: dto.registrationDeadline,
+        payment_method: dto.paymentMethod,
+        payment_number: dto.paymentNumber,
+        payment_account: dto.paymentAccount,
+        payment_instructions: dto.paymentInstructions,
         price: dto.price,
         currency: dto.currency,
       })
@@ -215,5 +233,25 @@ export class EventsService {
       .select()
       .single()
     return this.supabase.unwrap(data, error)
+  }
+
+  /**
+   * Booking / attendance totals for a single event, for the admin dashboard.
+   */
+  async stats(eventId: string) {
+    const { data, error } = await this.supabase.admin.rpc('event_engagement', {
+      p_event_id: eventId,
+    })
+    const row = Array.isArray(data) ? data[0] : data
+    return this.supabase.unwrap(
+      {
+        booked: Number(row?.booked ?? 0),
+        paid: Number(row?.paid ?? 0),
+        confirmed: Number(row?.confirmed ?? 0),
+        attendance: Number(row?.attendance ?? 0),
+        revenue: Number(row?.revenue ?? 0),
+      },
+      error
+    )
   }
 }

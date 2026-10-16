@@ -7,10 +7,10 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { formatEventDate } from '@/lib/utils/date'
-import { CalendarDays, MapPin, Ticket } from 'lucide-react'
+import { CalendarDays, Globe, MapPin, Ticket } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Events — ChurchOnline',
+  title: 'Events â€” ChurchOnline',
   description:
     'Discover upcoming church events, services, conferences and gatherings near you.',
 }
@@ -78,9 +78,9 @@ function EventCard({ event }: { event: PublicEvent }) {
             <CalendarDays className="h-3 w-3" />
             {formatEventDate(event.start_time, event.end_time, event.all_day ?? false)}
           </p>
-          {event.location_name && (
+          {(event.location_name || event.event_type === 'online') && (
             <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <MapPin className="h-3 w-3" /> {event.location_name}
+              {event.event_type === 'online' ? <Globe className="h-3 w-3" /> : <MapPin className="h-3 w-3" />} {event.event_type === 'online' ? 'Online event' : event.location_name}
             </p>
           )}
         </CardContent>
@@ -136,5 +136,6 @@ export default async function EventsPage() {
     </div>
   )
 }
+
 
 

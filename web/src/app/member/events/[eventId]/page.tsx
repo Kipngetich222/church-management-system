@@ -4,11 +4,14 @@ import { notFound } from 'next/navigation'
 import { formatEventDate } from '@/lib/utils/date'
 import { googleMapsUrl } from '@/lib/utils/maps'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { CalendarDays, MapPin } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CalendarDays, MapPin, Globe, Ticket, Video } from 'lucide-react'
 import { ShareButton } from '@/components/shared/ShareButton'
 import { ChurchMap } from '@/components/maps/ChurchMap'
 import { BackLink } from '@/components/shared/BackLink'
+import { RegisterForEvent } from '@/components/events/RegisterForEvent'
+import { EventCheckIn } from '@/components/events/EventCheckIn'
 
 export default async function MemberEventDetail({
   params,
@@ -21,17 +24,40 @@ export default async function MemberEventDetail({
   if (!event || event.church_id !== churchId) notFound()
 
   const maps = googleMapsUrl(event.latitude, event.longitude, event.address)
+  const isOnline = event.event_type === 'online'
+  const isPast = event.status === 'completed' || new Date(event.start_time) < new Date()
+  const showRegistration =
+    event.status === 'published' &&
+    event.is_registration_required &&
+    !isPast
 
   return (
     <div className="max-w-3xl space-y-6">
       <BackLink href="/member/calendar" label="Calendar" />
 
-      {event.poster_url && (
-        <div className="aspect-video rounded-xl overflow-hidden border">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
+      <div className="aspect-video rounded-xl overflow-hidden border bg-gradient-to-br from-primary/20 to-primary/5 grid place-items-center">
+        {event.poster_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img src={event.poster_url} alt={event.title} className="w-full h-full object-cover" />
-        </div>
-      )}
+        ) : (
+          <CalendarDays className="h-16 w-16 text-primary/40" />
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="secondary" className="capitalize">{event.status}</Badge>
+        {isOnline ? (
+          <Badge><Globe className="h-3 w-3 mr-1" /> Online</Badge>
+        ) : (
+          <Badge variant="outline"><MapPin className="h-3 w-3 mr-1" /> Physical</Badge>
+        )}
+        {event.visibility !== 'public' && (
+          <Badge variant="outline">Members event</Badge>
+        )}
+        {event.is_registration_required && (
+          <Badge><Ticket className="h-3 w-3 mr-1" /> Registration required</Badge>
+        )}
+      </div>
 
       <h1 className="text-3xl font-bold">{event.title}</h1>
 
@@ -40,28 +66,36 @@ export default async function MemberEventDetail({
           <CalendarDays className="h-5 w-5" />
           {formatEventDate(event.start_time, event.end_time, event.all_day)}
         </div>
-        {event.location_name && (
+        {!isOnline && event.location_name && (
           <div className="flex items-center gap-2">
             <MapPin className="h-5 w-5" /> {event.location_name}
           </div>
         )}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <ShareButton
-          url={`${process.env.NEXT_PUBLIC_APP_URL}/events/${event.id}`}
+          url={`${process.env.NEXT_PUBLIC_APP_URL}/e/${event.id}`}
           title={event.title}
         />
-        {maps && (
+        {isOnline && event.meeting_link && !isPast && (
+          <Button asChild>
+            <a href={event.meeting_link} target="_blank" rel="noreferrer">
+              <Video className="h-4 w-4 mr-2" /> Join online
+              {event.meeting_platform ? ` (${event.meeting_platform})` : ''}
+            </a>
+          </Button>
+        )}
+        {!isOnline && maps && (
           <Button variant="outline" asChild>
             <a href={maps} target="_blank" rel="noreferrer">
-              <MapPin className="h-4 w-4 mr-2" /> View location
+              <MapPin className="h-4 w-4 mr-2" /> View location & get directions
             </a>
           </Button>
         )}
       </div>
 
-      {event.latitude != null && event.longitude != null && (
+      {!isOnline && event.latitude != null && event.longitude != null && (
         <ChurchMap
           churches={[
             {
@@ -78,10 +112,33 @@ export default async function MemberEventDetail({
         />
       )}
 
+      {event.status === 'published' && !isPast && <EventCheckIn eventId={event.id} />}
+
       {event.description && (
         <Card>
           <CardContent className="pt-6 whitespace-pre-wrap text-sm">
             {event.description}
+          </CardContent>
+        </Card>
+      )}
+
+      {showRegistration && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Register / tickets</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RegisterForEvent
+              eventId={event.id}
+              price={event.price ?? 0}
+              currency={event.currency}
+              deadline={event.registration_deadline}
+              capacity={event.capacity}
+              paymentMethod={event.payment_method}
+              paymentNumber={event.payment_number}
+              paymentAccount={event.payment_account}
+              paymentInstructions={event.payment_instructions}
+            />
           </CardContent>
         </Card>
       )}

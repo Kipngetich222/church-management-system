@@ -16,6 +16,10 @@ import {
 import { PosterUpload } from './PosterUpload'
 import { MapPicker } from '@/components/maps/MapPicker'
 import { slugify } from '@/lib/utils/slug'
+import type { EventVisibility } from '@/lib/constants/events'
+import { Link2, MapPin } from 'lucide-react'
+
+type Option = { id: string; name: string }
 
 type Existing = {
   id: string
@@ -25,6 +29,9 @@ type Existing = {
   start_time: string
   end_time: string | null
   all_day: boolean
+  event_type: string | null
+  meeting_link: string | null
+  meeting_platform: string | null
   location_name: string | null
   address: string | null
   latitude: number | null
@@ -33,10 +40,16 @@ type Existing = {
   capacity: number | null
   status: string
   visibility: string
+  visibility_department_id: string | null
+  visibility_group_id: string | null
   is_registration_required: boolean
   registration_deadline: string | null
   price: number | null
   currency: string
+  payment_method: string | null
+  payment_number: string | null
+  payment_account: string | null
+  payment_instructions: string | null
 }
 
 function toLocalInput(iso: string | null): string {
@@ -49,9 +62,13 @@ function toLocalInput(iso: string | null): string {
 export function EventForm({
   churchId,
   existing,
+  departments = [],
+  groups = [],
 }: {
   churchId: string
   existing?: Existing
+  departments?: Option[]
+  groups?: Option[]
 }) {
   const router = useRouter()
   const [form, setForm] = useState({
@@ -61,6 +78,9 @@ export function EventForm({
     start_time: toLocalInput(existing?.start_time ?? null),
     end_time: toLocalInput(existing?.end_time ?? null),
     all_day: existing?.all_day ?? false,
+    event_type: existing?.event_type ?? 'physical',
+    meeting_link: existing?.meeting_link ?? '',
+    meeting_platform: existing?.meeting_platform ?? '',
     location_name: existing?.location_name ?? '',
     address: existing?.address ?? '',
     latitude: existing?.latitude ?? null,
@@ -69,18 +89,52 @@ export function EventForm({
     capacity: existing?.capacity ? String(existing.capacity) : '',
     status: existing?.status ?? 'published',
     visibility: existing?.visibility ?? 'public',
+    visibility_department_id: existing?.visibility_department_id ?? '',
+    visibility_group_id: existing?.visibility_group_id ?? '',
     is_registration_required: existing?.is_registration_required ?? false,
     registration_deadline: toLocalInput(existing?.registration_deadline ?? null),
     price: existing?.price != null ? String(existing.price) : '0',
     currency: existing?.currency ?? 'KES',
+    payment_method: existing?.payment_method ?? 'free',
+    payment_number: existing?.payment_number ?? '',
+    payment_account: existing?.payment_account ?? '',
+    payment_instructions: existing?.payment_instructions ?? '',
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const isOnline = form.event_type === 'online'
+  const isPaid = form.is_registration_required && parseFloat(form.price || '0') > 0
+  const needsPaymentDetails =
+    isPaid && ['till', 'paybill', 'phone'].includes(form.payment_method)
+  const isMembersOnlyAudience = form.visibility !== 'public'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    if (isOnline && !form.meeting_link.trim()) {
+      setError('Please add the meeting link for this online event.')
+      setLoading(false)
+      return
+    }
+    if (form.visibility === 'department' && !form.visibility_department_id) {
+      setError('Choose the department this event is for.')
+      setLoading(false)
+      return
+    }
+    if (form.visibility === 'group' && !form.visibility_group_id) {
+      setError('Choose the group this event is for.')
+      setLoading(false)
+      return
+    }
+    if (needsPaymentDetails && !form.payment_number.trim()) {
+      setError('Add the till / paybill / phone number for payments.')
+      setLoading(false)
+      return
+    }
+
     const supabase = createClient()
 
     const payload = {
@@ -91,6 +145,9 @@ export function EventForm({
       start_time: new Date(form.start_time).toISOString(),
       end_time: form.end_time ? new Date(form.end_time).toISOString() : null,
       all_day: form.all_day,
+      event_type: form.event_type,
+      meeting_link: isOnline ? form.meeting_link.trim() || null : null,
+      meeting_platform: isOnline ? form.meeting_platform.trim() || null : null,
       location_name: form.location_name || null,
       address: form.address || null,
       latitude: form.latitude,
@@ -98,13 +155,23 @@ export function EventForm({
       poster_url: form.poster_url || null,
       capacity: form.capacity ? parseInt(form.capacity) : null,
       status: form.status as 'draft' | 'published' | 'cancelled' | 'completed',
-      visibility: form.visibility as 'public' | 'members_only',
+      visibility: form.visibility as EventVisibility,
+      visibility_department_id:
+        form.visibility === 'department' ? form.visibility_department_id : null,
+      visibility_group_id:
+        form.visibility === 'group' ? form.visibility_group_id : null,
       is_registration_required: form.is_registration_required,
       registration_deadline: form.registration_deadline
         ? new Date(form.registration_deadline).toISOString()
         : null,
       price: parseFloat(form.price) || 0,
       currency: form.currency,
+      payment_method: isPaid ? form.payment_method : 'free',
+      payment_number: needsPaymentDetails ? form.payment_number.trim() : null,
+      payment_account: needsPaymentDetails ? form.payment_account.trim() || null : null,
+      payment_instructions: needsPaymentDetails
+        ? form.payment_instructions.trim() || null
+        : null,
     }
 
     const { error: err } = existing
@@ -163,6 +230,9 @@ export function EventForm({
             currentUrl={form.poster_url}
             onUploaded={(url) => setForm({ ...form, poster_url: url })}
           />
+          <p className="text-xs text-muted-foreground -mt-2">
+            Optional. If you skip the poster, a placeholder icon is shown instead.
+          </p>
         </CardContent>
       </Card>
 
@@ -203,34 +273,88 @@ export function EventForm({
 
       <Card>
         <CardContent className="pt-6 space-y-6">
-          <h3 className="font-semibold">Where</h3>
+          <h3 className="font-semibold">How members attend</h3>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>Location name</Label>
-              <Input
-                value={form.location_name}
-                onChange={(e) => setForm({ ...form, location_name: e.target.value })}
-                placeholder="Main Sanctuary"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Address</Label>
-              <Input
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-                placeholder="123 Church St, Nairobi"
-              />
+              <Label>Event type</Label>
+              <Select
+                value={form.event_type}
+                onValueChange={(v) => setForm({ ...form, event_type: v ?? 'physical' })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="physical">Physical — at a venue</SelectItem>
+                  <SelectItem value="online">Online — a meeting link</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <MapPicker
-            lat={form.latitude}
-            lng={form.longitude}
-            address={form.address}
-            onPick={(lat, lng) => setForm({ ...form, latitude: lat, longitude: lng })}
-            onAddress={(address) => setForm({ ...form, address })}
-          />
+          {isOnline ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2 md:col-span-2">
+                <Label className="flex items-center gap-2">
+                  <Link2 className="h-4 w-4" /> Meeting link
+                </Label>
+                <Input
+                  type="url"
+                  value={form.meeting_link}
+                  onChange={(e) => setForm({ ...form, meeting_link: e.target.value })}
+                  placeholder="https://meet.google.com/..."
+                  required={isOnline}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Members see this once the event is published so they can join.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Platform (optional)</Label>
+                <Input
+                  value={form.meeting_platform}
+                  onChange={(e) => setForm({ ...form, meeting_platform: e.target.value })}
+                  placeholder="Zoom, Google Meet, Teams…"
+                />
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" /> Location name
+                  </Label>
+                  <Input
+                    value={form.location_name}
+                    onChange={(e) => setForm({ ...form, location_name: e.target.value })}
+                    placeholder="Main Sanctuary"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Address</Label>
+                  <Input
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                    placeholder="123 Church St, Nairobi"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Coordinates & directions</Label>
+                <p className="text-xs text-muted-foreground">
+                  Pin the venue so members can open directions on their maps app.
+                </p>
+                <MapPicker
+                  lat={form.latitude}
+                  lng={form.longitude}
+                  address={form.address}
+                  onPick={(lat, lng) => setForm({ ...form, latitude: lat, longitude: lng })}
+                  onAddress={(address) => setForm({ ...form, address })}
+                />
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -247,23 +371,10 @@ export function EventForm({
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="draft">Draft — hidden from members</SelectItem>
                   <SelectItem value="published">Published</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Visibility</Label>
-              <Select
-                value={form.visibility}
-                onValueChange={(v) => setForm({ ...form, visibility: v ?? '' })}
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="public">Public (anyone can see)</SelectItem>
-                  <SelectItem value="members_only">Members only</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -275,6 +386,67 @@ export function EventForm({
                 onChange={(e) => setForm({ ...form, capacity: e.target.value })}
               />
             </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>Who can see this event</Label>
+              <Select
+                value={form.visibility}
+                onValueChange={(v) => setForm({ ...form, visibility: v ?? 'public' })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="public">Public — anyone with the link</SelectItem>
+                  <SelectItem value="all_members">All members of the church</SelectItem>
+                  <SelectItem value="super_admins">Super admins only</SelectItem>
+                  <SelectItem value="department">A specific department</SelectItem>
+                  <SelectItem value="group">A specific group</SelectItem>
+                  <SelectItem value="men">Men</SelectItem>
+                  <SelectItem value="women">Women</SelectItem>
+                  <SelectItem value="youth">Youth</SelectItem>
+                </SelectContent>
+              </Select>
+              {isMembersOnlyAudience && (
+                <p className="text-xs text-muted-foreground">
+                  Members still see it in their dashboard. Anyone else can view it
+                  via the shared link or QR code.
+                </p>
+              )}
+            </div>
+            {form.visibility === 'department' && (
+              <div className="space-y-2 md:col-span-2">
+                <Label>Department</Label>
+                <Select
+                  value={form.visibility_department_id || ''}
+                  onValueChange={(v) =>
+                    setForm({ ...form, visibility_department_id: v ?? '' })
+                  }
+                >
+                  <SelectTrigger><SelectValue placeholder="Choose a department" /></SelectTrigger>
+                  <SelectContent>
+                    {departments.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {form.visibility === 'group' && (
+              <div className="space-y-2 md:col-span-2">
+                <Label>Group</Label>
+                <Select
+                  value={form.visibility_group_id || ''}
+                  onValueChange={(v) =>
+                    setForm({ ...form, visibility_group_id: v ?? '' })
+                  }
+                >
+                  <SelectTrigger><SelectValue placeholder="Choose a group" /></SelectTrigger>
+                  <SelectContent>
+                    {groups.map((g) => (
+                      <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -302,6 +474,9 @@ export function EventForm({
                     setForm({ ...form, registration_deadline: e.target.value })
                   }
                 />
+                <p className="text-xs text-muted-foreground">
+                  Registrations close automatically after this time.
+                </p>
               </div>
               <div className="space-y-2">
                 <Label>Price</Label>
@@ -329,6 +504,69 @@ export function EventForm({
               </div>
             </div>
           )}
+
+          {isPaid && (
+            <div className="grid gap-4 md:grid-cols-2 border-t pt-4">
+              <div className="space-y-2">
+                <Label>How members pay</Label>
+                <Select
+                  value={form.payment_method}
+                  onValueChange={(v) => setForm({ ...form, payment_method: v ?? 'free' })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="free">Free — no payment</SelectItem>
+                    <SelectItem value="till">M-Pesa Till number</SelectItem>
+                    <SelectItem value="paybill">M-Pesa Paybill</SelectItem>
+                    <SelectItem value="phone">Send to a phone number</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {needsPaymentDetails && (
+                <>
+                  <div className="space-y-2">
+                    <Label>
+                      {form.payment_method === 'till'
+                        ? 'Till number'
+                        : form.payment_method === 'paybill'
+                          ? 'Paybill number'
+                          : 'Phone number'}
+                    </Label>
+                    <Input
+                      value={form.payment_number}
+                      onChange={(e) =>
+                        setForm({ ...form, payment_number: e.target.value })
+                      }
+                      placeholder={form.payment_method === 'phone' ? '0712 345 678' : '123456'}
+                    />
+                  </div>
+                  {form.payment_method === 'paybill' && (
+                    <div className="space-y-2">
+                      <Label>Account number</Label>
+                      <Input
+                        value={form.payment_account}
+                        onChange={(e) =>
+                          setForm({ ...form, payment_account: e.target.value })
+                        }
+                        placeholder="EVENT"
+                      />
+                    </div>
+                  )}
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>Payment instructions (optional)</Label>
+                    <Textarea
+                      value={form.payment_instructions}
+                      onChange={(e) =>
+                        setForm({ ...form, payment_instructions: e.target.value })
+                      }
+                      rows={2}
+                      placeholder="Use your ticket code as the account reference."
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -336,7 +574,7 @@ export function EventForm({
 
       <div className="flex gap-2">
         <Button type="submit" disabled={loading}>
-          {loading ? 'Saving...' : existing ? 'Save changes' : 'Create event'}
+          {loading ? 'Saving…' : existing ? 'Save changes' : 'Create event'}
         </Button>
         <Button type="button" variant="outline" onClick={() => router.back()}>
           Cancel
