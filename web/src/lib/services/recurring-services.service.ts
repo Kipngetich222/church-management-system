@@ -72,6 +72,37 @@ export async function getProgramme(
   return (data as unknown as ServiceProgrammeRow) ?? null
 }
 
+/** Pull the storage object path out of a legacy public URL. */
+function programmePathFromUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  const marker = '/service-programmes/'
+  const index = url.indexOf(marker)
+  if (index === -1) return null
+  return decodeURIComponent(url.slice(index + marker.length))
+}
+
+/**
+ * A short-lived URL a member or admin can open for a programme. The bucket is
+ * private, so files are only reachable through a signed URL that our storage
+ * policies hand out to that church's members. Falls back to the stored URL when
+ * signing is not possible (e.g. the lock-down migration has not run yet).
+ */
+export async function getProgrammeFileUrl(
+  programme: ServiceProgrammeRow | null | undefined
+): Promise<string | null> {
+  if (!programme) return null
+
+  const path = programme.file_path ?? programmePathFromUrl(programme.file_url)
+  if (!path) return programme.file_url
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.storage
+    .from('service-programmes')
+    .createSignedUrl(path, 60 * 60)
+  if (error || !data?.signedUrl) return programme.file_url
+  return data.signedUrl
+}
+
 export async function listServiceAttendance(
   recurringServiceId: string,
   serviceDate: string

@@ -85,7 +85,9 @@ export function UpcomingServices({
               </div>
 
               <Button asChild size="sm" className="mt-1">
-                <Link href={`/member/services/${next.serviceId}`}>
+                <Link
+                  href={`/member/services/${next.serviceId}?date=${next.date}`}
+                >
                   Programme &amp; details
                 </Link>
               </Button>
@@ -96,7 +98,7 @@ export function UpcomingServices({
                 {following.map((occurrence) => (
                   <Link
                     key={`${occurrence.serviceId}-${occurrence.date}`}
-                    href={`/member/services/${occurrence.serviceId}`}
+                    href={`/member/services/${occurrence.serviceId}?date=${occurrence.date}`}
                     className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm hover:bg-muted/50 transition"
                   >
                     <span className="min-w-0 flex-1 truncate">

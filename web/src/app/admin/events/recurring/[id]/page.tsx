@@ -3,6 +3,7 @@ import { getActiveChurch } from '@/lib/utils/church-scope'
 import {
   getRecurringService,
   getProgramme,
+  getProgrammeFileUrl,
   listServiceAttendance,
   listHiddenDates,
   WEEKDAY_LABELS,
@@ -13,7 +14,7 @@ import { ServiceQrPanel } from '@/components/events/ServiceQrPanel'
 import { ServiceProgrammePanel } from '@/components/events/ServiceProgrammePanel'
 import { ServiceRegisterDatePicker } from '@/components/events/ServiceRegisterDatePicker'
 import { ServiceOccurrenceToggle } from '@/components/events/ServiceOccurrenceToggle'
-import { DeleteRecurringServiceButton } from '@/components/events/DeleteRecurringServiceButton'
+import { RecurringServiceDangerZone } from '@/components/events/RecurringServiceDangerZone'
 import { ExportButton } from '@/components/shared/ExportButton'
 import { BackLink } from '@/components/shared/BackLink'
 import { Card, CardContent } from '@/components/ui/card'
@@ -54,6 +55,8 @@ export default async function RecurringServiceDetailPage({
     listServiceAttendance(service.id, occurrenceDate),
     listHiddenDates(service.id),
   ])
+
+  const programmeUrl = await getProgrammeFileUrl(programme)
 
   const occurrenceHidden = hiddenDates.includes(occurrenceDate)
 
@@ -168,6 +171,7 @@ export default async function RecurringServiceDetailPage({
         serviceId={service.id}
         date={occurrenceDate}
         existing={programme}
+        existingUrl={programmeUrl}
       />
 
       <div className="space-y-4">
@@ -175,15 +179,7 @@ export default async function RecurringServiceDetailPage({
         <RecurringServiceForm churchId={churchId} existing={service} />
       </div>
 
-      <div className="space-y-2 rounded-lg border border-destructive/40 p-4">
-        <h2 className="text-lg font-semibold text-destructive">Delete service</h2>
-        <p className="text-sm text-muted-foreground">
-          Permanently removes this recurring service along with every programme
-          and check-in recorded against it. To skip just one day, use &quot;Hide
-          this day&quot; above instead.
-        </p>
-        <DeleteRecurringServiceButton serviceId={service.id} title={service.title} />
-      </div>
+      <RecurringServiceDangerZone serviceId={service.id} title={service.title} />
     </div>
   )
 }

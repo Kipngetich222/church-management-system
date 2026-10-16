@@ -32,6 +32,24 @@ export function occurrenceKey(serviceId: string, date: string): string {
 }
 
 /**
+ * True when `dateKey` falls on the service's weekday and inside its optional
+ * start/end window - i.e. it is a genuine occurrence of that service. Used to
+ * validate a date a member asked for, so a shared link cannot point the page at
+ * an arbitrary day (and therefore at another service's programme).
+ */
+export function isServiceDate(
+  service: RecurringServiceRow,
+  dateKey: string
+): boolean {
+  if (new Date(`${dateKey}T00:00:00`).getDay() !== service.day_of_week) {
+    return false
+  }
+  if (service.start_date && dateKey < service.start_date) return false
+  if (service.end_date && dateKey > service.end_date) return false
+  return true
+}
+
+/**
  * Expand a recurring service into every occurrence between two dates
  * (inclusive). Pure local-date maths, so a service never shifts into the wrong
  * day. Dates present in `hidden` (see `occurrenceKey`) are skipped.
