@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { listUpcomingEvents, listPastEvents } from '@/lib/services/events.service'
 import type { SetupStepKey } from '@/lib/constants/setup-steps'
 import { ChurchLogo } from '@/components/shared/ChurchLogo'
-import { UpcomingEvents } from '@/components/events/UpcomingEvents'
+import { DashboardEvents } from '@/components/events/DashboardEvents'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -193,19 +193,7 @@ export default async function AdminDashboardPage() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <UpcomingEvents
-          events={upcoming}
-          basePath="/admin/events"
-          emptyText="No upcoming events yet."
-        />
-        <UpcomingEvents
-          events={past}
-          basePath="/admin/events"
-          title="Past events"
-          emptyText="No past events yet."
-        />
-      </div>
+      <DashboardEvents upcoming={upcoming} past={past} />
     </div>
   )
 }

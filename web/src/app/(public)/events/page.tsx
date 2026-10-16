@@ -10,7 +10,7 @@ import { formatEventDate } from '@/lib/utils/date'
 import { CalendarDays, Globe, MapPin, Ticket } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Events â€” ChurchOnline',
+  title: 'Events — ChurchOnline',
   description:
     'Discover upcoming church events, services, conferences and gatherings near you.',
 }
@@ -19,31 +19,48 @@ export const revalidate = 60
 
 async function loadEvents() {
   const supabase = createPublicClient()
-  const now = new Date().toISOString()
+  const nowMs = Date.now()
 
-  const [upcomingRes, pastRes] = await Promise.all([
-    supabase
-      .from('events')
-      .select('*, churches(name, username)')
-      .eq('visibility', 'public')
-      .in('status', ['published', 'completed'])
-      .gte('start_time', now)
-      .order('start_time')
-      .limit(60),
-    supabase
-      .from('events')
-      .select('*, churches(name, username)')
-      .eq('visibility', 'public')
-      .in('status', ['published', 'completed'])
-      .lt('start_time', now)
-      .order('start_time', { ascending: false })
-      .limit(12),
-  ])
+  const { data } = await supabase
+    .from('events')
+    .select('*, churches(name, username)')
+    .eq('visibility', 'public')
+    .in('status', ['published', 'completed'])
+    .order('start_time')
+    .limit(200)
 
-  return {
-    upcoming: upcomingRes.data ?? [],
-    past: pastRes.data ?? [],
-  }
+  const all = data ?? []
+
+  // Upcoming: published events that have not started yet, soonest first.
+  const upcoming = all
+    .filter(
+      (e) =>
+        e.status === 'published' &&
+        new Date(e.start_time).getTime() >= nowMs
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+    )
+
+  // Everything already held, plus every event explicitly marked completed.
+  // Completed events are sorted to the very bottom so they never appear above
+  // or in between the upcoming ones.
+  const past = all
+    .filter(
+      (e) =>
+        e.status === 'completed' ||
+        new Date(e.start_time).getTime() < nowMs
+    )
+    .sort((a, b) => {
+      const aDone = a.status === 'completed' ? 1 : 0
+      const bDone = b.status === 'completed' ? 1 : 0
+      if (aDone !== bDone) return aDone - bDone
+      return new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
+    })
+    .slice(0, 12)
+
+  return { upcoming, past }
 }
 
 type PublicEvent = Awaited<ReturnType<typeof loadEvents>>['upcoming'][number]

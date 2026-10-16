@@ -57,12 +57,25 @@ export default async function AdminEventsPage() {
     (e) => e.status === 'completed' || new Date(e.start_time).getTime() < now
   ).length
 
-  const totalBooked = Object.values(stats).reduce((s, v) => s + v.booked, 0)
   const totalConfirmed = Object.values(stats).reduce(
     (s, v) => s + Math.max(v.confirmed, v.attendance),
     0
   )
-  const bookingEvents = events.filter((e) => e.is_registration_required).length
+  // Only count bookings for events that are upcoming and still open for
+  // registration, so the number reflects what members can actually book.
+  const eventsOpenForBooking = events.filter(
+    (e) =>
+      e.is_registration_required &&
+      e.status === 'published' &&
+      new Date(e.start_time).getTime() >= now &&
+      (!e.registration_deadline ||
+        new Date(e.registration_deadline).getTime() >= now)
+  )
+  const totalBooked = eventsOpenForBooking.reduce(
+    (sum, e) => sum + (stats[e.id]?.booked ?? 0),
+    0
+  )
+  const bookingEvents = eventsOpenForBooking.length
 
   return (
     <div className="space-y-6">

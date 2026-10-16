@@ -15,7 +15,11 @@ export default async function EventBookingsPage() {
   ])
 
   const now = new Date().getTime()
-  const bookingEvents = events.filter((e) => e.is_registration_required)
+  // Completed events are no longer open for booking and are kept out of this
+  // view entirely so it only shows events that can still be booked.
+  const bookingEvents = events.filter(
+    (e) => e.is_registration_required && e.status !== 'completed'
+  )
   const openEvents = bookingEvents.filter(
     (e) =>
       e.status === 'published' &&
