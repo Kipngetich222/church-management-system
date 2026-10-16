@@ -1,10 +1,46 @@
-import { getActiveChurch } from '@/lib/utils/church-scope'
-import { listEvents, getChurchEventStats } from '@/lib/services/events.service'
-import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { CalendarDays, Plus } from 'lucide-react'
+import { getActiveChurch } from '@/lib/utils/church-scope'
+import {
+  listEvents,
+  getChurchEventStats,
+} from '@/lib/services/events.service'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { CalendarDays, ChevronRight, Plus, Ticket, UserCheck } from 'lucide-react'
 import { EventsTable } from '@/components/events/EventsTable'
 import { BackLink } from '@/components/shared/BackLink'
+
+function StatLink({
+  href,
+  label,
+  value,
+  hint,
+  icon: Icon,
+}: {
+  href: string
+  label: string
+  value: string
+  hint: string
+  icon: React.ComponentType<{ className?: string }>
+}) {
+  return (
+    <Link href={href}>
+      <Card className="h-full transition hover:bg-muted/40">
+        <CardContent className="pt-4 flex items-center gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+            <Icon className="h-5 w-5" />
+          </span>
+          <div className="flex-1 min-w-0">
+            <div className="text-xl font-bold leading-tight">{value}</div>
+            <div className="text-xs text-muted-foreground">{label}</div>
+            <div className="text-xs text-muted-foreground">{hint}</div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </CardContent>
+      </Card>
+    </Link>
+  )
+}
 
 export default async function AdminEventsPage() {
   const { churchId } = await getActiveChurch()
@@ -20,6 +56,13 @@ export default async function AdminEventsPage() {
   const past = events.filter(
     (e) => e.status === 'completed' || new Date(e.start_time).getTime() < now
   ).length
+
+  const totalBooked = Object.values(stats).reduce((s, v) => s + v.booked, 0)
+  const totalConfirmed = Object.values(stats).reduce(
+    (s, v) => s + Math.max(v.confirmed, v.attendance),
+    0
+  )
+  const bookingEvents = events.filter((e) => e.is_registration_required).length
 
   return (
     <div className="space-y-6">
@@ -45,9 +88,25 @@ export default async function AdminEventsPage() {
           </Button>
         </div>
       </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <StatLink
+          href="/admin/events/bookings"
+          label="Event bookings"
+          value={String(totalBooked)}
+          hint={`across ${bookingEvents} event${bookingEvents !== 1 ? 's' : ''} open for booking`}
+          icon={Ticket}
+        />
+        <StatLink
+          href="/admin/events/attendance"
+          label="Confirmed attendance"
+          value={String(totalConfirmed)}
+          hint="members checked in"
+          icon={UserCheck}
+        />
+      </div>
+
       <EventsTable events={events} stats={stats} />
     </div>
   )
 }
-
-
