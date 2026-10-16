@@ -4,6 +4,7 @@ import {
   getRecurringService,
   getProgramme,
   listServiceAttendance,
+  listHiddenDates,
   WEEKDAY_LABELS,
 } from '@/lib/services/recurring-services.service'
 import { nextOccurrence, todayKey } from '@/lib/utils/recurrence'
@@ -11,6 +12,8 @@ import { RecurringServiceForm } from '@/components/events/RecurringServiceForm'
 import { ServiceQrPanel } from '@/components/events/ServiceQrPanel'
 import { ServiceProgrammePanel } from '@/components/events/ServiceProgrammePanel'
 import { ServiceRegisterDatePicker } from '@/components/events/ServiceRegisterDatePicker'
+import { ServiceOccurrenceToggle } from '@/components/events/ServiceOccurrenceToggle'
+import { DeleteRecurringServiceButton } from '@/components/events/DeleteRecurringServiceButton'
 import { ExportButton } from '@/components/shared/ExportButton'
 import { BackLink } from '@/components/shared/BackLink'
 import { Card, CardContent } from '@/components/ui/card'
@@ -46,10 +49,13 @@ export default async function RecurringServiceDetailPage({
       ? today
       : nextOccurrence(service, today)
 
-  const [programme, attendance] = await Promise.all([
+  const [programme, attendance, hiddenDates] = await Promise.all([
     getProgramme(service.id, occurrenceDate),
     listServiceAttendance(service.id, occurrenceDate),
+    listHiddenDates(service.id),
   ])
+
+  const occurrenceHidden = hiddenDates.includes(occurrenceDate)
 
   const csvRows = [
     ['Name', 'Email', 'Checked in at', 'Method'],
@@ -65,16 +71,31 @@ export default async function RecurringServiceDetailPage({
     <div className="max-w-4xl space-y-8">
       <BackLink href="/admin/events/recurring" label="Recurring services" />
 
-      <div>
-        <h1 className="text-2xl font-bold">{service.title}</h1>
-        <p className="text-sm text-muted-foreground">
-          Every {WEEKDAY_LABELS[service.day_of_week]}
-          {' · '}
-          {(service.times ?? [])
-            .map((t) => `${t.label} ${t.start}`)
-            .join(' · ') || 'No times set'}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">{service.title}</h1>
+          <p className="text-sm text-muted-foreground">
+            Every {WEEKDAY_LABELS[service.day_of_week]}
+            {' - '}
+            {(service.times ?? [])
+              .map((t) => `${t.label} ${t.start}`)
+              .join(' - ') || 'No times set'}
+          </p>
+        </div>
+        <ServiceOccurrenceToggle
+          churchId={churchId}
+          serviceId={service.id}
+          date={occurrenceDate}
+          hidden={occurrenceHidden}
+        />
       </div>
+
+      {occurrenceHidden && (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">
+          {occurrenceDate} is hidden. The calendars skip this day, but the service
+          and its history are kept. Restore it above to show it again.
+        </div>
+      )}
 
       <ServiceQrPanel serviceId={service.id} qrCode={service.qr_code} />
 
@@ -152,6 +173,16 @@ export default async function RecurringServiceDetailPage({
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">Service settings</h2>
         <RecurringServiceForm churchId={churchId} existing={service} />
+      </div>
+
+      <div className="space-y-2 rounded-lg border border-destructive/40 p-4">
+        <h2 className="text-lg font-semibold text-destructive">Delete service</h2>
+        <p className="text-sm text-muted-foreground">
+          Permanently removes this recurring service along with every programme
+          and check-in recorded against it. To skip just one day, use &quot;Hide
+          this day&quot; above instead.
+        </p>
+        <DeleteRecurringServiceButton serviceId={service.id} title={service.title} />
       </div>
     </div>
   )

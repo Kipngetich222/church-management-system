@@ -64,3 +64,11 @@ export const WEEKDAY_LABELS = [
   'Friday',
   'Saturday',
 ]
+
+export type ServiceExceptionRow = {
+  id: string
+  church_id: string
+  recurring_service_id: string
+  service_date: string
+  reason: string | null
+}

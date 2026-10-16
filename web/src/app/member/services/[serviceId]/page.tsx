@@ -4,9 +4,10 @@ import { createClient } from '@/lib/supabase/server'
 import {
   getRecurringService,
   getProgramme,
+  listHiddenDates,
   WEEKDAY_LABELS,
 } from '@/lib/services/recurring-services.service'
-import { nextOccurrence, todayKey } from '@/lib/utils/recurrence'
+import { nextOccurrence, occurrenceKey, todayKey } from '@/lib/utils/recurrence'
 import { BackLink } from '@/components/shared/BackLink'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -35,7 +36,14 @@ export default async function MemberServicePage({
   const today = todayKey()
   const todayIsServiceDay =
     new Date(`${today}T00:00:00`).getDay() === service.day_of_week
-  const occurrenceDate = todayIsServiceDay ? today : nextOccurrence(service, today)
+
+  const hiddenDates = await listHiddenDates(service.id)
+  const hidden = new Set(hiddenDates.map((d) => occurrenceKey(service.id, d)))
+  const todayHidden = hidden.has(occurrenceKey(service.id, today))
+
+  const occurrenceDate = todayIsServiceDay
+    ? today
+    : nextOccurrence(service, today, hidden)
 
   const programme = await getProgramme(service.id, occurrenceDate)
 
@@ -69,7 +77,7 @@ export default async function MemberServicePage({
           <CalendarDays className="h-5 w-5" />
           {(service.times ?? [])
             .map((t) => `${t.label}: ${t.start}${t.end ? ` - ${t.end}` : ''}`)
-            .join(' · ') || 'Time to be announced'}
+            .join(' - ') || 'Time to be announced'}
         </div>
         {service.location_name && (
           <div className="flex items-center gap-2">
@@ -78,7 +86,7 @@ export default async function MemberServicePage({
         )}
       </div>
 
-      {todayIsServiceDay ? (
+      {todayIsServiceDay && !todayHidden ? (
         membership ? (
           <OccurrenceCheckIn
             churchId={churchId}
@@ -90,13 +98,15 @@ export default async function MemberServicePage({
         ) : null
       ) : (
         <p className="text-sm text-muted-foreground">
-          Check-in opens on{' '}
-          {new Date(`${occurrenceDate}T00:00:00`).toLocaleDateString(undefined, {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'short',
-          })}
-          , the next {WEEKDAY_LABELS[service.day_of_week]}.
+          {todayIsServiceDay && todayHidden
+            ? 'There is no service today.'
+            : `Check-in opens on ${new Date(
+                `${occurrenceDate}T00:00:00`
+              ).toLocaleDateString(undefined, {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'short',
+              })}, the next ${WEEKDAY_LABELS[service.day_of_week]}.`}
         </p>
       )}
 

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { appBaseUrl } from '@/lib/utils/app-url'
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BadgeChip } from '@/components/members/BadgeChip'
@@ -52,7 +53,7 @@ export default async function MemberProfilePage() {
   const badges = [...(m?.badges ?? [])]
   if (m?.is_baptized) badges.push('baptized')
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+  const baseUrl = appBaseUrl()
   const shareUrl = `${baseUrl}/members/${m?.id}`
 
   return (
@@ -70,7 +71,7 @@ export default async function MemberProfilePage() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             {m?.users?.full_name}
-            <ShareButton url={shareUrl} title={`${m?.users?.full_name} — ${church?.name}`} />
+            <ShareButton url={shareUrl} title={`${m?.users?.full_name} ??? ${church?.name}`} />
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -80,23 +81,23 @@ export default async function MemberProfilePage() {
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Phone</p>
-            <p>{m?.users?.phone ?? '—'}</p>
+            <p>{m?.users?.phone ?? '???'}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Gender</p>
-            <p className="capitalize">{m?.users?.gender ?? '—'}</p>
+            <p className="capitalize">{m?.users?.gender ?? '???'}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Category</p>
-            <p>{m?.users?.category ? CATEGORY_LABELS[m.users.category] ?? m.users.category : '—'}</p>
+            <p>{m?.users?.category ? CATEGORY_LABELS[m.users.category] ?? m.users.category : '???'}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Date of birth</p>
-            <p>{m?.users?.date_of_birth ? format(new Date(m.users.date_of_birth), 'MMMM d') : '—'}</p>
+            <p>{m?.users?.date_of_birth ? format(new Date(m.users.date_of_birth), 'MMMM d') : '???'}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Member since</p>
-            <p>{m ? format(new Date(m.joined_at), 'MMMM yyyy') : '—'}</p>
+            <p>{m ? format(new Date(m.joined_at), 'MMMM yyyy') : '???'}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground mb-2">Badges</p>

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { appBaseUrl } from '@/lib/utils/app-url'
 import { createClient as createAdmin } from '@supabase/supabase-js'
 import { stkPush } from '@/lib/services/mpesa.service'
 import { NextResponse } from 'next/server'
@@ -14,11 +15,15 @@ const schema = z.object({
 export async function POST(req: Request) {
   const body = await req.json()
   const parsed = schema.safeParse(body)
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.message }, { status: 400 })
+  if (!parsed.success)
+    return NextResponse.json({ error: parsed.error.message }, { status: 400 })
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user)
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Get membership
   const { data: membership } = await supabase
@@ -42,7 +47,7 @@ export async function POST(req: Request) {
     amount: parsed.data.amount,
     accountReference: reference,
     transactionDesc: 'Church giving',
-    callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/giving/mpesa/callback`,
+    callbackUrl: `${appBaseUrl()}/api/giving/mpesa/callback`,
   })
 
   // Persist pending record for the callback to reconcile

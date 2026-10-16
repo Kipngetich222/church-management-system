@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { appBaseUrl } from '@/lib/utils/app-url'
 import { formatEventDate } from '@/lib/utils/date'
 import { googleMapsUrl } from '@/lib/utils/maps'
 import { Badge } from '@/components/ui/badge'
@@ -24,9 +25,9 @@ export async function generateMetadata({
   if (!event) return { title: 'Event not found' }
 
   const church = event.churches
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const baseUrl = appBaseUrl()
   return {
-    title: `${event.title} — ${church?.name ?? 'Church event'}`,
+    title: `${event.title} ??? ${church?.name ?? 'Church event'}`,
     description: event.description?.slice(0, 155) ?? undefined,
     openGraph: {
       title: event.title,
@@ -103,7 +104,7 @@ export default async function PublicEventPage({
 
         <div className="flex flex-wrap gap-2">
           <ShareButton
-            url={`${process.env.NEXT_PUBLIC_APP_URL}/e/${event.id}`}
+            url={`${appBaseUrl()}/e/${event.id}`}
             title={event.title}
           />
           {isOnline && event.meeting_link && !isPast && (

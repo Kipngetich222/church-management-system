@@ -19,15 +19,21 @@ export function todayKey(): string {
   return toDateKey(new Date())
 }
 
+/** A stable key for one occurrence, used to look up hidden dates. */
+export function occurrenceKey(serviceId: string, date: string): string {
+  return `${serviceId}|${date}`
+}
+
 /**
  * Expand a recurring service into every occurrence between two dates
  * (inclusive). Pure local-date maths, so a service never shifts into the wrong
- * day.
+ * day. Dates present in `hidden` (see `occurrenceKey`) are skipped.
  */
 export function expandOccurrences(
   service: RecurringServiceRow,
   fromKey: string,
-  toKey: string
+  toKey: string,
+  hidden?: Set<string>
 ): ServiceOccurrence[] {
   const occurrences: ServiceOccurrence[] = []
   const cursor = new Date(`${fromKey}T00:00:00`)
@@ -40,15 +46,17 @@ export function expandOccurrences(
     : null
 
   while (cursor <= end) {
+    const key = toDateKey(cursor)
     if (
       cursor.getDay() === service.day_of_week &&
       (!lower || cursor >= lower) &&
-      (!upper || cursor <= upper)
+      (!upper || cursor <= upper) &&
+      !hidden?.has(occurrenceKey(service.id, key))
     ) {
       occurrences.push({
         serviceId: service.id,
         title: service.title,
-        date: toDateKey(cursor),
+        date: key,
         times: Array.isArray(service.times) ? service.times : [],
       })
     }
@@ -61,17 +69,22 @@ export function expandOccurrences(
 export function expandManyOccurrences(
   services: RecurringServiceRow[],
   fromKey: string,
-  toKey: string
+  toKey: string,
+  hidden?: Set<string>
 ): ServiceOccurrence[] {
   return services
     .filter((service) => service.is_active)
-    .flatMap((service) => expandOccurrences(service, fromKey, toKey))
+    .flatMap((service) => expandOccurrences(service, fromKey, toKey, hidden))
 }
 
-/** The next date on or after `fromKey` on which the service occurs. */
+/**
+ * The next date on or after `fromKey` on which the service occurs and is not
+ * hidden.
+ */
 export function nextOccurrence(
   service: RecurringServiceRow,
-  fromKey?: string
+  fromKey?: string,
+  hidden?: Set<string>
 ): string {
   const start = fromKey ?? todayKey()
   const cursor = new Date(`${start}T00:00:00`)
@@ -80,7 +93,12 @@ export function nextOccurrence(
     const key = toDateKey(cursor)
     const afterStart = !service.start_date || key >= service.start_date
     const beforeEnd = !service.end_date || key <= service.end_date
-    if (cursor.getDay() === service.day_of_week && afterStart && beforeEnd) {
+    if (
+      cursor.getDay() === service.day_of_week &&
+      afterStart &&
+      beforeEnd &&
+      !hidden?.has(occurrenceKey(service.id, key))
+    ) {
       return key
     }
     cursor.setDate(cursor.getDate() + 1)
