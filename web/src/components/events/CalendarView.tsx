@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import {
   format, addMonths, subMonths, startOfMonth,
-  isSameMonth, isSameDay, isToday,
+  isSameMonth, isToday,
 } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -30,6 +30,8 @@ export function CalendarView({
     if (!eventsByDay.has(key)) eventsByDay.set(key, [])
     eventsByDay.get(key)!.push(e)
   })
+
+  const now = new Date().getTime()
 
   return (
     <Card>
@@ -74,15 +76,23 @@ export function CalendarView({
                 )}>
                   {format(day, 'd')}
                 </div>
-                {dayEvents.slice(0, 3).map((e) => (
-                  <Link
-                    key={e.id}
-                    href={`${basePath}/${e.id}`}
-                    className="block px-1.5 py-0.5 rounded bg-primary/10 text-primary truncate hover:bg-primary/20"
-                  >
-                    {e.title}
-                  </Link>
-                ))}
+                {dayEvents.slice(0, 3).map((e) => {
+                  const past = e.status === 'completed' || new Date(e.start_time).getTime() < now
+                  return (
+                    <Link
+                      key={e.id}
+                      href={`${basePath}/${e.id}`}
+                      className={cn(
+                        'block px-1.5 py-0.5 rounded truncate',
+                        past
+                          ? 'bg-muted text-muted-foreground hover:bg-muted/80'
+                          : 'bg-primary/10 text-primary hover:bg-primary/20'
+                      )}
+                    >
+                      {e.title}
+                    </Link>
+                  )
+                })}
                 {dayEvents.length > 3 && (
                   <div className="text-muted-foreground">+{dayEvents.length - 3} more</div>
                 )}
@@ -94,3 +104,5 @@ export function CalendarView({
     </Card>
   )
 }
+
+

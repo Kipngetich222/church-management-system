@@ -700,11 +700,18 @@ export type Database = {
           currency: string | null
           description: string | null
           end_time: string | null
+          event_type: string
           id: string
           is_registration_required: boolean | null
           latitude: number | null
           location_name: string | null
           longitude: number | null
+          meeting_link: string | null
+          meeting_platform: string | null
+          payment_account: string | null
+          payment_instructions: string | null
+          payment_method: string | null
+          payment_number: string | null
           poster_url: string | null
           price: number | null
           qr_code: string | null
@@ -715,6 +722,8 @@ export type Database = {
           title: string
           updated_at: string | null
           visibility: Database['public']['Enums']['event_visibility'] | null
+          visibility_department_id: string | null
+          visibility_group_id: string | null
         }
         Insert: {
           address?: string | null
@@ -726,11 +735,18 @@ export type Database = {
           currency?: string | null
           description?: string | null
           end_time?: string | null
+          event_type?: string
           id?: string
           is_registration_required?: boolean | null
           latitude?: number | null
           location_name?: string | null
           longitude?: number | null
+          meeting_link?: string | null
+          meeting_platform?: string | null
+          payment_account?: string | null
+          payment_instructions?: string | null
+          payment_method?: string | null
+          payment_number?: string | null
           poster_url?: string | null
           price?: number | null
           qr_code?: string | null
@@ -741,6 +757,8 @@ export type Database = {
           title: string
           updated_at?: string | null
           visibility?: Database['public']['Enums']['event_visibility'] | null
+          visibility_department_id?: string | null
+          visibility_group_id?: string | null
         }
         Update: {
           address?: string | null
@@ -752,11 +770,18 @@ export type Database = {
           currency?: string | null
           description?: string | null
           end_time?: string | null
+          event_type?: string
           id?: string
           is_registration_required?: boolean | null
           latitude?: number | null
           location_name?: string | null
           longitude?: number | null
+          meeting_link?: string | null
+          meeting_platform?: string | null
+          payment_account?: string | null
+          payment_instructions?: string | null
+          payment_method?: string | null
+          payment_number?: string | null
           poster_url?: string | null
           price?: number | null
           qr_code?: string | null
@@ -767,6 +792,8 @@ export type Database = {
           title?: string
           updated_at?: string | null
           visibility?: Database['public']['Enums']['event_visibility'] | null
+          visibility_department_id?: string | null
+          visibility_group_id?: string | null
         }
         Relationships: [
           {
@@ -1963,6 +1990,16 @@ export type Database = {
         }[]
       }
       is_church_admin: { Args: { church_uuid: string }; Returns: boolean }
+      event_engagement: {
+        Args: { p_event_id: string }
+        Returns: {
+          attendance: number
+          booked: number
+          confirmed: number
+          paid: number
+          revenue: number
+        }[]
+      }
       select_super_admin_successor: {
         Args: { p_church_id: string; p_exclude_user_id: string }
         Returns: string | null
@@ -1998,7 +2035,16 @@ export type Database = {
       campaign_status: 'active' | 'completed' | 'paused' | 'cancelled'
       communication_channel: 'sms' | 'email' | 'in_app'
       event_status: 'draft' | 'published' | 'cancelled' | 'completed'
-      event_visibility: 'public' | 'members_only'
+      event_visibility:
+        | 'public'
+        | 'members_only'
+        | 'all_members'
+        | 'super_admins'
+        | 'department'
+        | 'group'
+        | 'men'
+        | 'women'
+        | 'youth'
       offering_type:
         | 'tithe'
         | 'general'
@@ -2162,7 +2208,17 @@ export const Constants = {
       campaign_status: ['active', 'completed', 'paused', 'cancelled'],
       communication_channel: ['sms', 'email', 'in_app'],
       event_status: ['draft', 'published', 'cancelled', 'completed'],
-      event_visibility: ['public', 'members_only'],
+      event_visibility: [
+        'public',
+        'members_only',
+        'all_members',
+        'super_admins',
+        'department',
+        'group',
+        'men',
+        'women',
+        'youth',
+      ],
       offering_type: [
         'tithe',
         'general',

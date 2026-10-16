@@ -2,8 +2,15 @@ import Link from 'next/link'
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { getChurchSetup } from '@/lib/utils/church-setup'
 import { getPlanUsage } from '@/lib/services/plan.service'
+import { createClient } from '@/lib/supabase/server'
+import {
+  listUpcomingEvents,
+  listPastEvents,
+  getChurchEventStats,
+} from '@/lib/services/events.service'
 import type { SetupStepKey } from '@/lib/constants/setup-steps'
 import { ChurchLogo } from '@/components/shared/ChurchLogo'
+import { UpcomingEvents } from '@/components/events/UpcomingEvents'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -20,6 +27,8 @@ import {
   Coins,
   Crown,
   MapPin,
+  Ticket,
+  UserCheck,
   Users,
 } from 'lucide-react'
 
@@ -34,19 +43,85 @@ const STEP_ICONS: Record<
   events: CalendarDays,
 }
 
+function StatCard({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  href,
+}: {
+  label: string
+  value: string
+  hint?: string
+  icon: React.ComponentType<{ className?: string }>
+  href?: string
+}) {
+  const body = (
+    <Card className="h-full">
+      <CardHeader className="flex flex-row items-center gap-3">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+          <Icon className="h-4 w-4" />
+        </span>
+        <CardTitle className="text-base">{label}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        {hint && <p className="text-xs text-muted-foreground mt-1">{hint}</p>}
+      </CardContent>
+    </Card>
+  )
+  return href ? <Link href={href}>{body}</Link> : body
+}
+
 export default async function AdminDashboardPage() {
   const { church, churchId, role } = await getActiveChurch()
-  const setup = await getChurchSetup(churchId, church)
-  const planUsage = await getPlanUsage(churchId)
+  const supabase = await createClient()
+
+  const weekAgo = new Date(new Date().getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
+
+  const [
+    setup,
+    planUsage,
+    upcoming,
+    past,
+    stats,
+    memberCount,
+    offerings,
+  ] = await Promise.all([
+    getChurchSetup(churchId, church),
+    getPlanUsage(churchId),
+    listUpcomingEvents(churchId, 5),
+    listPastEvents(churchId, 5),
+    getChurchEventStats(churchId),
+    supabase
+      .from('church_memberships')
+      .select('id', { count: 'exact', head: true })
+      .eq('church_id', churchId),
+    supabase
+      .from('offerings')
+      .select('amount, given_at')
+      .eq('church_id', churchId)
+      .gte('given_at', weekAgo),
+  ])
+
+  const weekGiving = (offerings.data ?? []).reduce(
+    (sum, o) => sum + Number(o.amount ?? 0),
+    0
+  )
+  const upcomingBooked = upcoming.reduce(
+    (sum, e) => sum + (stats[e.id]?.booked ?? 0),
+    0
+  )
+  const upcomingConfirmed = upcoming.reduce(
+    (sum, e) => sum + Math.max(stats[e.id]?.confirmed ?? 0, stats[e.id]?.attendance ?? 0),
+    0
+  )
+  const totalEvents = Object.keys(stats).length
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <ChurchLogo
-          name={church?.name}
-          logoUrl={church?.logo_url}
-          size="lg"
-        />
+        <ChurchLogo name={church?.name} logoUrl={church?.logo_url} size="lg" />
         <div>
           <h1 className="text-2xl font-bold">Welcome to {church?.name}</h1>
           <p className="text-muted-foreground">Signed in as {role}</p>
@@ -81,11 +156,7 @@ export default async function AdminDashboardPage() {
                       ) : (
                         <Circle className="h-4 w-4 text-muted-foreground" />
                       )}
-                      <span
-                        className={
-                          step.done ? 'text-muted-foreground line-through' : ''
-                        }
-                      >
+                      <span className={step.done ? 'text-muted-foreground line-through' : ''}>
                         {step.label}
                       </span>
                     </span>
@@ -108,48 +179,77 @@ export default async function AdminDashboardPage() {
         </Card>
       )}
 
-        {planUsage.atLimit && (
-          <Card className="border-destructive/40 bg-destructive/5">
-            <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4 text-sm">
-              <span className="flex items-start gap-2">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-                <span>{church?.name ?? 'Your church'} has reached the {planUsage.memberLimit}-member limit on the {planUsage.planName} plan. Nobody new can join until you upgrade to the Growth plan.</span>
+      {planUsage.atLimit && (
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4 text-sm">
+            <span className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+              <span>
+                {church?.name ?? 'Your church'} has reached the {planUsage.memberLimit}-member
+                limit on the {planUsage.planName} plan. Nobody new can join until you upgrade
+                to the Growth plan.
               </span>
-              <Button render={<Link href="/admin/settings/plan" />}>
-                Upgrade plan
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-              <Users className="h-4 w-4" />
             </span>
-            <CardTitle>Members</CardTitle>
-          </CardHeader>
-          <CardContent>—</CardContent>
+            <Button render={<Link href="/admin/settings/plan" />}>Upgrade plan</Button>
+          </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-              <CalendarDays className="h-4 w-4" />
-            </span>
-            <CardTitle>Upcoming Events</CardTitle>
-          </CardHeader>
-          <CardContent>—</CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-              <Coins className="h-4 w-4" />
-            </span>
-            <CardTitle>This Week&apos;s Giving</CardTitle>
-          </CardHeader>
-          <CardContent>—</CardContent>
-        </Card>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Members"
+          value={String(memberCount.count ?? 0)}
+          icon={Users}
+          href="/admin/members"
+        />
+        <StatCard
+          label="Upcoming Events"
+          value={String(upcoming.length)}
+          hint={`of ${totalEvents} total events`}
+          icon={CalendarDays}
+          href="/admin/events"
+        />
+        <StatCard
+          label="Event Bookings"
+          value={String(upcomingBooked)}
+          hint="across upcoming events"
+          icon={Ticket}
+          href="/admin/events"
+        />
+        <StatCard
+          label="Confirmed Attendance"
+          value={String(upcomingConfirmed)}
+          hint="check-ins so far"
+          icon={UserCheck}
+          href="/admin/events"
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="This Week's Giving"
+          value={`KES ${weekGiving.toLocaleString()}`}
+          icon={Coins}
+          href="/admin/finance/offerings"
+        />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <UpcomingEvents
+          events={upcoming}
+          basePath="/admin/events"
+          emptyText="No upcoming events yet."
+        />
+        <UpcomingEvents
+          events={past}
+          basePath="/admin/events"
+          title="Past events"
+          emptyText="No past events yet."
+        />
       </div>
     </div>
   )
 }
+
+
+

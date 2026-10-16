@@ -39,7 +39,9 @@ export function EventQrPanel({
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Print this or share it on screens. Members scan it to check in.
+          Print this or share it on screens. Anyone who scans it opens the event
+          page — members land on their event page and visitors on the public
+          one, where they can register or buy a ticket.
         </p>
 
         {code ? (
@@ -50,7 +52,7 @@ export function EventQrPanel({
               <Button variant="outline" onClick={download}>
                 <Download className="h-4 w-4 mr-2" /> Download
               </Button>
-              <Button variant="ghost" onClick={generate}>
+              <Button variant="ghost" onClick={generate} disabled={busy}>
                 Regenerate
               </Button>
             </div>

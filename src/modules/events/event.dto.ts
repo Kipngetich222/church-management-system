@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional, PartialType } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
 import {
   IsBoolean,
   IsEmail,
@@ -7,96 +7,154 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
-} from "class-validator";
+} from 'class-validator'
 
-const STATUSES = ["draft", "published", "cancelled", "completed"] as const;
-const VISIBILITIES = ["public", "members_only"] as const;
+const STATUSES = ['draft', 'published', 'cancelled', 'completed'] as const
+const VISIBILITIES = [
+  'public',
+  'members_only',
+  'all_members',
+  'super_admins',
+  'department',
+  'group',
+  'men',
+  'women',
+  'youth',
+] as const
+const EVENT_TYPES = ['physical', 'online'] as const
+const PAYMENT_METHODS = ['free', 'till', 'paybill', 'phone'] as const
 
 export class CreateEventDto {
   @ApiProperty()
   @IsString()
   @MaxLength(200)
-  title!: string;
+  title!: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  description?: string;
+  description?: string
 
   @ApiProperty()
   @IsISO8601()
-  startTime!: string;
+  startTime!: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsISO8601()
-  endTime?: string;
+  endTime?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
-  allDay?: boolean;
+  allDay?: boolean
+
+  @ApiPropertyOptional({ enum: EVENT_TYPES })
+  @IsOptional()
+  @IsIn(EVENT_TYPES)
+  eventType?: (typeof EVENT_TYPES)[number]
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  locationName?: string;
+  meetingLink?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  address?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsNumber()
-  latitude?: number;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsNumber()
-  longitude?: number;
+  meetingPlatform?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  posterUrl?: string;
+  locationName?: string
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  address?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsNumber()
-  capacity?: number;
+  latitude?: number
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  longitude?: number
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  posterUrl?: string
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  capacity?: number
 
   @ApiPropertyOptional({ enum: STATUSES })
   @IsOptional()
   @IsIn(STATUSES)
-  status?: (typeof STATUSES)[number];
+  status?: (typeof STATUSES)[number]
 
   @ApiPropertyOptional({ enum: VISIBILITIES })
   @IsOptional()
   @IsIn(VISIBILITIES)
-  visibility?: (typeof VISIBILITIES)[number];
+  visibility?: (typeof VISIBILITIES)[number]
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  visibilityDepartmentId?: string
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  visibilityGroupId?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
-  isRegistrationRequired?: boolean;
+  isRegistrationRequired?: boolean
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsISO8601()
-  registrationDeadline?: string;
+  registrationDeadline?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsNumber()
-  price?: number;
+  price?: number
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  currency?: string;
+  currency?: string
+
+  @ApiPropertyOptional({ enum: PAYMENT_METHODS })
+  @IsOptional()
+  @IsIn(PAYMENT_METHODS)
+  paymentMethod?: (typeof PAYMENT_METHODS)[number]
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  paymentNumber?: string
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  paymentAccount?: string
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  paymentInstructions?: string
 }
 
 export class UpdateEventDto extends PartialType(CreateEventDto) {}
@@ -105,48 +163,48 @@ export class QueryEventsDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsISO8601()
-  from?: string;
+  from?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsISO8601()
-  to?: string;
+  to?: string
 
   @ApiPropertyOptional({ enum: STATUSES })
   @IsOptional()
   @IsIn(STATUSES)
-  status?: (typeof STATUSES)[number];
+  status?: (typeof STATUSES)[number]
 
   @ApiPropertyOptional({ enum: VISIBILITIES })
   @IsOptional()
   @IsIn(VISIBILITIES)
-  visibility?: (typeof VISIBILITIES)[number];
+  visibility?: (typeof VISIBILITIES)[number]
 }
 
 export class RegisterEventDto {
   @ApiProperty()
   @IsString()
   @MaxLength(160)
-  name!: string;
+  name!: string
 
   @ApiProperty()
   @IsEmail()
-  email!: string;
+  email!: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  phone?: string;
+  phone?: string
 }
 
 export class MarkAttendanceDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  membershipId?: string;
+  membershipId?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  registrationId?: string;
+  registrationId?: string
 }

@@ -8,22 +8,22 @@ import {
   Post,
   Query,
   UseGuards,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Public } from '../../common/decorators/public.decorator';
-import { ChurchAdmin } from '../../common/decorators/roles.decorator';
-import { ChurchGuard } from '../../common/guards/church.guard';
-import type { AuthUser } from '../../common/interfaces/auth-user.interface';
-import { buildEventQrPayload, generateQrDataUrl } from '../../common/utils/qr';
+} from '@nestjs/common'
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
+import { CurrentUser } from '../../common/decorators/current-user.decorator'
+import { Public } from '../../common/decorators/public.decorator'
+import { ChurchAdmin } from '../../common/decorators/roles.decorator'
+import { ChurchGuard } from '../../common/guards/church.guard'
+import type { AuthUser } from '../../common/interfaces/auth-user.interface'
+import { buildEventQrPayload, generateQrDataUrl } from '../../common/utils/qr'
 import {
   CreateEventDto,
   MarkAttendanceDto,
   QueryEventsDto,
   RegisterEventDto,
   UpdateEventDto,
-} from './event.dto';
-import { EventsService } from './events.service';
+} from './event.dto'
+import { EventsService } from './events.service'
 
 @ApiTags('events')
 @ApiBearerAuth('supabase-jwt')
@@ -35,7 +35,7 @@ export class ChurchEventsController {
   @Get()
   @ApiOperation({ summary: 'List events for a church' })
   list(@Param('churchId') churchId: string, @Query() query: QueryEventsDto) {
-    return this.eventsService.list(churchId, query);
+    return this.eventsService.list(churchId, query)
   }
 
   @ChurchAdmin()
@@ -44,9 +44,9 @@ export class ChurchEventsController {
   create(
     @Param('churchId') churchId: string,
     @CurrentUser() user: AuthUser,
-    @Body() dto: CreateEventDto,
+    @Body() dto: CreateEventDto
   ) {
-    return this.eventsService.create(churchId, dto, user.id);
+    return this.eventsService.create(churchId, dto, user.id)
   }
 
   @ChurchAdmin()
@@ -55,29 +55,35 @@ export class ChurchEventsController {
   update(
     @Param('churchId') churchId: string,
     @Param('eventId') eventId: string,
-    @Body() dto: UpdateEventDto,
+    @Body() dto: UpdateEventDto
   ) {
-    return this.eventsService.update(churchId, eventId, dto);
+    return this.eventsService.update(churchId, eventId, dto)
   }
 
   @ChurchAdmin()
   @Delete(':eventId')
   @ApiOperation({ summary: 'Delete an event' })
-  remove(@Param('churchId') churchId: string, @Param('eventId') eventId: string) {
-    return this.eventsService.remove(churchId, eventId);
+  remove(
+    @Param('churchId') churchId: string,
+    @Param('eventId') eventId: string
+  ) {
+    return this.eventsService.remove(churchId, eventId)
   }
 
   @ChurchAdmin()
   @Get(':eventId/registrations')
   @ApiOperation({ summary: 'List event registrations (admin)' })
-  registrations(@Param('churchId') churchId: string, @Param('eventId') eventId: string) {
-    return this.eventsService.listRegistrations(churchId, eventId);
+  registrations(
+    @Param('churchId') churchId: string,
+    @Param('eventId') eventId: string
+  ) {
+    return this.eventsService.listRegistrations(churchId, eventId)
   }
 
   @Get(':eventId/attendance')
   @ApiOperation({ summary: 'List event attendance' })
   attendance(@Param('eventId') eventId: string) {
-    return this.eventsService.listAttendance(eventId);
+    return this.eventsService.listAttendance(eventId)
   }
 
   @ChurchAdmin()
@@ -86,9 +92,16 @@ export class ChurchEventsController {
   markAttendance(
     @Param('churchId') churchId: string,
     @Param('eventId') eventId: string,
-    @Body() dto: MarkAttendanceDto,
+    @Body() dto: MarkAttendanceDto
   ) {
-    return this.eventsService.markAttendance(eventId, dto);
+    return this.eventsService.markAttendance(eventId, dto)
+  }
+
+  @ChurchAdmin()
+  @Get(':eventId/stats')
+  @ApiOperation({ summary: 'Event booking / attendance stats (admin)' })
+  stats(@Param('eventId') eventId: string) {
+    return this.eventsService.stats(eventId)
   }
 }
 
@@ -101,30 +114,30 @@ export class EventsController {
   @Get('upcoming')
   @ApiOperation({ summary: 'Upcoming public events across all churches' })
   upcoming(@Query('limit') limit?: string) {
-    return this.eventsService.upcomingPublic(limit ? parseInt(limit, 10) : 10);
+    return this.eventsService.upcomingPublic(limit ? parseInt(limit, 10) : 10)
   }
 
   @Public()
   @Get(':eventId')
   @ApiOperation({ summary: 'Get an event' })
   getById(@Param('eventId') eventId: string) {
-    return this.eventsService.getById(eventId);
+    return this.eventsService.getById(eventId)
   }
 
   @Public()
   @Get(':eventId/qr')
   @ApiOperation({ summary: 'Generate the check-in QR code for an event' })
   async qr(@Param('eventId') eventId: string) {
-    const event = await this.eventsService.getById(eventId);
-    const payload = buildEventQrPayload(event.id, event.church_id);
-    const dataUrl = await generateQrDataUrl(payload);
-    return { payload, dataUrl };
+    const event = await this.eventsService.getById(eventId)
+    const payload = buildEventQrPayload(event.id, event.church_id)
+    const dataUrl = await generateQrDataUrl(payload)
+    return { payload, dataUrl }
   }
 
   @Public()
   @Post(':eventId/register')
   @ApiOperation({ summary: 'Register for an event' })
   register(@Param('eventId') eventId: string, @Body() dto: RegisterEventDto) {
-    return this.eventsService.register(eventId, dto);
+    return this.eventsService.register(eventId, dto)
   }
 }

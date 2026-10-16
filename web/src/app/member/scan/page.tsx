@@ -1,29 +1,17 @@
-import { createClient } from '@/lib/supabase/server'
-import { getActiveChurch } from '@/lib/utils/church-scope'
 import { QRScanner } from '@/components/qr/QRScanner'
 import { BackLink } from '@/components/shared/BackLink'
 
 export default async function ScanPage() {
-  const { churchId } = await getActiveChurch()
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { data: membership } = await supabase
-    .from('church_memberships')
-    .select('id')
-    .eq('user_id', user!.id)
-    .eq('church_id', churchId)
-    .single()
-
   return (
     <div className="max-w-md mx-auto space-y-4">
       <BackLink href="/member/home" label="Home" />
 
-      <h1 className="text-2xl font-bold">Scan attendance</h1>
+      <h1 className="text-2xl font-bold">Scan an event code</h1>
       <p className="text-sm text-muted-foreground">
-        Point your camera at the event QR code to check in.
+        Point your camera at an event QR code to open it — you can view the
+        venue or online link, register and buy tickets from there.
       </p>
-      <QRScanner churchId={churchId} membershipId={membership!.id} />
+      <QRScanner />
     </div>
   )
 }

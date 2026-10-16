@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { getDailyScripture } from '@/lib/services/scripture.service'
-import { getUpcomingPublicEvents } from '@/lib/services/events.service'
+import { listUpcomingEvents, listPastEvents } from '@/lib/services/events.service'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -33,6 +33,7 @@ export default async function MemberHomePage() {
     { data: membership },
     scripture,
     upcoming,
+    past,
     { data: announcements },
     { data: leaders },
   ] = await Promise.all([
@@ -45,7 +46,9 @@ export default async function MemberHomePage() {
 
     getDailyScripture(),
 
-    getUpcomingPublicEvents(churchId, 4),
+    listUpcomingEvents(churchId, 4),
+
+    listPastEvents(churchId, 3),
 
     supabase
       .from('announcements')
@@ -112,7 +115,7 @@ WELCOME SECTION
           </p>
 
           <p className="text-sm text-muted-foreground mt-2">
-            — {scripture.reference}
+            â€” {scripture.reference}
           </p>
         </CardContent>
       </Card>
@@ -162,6 +165,15 @@ WELCOME SECTION
         {/* Upcoming Events */}
 
         <UpcomingEvents events={upcoming} basePath="/member/events" />
+
+        {past.length > 0 && (
+          <UpcomingEvents
+            events={past}
+            basePath="/member/events"
+            title="Past events"
+            emptyText="No past events yet."
+          />
+        )}
 
         {/* Announcements */}
 
@@ -253,3 +265,6 @@ WELCOME SECTION
     </div>
   )
 }
+
+
+
