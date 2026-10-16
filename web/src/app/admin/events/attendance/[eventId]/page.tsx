@@ -11,6 +11,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { BackLink } from '@/components/shared/BackLink'
+import { ExportButton } from '@/components/shared/ExportButton'
 import { formatEventDate } from '@/lib/utils/date'
 
 function person(a: EventAttendanceRow) {
@@ -47,13 +48,32 @@ export default async function EventAttendanceDetailPage({
     <div className="space-y-6">
       <BackLink href="/admin/events/attendance" label="Confirmed attendance" />
 
-      <div>
-        <h1 className="text-2xl font-bold">{event.title}</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold">{event.title}</h1>
         <p className="text-sm text-muted-foreground">
           {formatEventDate(event.start_time, event.end_time, event.all_day)} ·{' '}
           {attendance.length} confirmed attendance
           {attendance.length !== 1 ? 's' : ''}
         </p>
+        </div>
+        <ExportButton
+          filename={`${event.title}-attendance.csv`}
+          title={`${event.title} - Confirmed attendance`}
+          label="Export attendance"
+          rows={[
+            ['Name', 'Email', 'Checked in at', 'Method'],
+            ...attendance.map((a) => {
+              const p = person(a)
+              return [
+                p.name,
+                p.email,
+                a.scanned_at ? new Date(a.scanned_at).toLocaleString() : '',
+                a.method ?? 'qr',
+              ]
+            }),
+          ]}
+        />
       </div>
 
       <Card>

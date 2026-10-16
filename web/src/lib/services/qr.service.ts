@@ -69,3 +69,20 @@ export function extractEventId(raw: string): string | null {
   }
   return null
 }
+
+/**
+ * Absolute URL a scanned recurring-service QR code should open. The `/s/:id`
+ * route sends members of the church to their service page, where the programme
+ * lives and check-in opens on the day.
+ */
+export function buildServiceQrUrl(serviceId: string, baseUrl?: string): string {
+  const base =
+    baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  return `${base.replace(/\/$/, '')}/s/${serviceId}`
+}
+
+/** Pull a recurring service id out of a scanned `/s/:id` link. */
+export function extractServiceId(raw: string): string | null {
+  const match = raw.match(/\/s\/([0-9a-f-]{36})/i)
+  return match ? match[1] : null
+}

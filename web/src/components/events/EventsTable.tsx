@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
+import { ExportButton } from '@/components/shared/ExportButton'
 import { CalendarDays, Globe, MapPin, Search, Ticket } from 'lucide-react'
 import type { EventRow, EventStats } from '@/lib/services/events.service'
 import { EVENT_VISIBILITY_LABELS } from '@/lib/constants/events'
@@ -63,6 +64,23 @@ export function EventsTable({
           <Switch checked={showPast} onCheckedChange={setShowPast} />
           Show past events
         </label>
+        <ExportButton
+          filename="events.csv"
+          title="Events"
+          label="Export"
+          rows={[
+            ['Event', 'When', 'Type', 'Status', 'Visibility', 'Booked', 'Attended'],
+            ...filtered.map((e) => [
+              e.title,
+              formatEventDate(e.start_time, e.end_time, e.all_day),
+              e.event_type,
+              e.status,
+              visibilityLabel(e.visibility),
+              stats[e.id]?.booked ?? 0,
+              Math.max(stats[e.id]?.confirmed ?? 0, stats[e.id]?.attendance ?? 0),
+            ]),
+          ]}
+        />
       </div>
 
       <div className="border rounded-lg bg-background overflow-x-auto">

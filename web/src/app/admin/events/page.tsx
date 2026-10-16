@@ -6,7 +6,7 @@ import {
 } from '@/lib/services/events.service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { CalendarDays, ChevronRight, Plus, Ticket, UserCheck } from 'lucide-react'
+import { CalendarDays, ChevronRight, Plus, Repeat, Ticket, UserCheck } from 'lucide-react'
 import { EventsTable } from '@/components/events/EventsTable'
 import { BackLink } from '@/components/shared/BackLink'
 
@@ -89,6 +89,11 @@ export default async function AdminEventsPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/admin/events/recurring">
+              <Repeat className="h-4 w-4 mr-2" /> Recurring
+            </Link>
+          </Button>
           <Button variant="outline" asChild>
             <Link href="/admin/events/calendar">
               <CalendarDays className="h-4 w-4 mr-2" /> Calendar
