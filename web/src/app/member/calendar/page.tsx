@@ -42,7 +42,7 @@ export default async function MemberCalendarPage() {
       id: o.serviceId,
       title: o.title,
       date: o.date,
-      href: `/member/services/${o.serviceId}`,
+      href: `/member/services/${o.serviceId}?date=${o.date}`,
       subtitle: o.times.map((t) => t.start).join(', '),
     })
   )

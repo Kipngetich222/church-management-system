@@ -10,6 +10,10 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { BackLink } from '@/components/shared/BackLink'
+import {
+  HiddenRecurringServices,
+  type HiddenServiceItem,
+} from '@/components/events/HiddenRecurringServices'
 import { ChevronRight, Plus, Repeat } from 'lucide-react'
 
 function addDays(key: string, days: number): string {
@@ -33,6 +37,23 @@ export default async function RecurringServicesPage() {
   const hidden = new Set(
     exceptions.map((e) => occurrenceKey(e.recurring_service_id, e.service_date))
   )
+
+  // Hidden days that belong to a service in this church, newest first so the
+  // ones an admin just hid are easy to spot and restore.
+  const serviceById = new Map(services.map((s) => [s.id, s]))
+  const hiddenItems: HiddenServiceItem[] = exceptions
+    .filter((e) => serviceById.has(e.recurring_service_id))
+    .map((e) => {
+      const service = serviceById.get(e.recurring_service_id)!
+      return {
+        serviceId: e.recurring_service_id,
+        title: service.title,
+        date: e.service_date,
+        times: (service.times ?? []).map((t) => t.start).join(', '),
+        reason: e.reason ?? null,
+      }
+    })
+    .sort((a, b) => a.date.localeCompare(b.date))
 
   return (
     <div className="space-y-6">
@@ -96,6 +117,8 @@ export default async function RecurringServicesPage() {
           ))}
         </div>
       )}
+
+      <HiddenRecurringServices churchId={churchId} items={hiddenItems} />
     </div>
   )
 }

@@ -19,9 +19,34 @@ export function todayKey(): string {
   return toDateKey(new Date())
 }
 
+/** Shift a `YYYY-MM-DD` key by a number of days, using local-date maths. */
+export function addDaysToKey(key: string, days: number): string {
+  const d = new Date(`${key}T00:00:00`)
+  d.setDate(d.getDate() + days)
+  return toDateKey(d)
+}
+
 /** A stable key for one occurrence, used to look up hidden dates. */
 export function occurrenceKey(serviceId: string, date: string): string {
   return `${serviceId}|${date}`
+}
+
+/**
+ * True when `dateKey` falls on the service's weekday and inside its optional
+ * start/end window - i.e. it is a genuine occurrence of that service. Used to
+ * validate a date a member asked for, so a shared link cannot point the page at
+ * an arbitrary day (and therefore at another service's programme).
+ */
+export function isServiceDate(
+  service: RecurringServiceRow,
+  dateKey: string
+): boolean {
+  if (new Date(`${dateKey}T00:00:00`).getDay() !== service.day_of_week) {
+    return false
+  }
+  if (service.start_date && dateKey < service.start_date) return false
+  if (service.end_date && dateKey > service.end_date) return false
+  return true
 }
 
 /**
@@ -75,6 +100,22 @@ export function expandManyOccurrences(
   return services
     .filter((service) => service.is_active)
     .flatMap((service) => expandOccurrences(service, fromKey, toKey, hidden))
+}
+
+/**
+ * The soonest occurrences across a set of services, ordered by date. Used by
+ * the member dashboard to surface what is next without opening the calendar.
+ */
+export function nextOccurrences(
+  services: RecurringServiceRow[],
+  limit: number,
+  fromKey?: string,
+  hidden?: Set<string>
+): ServiceOccurrence[] {
+  const start = fromKey ?? todayKey()
+  return expandManyOccurrences(services, start, addDaysToKey(start, 60), hidden)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, limit)
 }
 
 /**

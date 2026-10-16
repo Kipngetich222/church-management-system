@@ -19,19 +19,26 @@ export function ServiceProgrammePanel({
   serviceId,
   date,
   existing,
+  existingUrl,
 }: {
   churchId: string
   serviceId: string
   date: string
   existing: ServiceProgrammeRow | null
+  existingUrl?: string | null
 }) {
   const router = useRouter()
-  const [fileUrl, setFileUrl] = useState(existing?.file_url ?? '')
+  const [filePath, setFilePath] = useState(existing?.file_path ?? '')
+  const [previewUrl, setPreviewUrl] = useState('')
   const [fileName, setFileName] = useState(existing?.file_name ?? '')
   const [title, setTitle] = useState(existing?.title ?? '')
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  // The bucket is private, so we open the file through a short-lived signed
+  // URL. Fall back to whatever the server already resolved for older rows.
+  const currentUrl = previewUrl || existingUrl || ''
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -50,14 +57,17 @@ export function ServiceProgrammePanel({
       return
     }
 
-    const { data } = supabase.storage.from('service-programmes').getPublicUrl(path)
-    setFileUrl(data.publicUrl)
+    const { data: signed } = await supabase.storage
+      .from('service-programmes')
+      .createSignedUrl(path, 60 * 60)
+    setFilePath(path)
+    setPreviewUrl(signed?.signedUrl ?? '')
     setFileName(file.name)
     setUploading(false)
   }
 
   async function save() {
-    if (!fileUrl) {
+    if (!filePath) {
       setError('Upload a PDF programme first.')
       return
     }
@@ -70,7 +80,8 @@ export function ServiceProgrammePanel({
         recurring_service_id: serviceId,
         service_date: date,
         title: title.trim() || null,
-        file_url: fileUrl,
+        file_path: filePath,
+        file_url: null,
         file_name: fileName || null,
       },
       { onConflict: 'recurring_service_id,service_date' }
@@ -91,14 +102,15 @@ export function ServiceProgrammePanel({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {existing?.file_url && (
+        {currentUrl && (
           <a
-            href={existing.file_url}
+            href={currentUrl}
             target="_blank"
             rel="noreferrer"
             className="flex items-center gap-2 text-sm text-primary underline"
           >
-            <FileText className="h-4 w-4" /> {existing.file_name ?? 'Current programme'}
+            <FileText className="h-4 w-4" />{' '}
+            {fileName || 'Current programme'}
           </a>
         )}
 
@@ -121,7 +133,7 @@ export function ServiceProgrammePanel({
           <span className="text-sm text-muted-foreground">
             {uploading
               ? 'Uploading...'
-              : fileUrl
+              : filePath
                 ? `Selected: ${fileName || 'programme.pdf'}`
                 : 'Upload a PDF programme'}
           </span>
@@ -130,7 +142,7 @@ export function ServiceProgrammePanel({
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <Button onClick={save} disabled={saving || !fileUrl}>
+        <Button onClick={save} disabled={saving || !filePath}>
           {saving ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...

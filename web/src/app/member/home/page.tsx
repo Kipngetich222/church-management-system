@@ -2,11 +2,17 @@ import { createClient } from '@/lib/supabase/server'
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { getDailyScripture } from '@/lib/services/scripture.service'
 import { listUpcomingEvents, listPastEvents } from '@/lib/services/events.service'
+import {
+  listRecurringServices,
+  listServiceExceptions,
+} from '@/lib/services/recurring-services.service'
+import { addDaysToKey, occurrenceKey, todayKey } from '@/lib/utils/recurrence'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 import { BadgeChip } from '@/components/members/BadgeChip'
 import { UpcomingEvents } from '@/components/events/UpcomingEvents'
+import { UpcomingServices } from '@/components/events/UpcomingServices'
 import { Button } from '@/components/ui/button'
 import { ChurchMap } from '@/components/maps/ChurchMap'
 import { LeadershipSection } from '@/components/churches/LeadershipSection'
@@ -29,11 +35,15 @@ export default async function MemberHomePage() {
   } = await supabase.auth.getUser()
 
   // Fetch member information, scripture, events, and announcements
+  const today = todayKey()
+
   const [
     { data: membership },
     scripture,
     upcoming,
     past,
+    services,
+    exceptions,
     { data: announcements },
     { data: leaders },
   ] = await Promise.all([
@@ -49,6 +59,12 @@ export default async function MemberHomePage() {
     listUpcomingEvents(churchId, 4),
 
     listPastEvents(churchId, 3),
+
+    listRecurringServices(churchId),
+
+    // Hidden days across the window the services widget looks at, so hidden
+    // occurrences never show up on the homepage.
+    listServiceExceptions(churchId, today, addDaysToKey(today, 60)),
 
     supabase
       .from('announcements')
@@ -73,6 +89,10 @@ export default async function MemberHomePage() {
   if (membership?.is_baptized) {
     badges.push('baptized')
   }
+
+  const hiddenOccurrences = new Set(
+    exceptions.map((e) => occurrenceKey(e.recurring_service_id, e.service_date))
+  )
 
   const maps = googleMapsUrl(
     church?.latitude,
@@ -156,6 +176,12 @@ WELCOME SECTION
           </Link>
         </Button>
       </div>
+
+      {/* ============================================
+      UPCOMING SERVICES (RECURRING)
+      ============================================ */}
+
+      <UpcomingServices services={services} hidden={hiddenOccurrences} />
 
       {/* ============================================
       UPCOMING EVENTS + ANNOUNCEMENTS

@@ -4,10 +4,16 @@ import { createClient } from '@/lib/supabase/server'
 import {
   getRecurringService,
   getProgramme,
+  getProgrammeFileUrl,
   listHiddenDates,
   WEEKDAY_LABELS,
 } from '@/lib/services/recurring-services.service'
-import { nextOccurrence, occurrenceKey, todayKey } from '@/lib/utils/recurrence'
+import {
+  isServiceDate,
+  nextOccurrence,
+  occurrenceKey,
+  todayKey,
+} from '@/lib/utils/recurrence'
 import { BackLink } from '@/components/shared/BackLink'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -17,10 +23,13 @@ import { CalendarDays, FileText, MapPin } from 'lucide-react'
 
 export default async function MemberServicePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ serviceId: string }>
+  searchParams: Promise<{ date?: string }>
 }) {
   const { serviceId } = await params
+  const { date } = await searchParams
   const { churchId, user } = await getActiveChurch()
   const service = await getRecurringService(serviceId)
   if (!service || service.church_id !== churchId) notFound()
@@ -41,11 +50,26 @@ export default async function MemberServicePage({
   const hidden = new Set(hiddenDates.map((d) => occurrenceKey(service.id, d)))
   const todayHidden = hidden.has(occurrenceKey(service.id, today))
 
-  const occurrenceDate = todayIsServiceDay
-    ? today
-    : nextOccurrence(service, today, hidden)
+  // Which occurrence to show. A `?date=` from the calendar or dashboard is only
+  // honoured when it is a real, visible occurrence of *this* service; otherwise
+  // we fall back to today (when it is a service day) or the next occurrence.
+  const requested =
+    date && /^\d{4}-\d{2}-\d{2}$/.test(date) && isServiceDate(service, date)
+      ? date
+      : null
+  const defaultDate =
+    todayIsServiceDay && !todayHidden
+      ? today
+      : nextOccurrence(service, today, hidden)
+  const occurrenceDate =
+    requested && !hidden.has(occurrenceKey(service.id, requested))
+      ? requested
+      : defaultDate
 
+  // Programme is scoped to this service *and* the exact occurrence, so a day
+  // with no programme never exposes another service's (or another day's) file.
   const programme = await getProgramme(service.id, occurrenceDate)
+  const programmeUrl = await getProgrammeFileUrl(programme)
 
   let alreadyCheckedIn = false
   if (membership) {
@@ -117,20 +141,28 @@ export default async function MemberServicePage({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {programme?.file_url ? (
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            {new Date(`${occurrenceDate}T00:00:00`).toLocaleDateString(
+              undefined,
+              { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }
+            )}
+          </p>
+          {programme && programmeUrl ? (
             <>
-              <p className="text-sm text-muted-foreground">
-                {programme.title ?? `Programme for ${occurrenceDate}`}
-              </p>
+              {programme.title && (
+                <p className="text-sm text-muted-foreground">
+                  {programme.title}
+                </p>
+              )}
               <Button asChild>
-                <a href={programme.file_url} target="_blank" rel="noreferrer">
+                <a href={programmeUrl} target="_blank" rel="noreferrer">
                   <FileText className="h-4 w-4 mr-2" /> Download programme
                 </a>
               </Button>
             </>
           ) : (
             <p className="text-sm text-muted-foreground">
-              The programme for {occurrenceDate} has not been uploaded yet.
+              No programme has been published for this service yet.
             </p>
           )}
         </CardContent>

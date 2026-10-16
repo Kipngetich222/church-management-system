@@ -41,6 +41,7 @@ export type ServiceProgrammeRow = {
   title: string | null
   notes: string | null
   file_url: string | null
+  file_path: string | null
   file_name: string | null
 }
 
