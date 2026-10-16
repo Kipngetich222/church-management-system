@@ -2027,6 +2027,197 @@ export type Database = {
           },
         ]
       }
+      recurring_services: {
+        Row: {
+          address: string | null
+          church_id: string
+          created_at: string | null
+          created_by: string | null
+          day_of_week: number
+          description: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean
+          location_name: string | null
+          procedure: string | null
+          qr_code: string | null
+          start_date: string | null
+          times: Json
+          timezone: string
+          title: string
+          updated_at: string | null
+          visibility: Database['public']['Enums']['event_visibility']
+        }
+        Insert: {
+          address?: string | null
+          church_id: string
+          created_at?: string | null
+          created_by?: string | null
+          day_of_week: number
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          location_name?: string | null
+          procedure?: string | null
+          qr_code?: string | null
+          start_date?: string | null
+          times?: Json
+          timezone?: string
+          title: string
+          updated_at?: string | null
+          visibility?: Database['public']['Enums']['event_visibility']
+        }
+        Update: {
+          address?: string | null
+          church_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          day_of_week?: number
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          location_name?: string | null
+          procedure?: string | null
+          qr_code?: string | null
+          start_date?: string | null
+          times?: Json
+          timezone?: string
+          title?: string
+          updated_at?: string | null
+          visibility?: Database['public']['Enums']['event_visibility']
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'recurring_services_church_id_fkey'
+            columns: ['church_id']
+            isOneToOne: false
+            referencedRelation: 'churches'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'recurring_services_created_by_fkey'
+            columns: ['created_by']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      service_attendance: {
+        Row: {
+          church_id: string
+          id: string
+          membership_id: string
+          method: string
+          recurring_service_id: string
+          scanned_at: string | null
+          service_date: string
+        }
+        Insert: {
+          church_id: string
+          id?: string
+          membership_id: string
+          method?: string
+          recurring_service_id: string
+          scanned_at?: string | null
+          service_date: string
+        }
+        Update: {
+          church_id?: string
+          id?: string
+          membership_id?: string
+          method?: string
+          recurring_service_id?: string
+          scanned_at?: string | null
+          service_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'service_attendance_church_id_fkey'
+            columns: ['church_id']
+            isOneToOne: false
+            referencedRelation: 'churches'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'service_attendance_membership_id_fkey'
+            columns: ['membership_id']
+            isOneToOne: false
+            referencedRelation: 'church_memberships'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'service_attendance_recurring_service_id_fkey'
+            columns: ['recurring_service_id']
+            isOneToOne: false
+            referencedRelation: 'recurring_services'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      service_programmes: {
+        Row: {
+          church_id: string
+          created_at: string | null
+          file_name: string | null
+          file_url: string | null
+          id: string
+          notes: string | null
+          recurring_service_id: string
+          service_date: string
+          title: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          church_id: string
+          created_at?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          notes?: string | null
+          recurring_service_id: string
+          service_date: string
+          title?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          church_id?: string
+          created_at?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          notes?: string | null
+          recurring_service_id?: string
+          service_date?: string
+          title?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'service_programmes_church_id_fkey'
+            columns: ['church_id']
+            isOneToOne: false
+            referencedRelation: 'churches'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'service_programmes_recurring_service_id_fkey'
+            columns: ['recurring_service_id']
+            isOneToOne: false
+            referencedRelation: 'recurring_services'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'service_programmes_uploaded_by_fkey'
+            columns: ['uploaded_by']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

@@ -6,7 +6,7 @@ import type { Html5Qrcode } from 'html5-qrcode'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Camera, Loader2 } from 'lucide-react'
-import { extractEventId } from '@/lib/services/qr.service'
+import { extractEventId, extractServiceId } from '@/lib/services/qr.service'
 
 export function QRScanner() {
   const router = useRouter()
@@ -30,13 +30,18 @@ export function QRScanner() {
           await scanner.stop()
           setScanning(false)
           const eventId = extractEventId(decodedText)
-          if (!eventId) {
-            setError('That does not look like a church event code.')
+          if (eventId) {
+            // Hand off to the redirect hub, which sends members to their event
+            // page and everyone else to the public event page.
+            router.push(`/e/${eventId}`)
             return
           }
-          // Hand off to the redirect hub, which sends members to their event
-          // page and everyone else to the public event page.
-          router.push(`/e/${eventId}`)
+          const serviceId = extractServiceId(decodedText)
+          if (serviceId) {
+            router.push(`/s/${serviceId}`)
+            return
+          }
+          setError('That does not look like a church code.')
         },
         () => {}
       )

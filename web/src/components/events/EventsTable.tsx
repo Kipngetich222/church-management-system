@@ -9,12 +9,19 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
+import { ExportButton } from '@/components/shared/ExportButton'
 import { CalendarDays, Globe, MapPin, Search, Ticket } from 'lucide-react'
 import type { EventRow, EventStats } from '@/lib/services/events.service'
 import { EVENT_VISIBILITY_LABELS } from '@/lib/constants/events'
 
 function visibilityLabel(visibility: EventRow['visibility']) {
   return EVENT_VISIBILITY_LABELS[visibility] ?? visibility
+}
+
+/** An event counts as past once it is completed or its start time has gone. */
+function isPastEvent(event: EventRow) {
+  return event.status === 'completed' || !isUpcoming(event.start_time)
 }
 
 export function EventsTable({
@@ -25,19 +32,54 @@ export function EventsTable({
   stats?: Record<string, EventStats>
 }) {
   const [q, setQ] = useState('')
-  const filtered = events.filter((e) =>
-    e.title.toLowerCase().includes(q.toLowerCase())
-  )
+  const [showPast, setShowPast] = useState(false)
+
+  const filtered = events
+    .filter((e) => e.title.toLowerCase().includes(q.toLowerCase()))
+    .filter((e) => showPast || !isPastEvent(e))
+    .sort((a, b) => {
+      const aPast = isPastEvent(a)
+      const bPast = isPastEvent(b)
+      // Upcoming events first, past/completed events at the bottom.
+      if (aPast !== bPast) return aPast ? 1 : -1
+      const aTime = new Date(a.start_time).getTime()
+      const bTime = new Date(b.start_time).getTime()
+      // Upcoming soonest-first; past most-recent-first.
+      return aPast ? bTime - aTime : aTime - bTime
+    })
 
   return (
     <div className="space-y-4">
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search events..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="pl-9"
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search events..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-muted-foreground select-none">
+          <Switch checked={showPast} onCheckedChange={setShowPast} />
+          Show past events
+        </label>
+        <ExportButton
+          filename="events.csv"
+          title="Events"
+          label="Export"
+          rows={[
+            ['Event', 'When', 'Type', 'Status', 'Visibility', 'Booked', 'Attended'],
+            ...filtered.map((e) => [
+              e.title,
+              formatEventDate(e.start_time, e.end_time, e.all_day),
+              e.event_type,
+              e.status,
+              visibilityLabel(e.visibility),
+              stats[e.id]?.booked ?? 0,
+              Math.max(stats[e.id]?.confirmed ?? 0, stats[e.id]?.attendance ?? 0),
+            ]),
+          ]}
         />
       </div>
 
@@ -125,7 +167,9 @@ export function EventsTable({
             {filtered.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                  No events found
+                  {events.length > 0 && !showPast
+                    ? 'No upcoming events. Turn on "Show past events" to see older ones.'
+                    : 'No events found'}
                 </TableCell>
               </TableRow>
             )}

@@ -6,10 +6,11 @@ export default async function ScanPage() {
     <div className="max-w-md mx-auto space-y-4">
       <BackLink href="/member/home" label="Home" />
 
-      <h1 className="text-2xl font-bold">Scan an event code</h1>
+      <h1 className="text-2xl font-bold">Scan a church code</h1>
       <p className="text-sm text-muted-foreground">
-        Point your camera at an event QR code to open it — you can view the
-        venue or online link, register and buy tickets from there.
+        Point your camera at an event or service QR code to open it. Event
+        codes show the venue or online link where you can register and buy
+        tickets; service codes take you to the programme and check-in.
       </p>
       <QRScanner />
     </div>

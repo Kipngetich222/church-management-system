@@ -13,11 +13,21 @@ import { getCalendarDays } from '@/lib/utils/calendar'
 import { cn } from '@/lib/utils'
 import type { EventRow } from '@/lib/services/events.service'
 
+export type CalendarOccurrence = {
+  id: string
+  title: string
+  date: string
+  href: string
+  subtitle?: string
+}
+
 export function CalendarView({
   events,
+  occurrences = [],
   basePath = '/admin/events',
 }: {
   events: EventRow[]
+  occurrences?: CalendarOccurrence[]
   basePath?: string
 }) {
   const [current, setCurrent] = useState(startOfMonth(new Date()))
@@ -29,6 +39,12 @@ export function CalendarView({
     const key = e.start_time.slice(0, 10)
     if (!eventsByDay.has(key)) eventsByDay.set(key, [])
     eventsByDay.get(key)!.push(e)
+  })
+
+  const occurrencesByDay = new Map<string, CalendarOccurrence[]>()
+  occurrences.forEach((o) => {
+    if (!occurrencesByDay.has(o.date)) occurrencesByDay.set(o.date, [])
+    occurrencesByDay.get(o.date)!.push(o)
   })
 
   const now = new Date().getTime()
@@ -60,6 +76,7 @@ export function CalendarView({
           {days.map((day) => {
             const key = format(day, 'yyyy-MM-dd')
             const dayEvents = eventsByDay.get(key) ?? []
+            const dayOccurrences = occurrencesByDay.get(key) ?? []
             const outside = !isSameMonth(day, current)
             return (
               <div
@@ -93,8 +110,20 @@ export function CalendarView({
                     </Link>
                   )
                 })}
-                {dayEvents.length > 3 && (
-                  <div className="text-muted-foreground">+{dayEvents.length - 3} more</div>
+                {dayOccurrences.slice(0, 2).map((o) => (
+                  <Link
+                    key={`${o.id}-${o.date}`}
+                    href={o.href}
+                    title={o.subtitle ? `${o.title} - ${o.subtitle}` : o.title}
+                    className="block px-1.5 py-0.5 rounded truncate bg-amber-500/15 text-amber-700 hover:bg-amber-500/25 dark:text-amber-400"
+                  >
+                    {o.title}
+                  </Link>
+                ))}
+                {dayEvents.length + dayOccurrences.length > 5 && (
+                  <div className="text-muted-foreground">
+                    +{dayEvents.length + dayOccurrences.length - 5} more
+                  </div>
                 )}
               </div>
             )

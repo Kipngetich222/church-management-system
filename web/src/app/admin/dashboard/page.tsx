@@ -3,14 +3,10 @@ import { getActiveChurch } from '@/lib/utils/church-scope'
 import { getChurchSetup } from '@/lib/utils/church-setup'
 import { getPlanUsage } from '@/lib/services/plan.service'
 import { createClient } from '@/lib/supabase/server'
-import {
-  listUpcomingEvents,
-  listPastEvents,
-  getChurchEventStats,
-} from '@/lib/services/events.service'
+import { listUpcomingEvents, listPastEvents } from '@/lib/services/events.service'
 import type { SetupStepKey } from '@/lib/constants/setup-steps'
 import { ChurchLogo } from '@/components/shared/ChurchLogo'
-import { UpcomingEvents } from '@/components/events/UpcomingEvents'
+import { DashboardEvents } from '@/components/events/DashboardEvents'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -27,8 +23,6 @@ import {
   Coins,
   Crown,
   MapPin,
-  Ticket,
-  UserCheck,
   Users,
 } from 'lucide-react'
 
@@ -84,7 +78,6 @@ export default async function AdminDashboardPage() {
     planUsage,
     upcoming,
     past,
-    stats,
     memberCount,
     offerings,
   ] = await Promise.all([
@@ -92,7 +85,6 @@ export default async function AdminDashboardPage() {
     getPlanUsage(churchId),
     listUpcomingEvents(churchId, 5),
     listPastEvents(churchId, 5),
-    getChurchEventStats(churchId),
     supabase
       .from('church_memberships')
       .select('id', { count: 'exact', head: true })
@@ -108,15 +100,6 @@ export default async function AdminDashboardPage() {
     (sum, o) => sum + Number(o.amount ?? 0),
     0
   )
-  const upcomingBooked = upcoming.reduce(
-    (sum, e) => sum + (stats[e.id]?.booked ?? 0),
-    0
-  )
-  const upcomingConfirmed = upcoming.reduce(
-    (sum, e) => sum + Math.max(stats[e.id]?.confirmed ?? 0, stats[e.id]?.attendance ?? 0),
-    0
-  )
-  const totalEvents = Object.keys(stats).length
 
   return (
     <div className="space-y-6">
@@ -195,37 +178,13 @@ export default async function AdminDashboardPage() {
         </Card>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           label="Members"
           value={String(memberCount.count ?? 0)}
           icon={Users}
           href="/admin/members"
         />
-        <StatCard
-          label="Upcoming Events"
-          value={String(upcoming.length)}
-          hint={`of ${totalEvents} total events`}
-          icon={CalendarDays}
-          href="/admin/events"
-        />
-        <StatCard
-          label="Event Bookings"
-          value={String(upcomingBooked)}
-          hint="across upcoming events"
-          icon={Ticket}
-          href="/admin/events"
-        />
-        <StatCard
-          label="Confirmed Attendance"
-          value={String(upcomingConfirmed)}
-          hint="check-ins so far"
-          icon={UserCheck}
-          href="/admin/events"
-        />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="This Week's Giving"
           value={`KES ${weekGiving.toLocaleString()}`}
@@ -234,22 +193,8 @@ export default async function AdminDashboardPage() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <UpcomingEvents
-          events={upcoming}
-          basePath="/admin/events"
-          emptyText="No upcoming events yet."
-        />
-        <UpcomingEvents
-          events={past}
-          basePath="/admin/events"
-          title="Past events"
-          emptyText="No past events yet."
-        />
-      </div>
+      <DashboardEvents upcoming={upcoming} past={past} />
     </div>
   )
 }
-
-
 

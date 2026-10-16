@@ -174,17 +174,36 @@ export function EventForm({
         : null,
     }
 
-    const { error: err } = existing
-      ? await supabase.from('events').update(payload).eq('id', existing.id)
-      : await supabase.from('events').insert(payload).select('id').single()
+    if (existing) {
+      const { error: err } = await supabase
+        .from('events')
+        .update(payload)
+        .eq('id', existing.id)
+      if (err) {
+        setError(err.message)
+        setLoading(false)
+        return
+      }
+      router.push('/admin/events')
+      router.refresh()
+      return
+    }
 
-    if (err) {
-      setError(err.message)
+    const { data, error: err } = await supabase
+      .from('events')
+      .insert(payload)
+      .select('id')
+      .single()
+
+    if (err || !data) {
+      setError(err?.message ?? 'Could not create the event')
       setLoading(false)
       return
     }
 
-    router.push('/admin/events')
+    // Land on the new event with the QR prompt so the admin can decide whether
+    // to generate a QR code right away.
+    router.push(`/admin/events/${data.id}?created=1`)
     router.refresh()
   }
 
@@ -583,4 +602,3 @@ export function EventForm({
     </form>
   )
 }
-

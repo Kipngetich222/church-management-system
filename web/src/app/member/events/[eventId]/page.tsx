@@ -25,7 +25,14 @@ export default async function MemberEventDetail({
 
   const maps = googleMapsUrl(event.latitude, event.longitude, event.address)
   const isOnline = event.event_type === 'online'
-  const isPast = event.status === 'completed' || new Date(event.start_time) < new Date()
+  const now = new Date()
+  const startTime = new Date(event.start_time)
+  const endTime = event.end_time ? new Date(event.end_time) : null
+  const isPast = event.status === 'completed' || startTime < now
+  const hasStarted = now >= startTime
+  const hasEnded = event.status === 'completed' || (endTime ? now > endTime : false)
+  const canCheckIn =
+    event.status === 'published' && hasStarted && !hasEnded
   const showRegistration =
     event.status === 'published' &&
     event.is_registration_required &&
@@ -112,7 +119,20 @@ export default async function MemberEventDetail({
         />
       )}
 
-      {event.status === 'published' && !isPast && <EventCheckIn eventId={event.id} />}
+      {canCheckIn && <EventCheckIn eventId={event.id} />}
+
+      {event.status === 'published' && !hasStarted && (
+        <p className="text-sm text-muted-foreground">
+          Check-in opens on{' '}
+          {startTime.toLocaleString(undefined, {
+            day: 'numeric',
+            month: 'short',
+            hour: 'numeric',
+            minute: '2-digit',
+          })}{' '}
+          when the event starts.
+        </p>
+      )}
 
       {event.description && (
         <Card>

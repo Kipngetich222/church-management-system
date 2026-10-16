@@ -17,6 +17,7 @@ import {
   FolderOpen,
   CreditCard,
   Crown,
+  Repeat,
 } from 'lucide-react'
 
 export type NavItem = {
@@ -66,6 +67,13 @@ export const ADMIN_NAV: NavItem[] = [
     label: 'Events',
     href: '/admin/events',
     icon: Calendar,
+    permission: 'events:read',
+    section: 'Ministry',
+  },
+  {
+    label: 'Recurring services',
+    href: '/admin/events/recurring',
+    icon: Repeat,
     permission: 'events:read',
     section: 'Ministry',
   },

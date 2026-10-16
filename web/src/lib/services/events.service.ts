@@ -249,3 +249,69 @@ export async function getChurchEventStats(
 
   return stats
 }
+
+export type EventRegistrationPerson = {
+  full_name: string | null
+  email: string | null
+}
+
+export type EventRegistrationRow = {
+  id: string
+  guest_name: string | null
+  guest_email: string | null
+  guest_phone: string | null
+  status: string | null
+  payment_status: string | null
+  amount_paid: number | null
+  ticket_code: string | null
+  created_at: string | null
+  church_memberships: {
+    id: string
+    users: EventRegistrationPerson | null
+  } | null
+}
+
+export type EventAttendanceRow = {
+  id: string
+  scanned_at: string | null
+  method: string | null
+  church_memberships: {
+    id: string
+    users: EventRegistrationPerson | null
+  } | null
+}
+
+/** Everyone who booked / registered for an event (admin view). */
+export async function listEventRegistrations(
+  eventId: string
+): Promise<EventRegistrationRow[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('event_registrations')
+    .select(
+      `id, guest_name, guest_email, guest_phone, status, payment_status,
+       amount_paid, ticket_code, created_at,
+       church_memberships(id, users(full_name, email))`
+    )
+    .eq('event_id', eventId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as unknown as EventRegistrationRow[]
+}
+
+/** Everyone who has checked in / confirmed attendance for an event. */
+export async function listEventAttendanceForEvent(
+  eventId: string
+): Promise<EventAttendanceRow[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('event_attendance')
+    .select(
+      `id, scanned_at, method,
+       church_memberships(id, users(full_name, email))`
+    )
+    .eq('event_id', eventId)
+    .order('scanned_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as unknown as EventAttendanceRow[]
+}

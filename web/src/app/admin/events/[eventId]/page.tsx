@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getEventById, getEventEngagement } from '@/lib/services/events.service'
 import { EventForm } from '@/components/events/EventForm'
 import { EventQrPanel } from '@/components/events/EventQrPanel'
+import { QrPrompt } from '@/components/events/QrPrompt'
 import { BackLink } from '@/components/shared/BackLink'
 import { Card, CardContent } from '@/components/ui/card'
 import { notFound } from 'next/navigation'
@@ -34,10 +35,13 @@ function Stat({
 
 export default async function EditEventPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ eventId: string }>
+  searchParams: Promise<{ created?: string }>
 }) {
   const { eventId } = await params
+  const { created } = await searchParams
   const { churchId } = await getActiveChurch()
   const supabase = await createClient()
 
@@ -65,7 +69,9 @@ export default async function EditEventPage({
     <div className="max-w-3xl space-y-8">
       <BackLink href="/admin/events" label="Events" />
 
-      <h1 className="text-2xl font-bold">Edit event</h1>
+      <h1 className="text-2xl font-bold">{created ? 'Event created' : 'Edit event'}</h1>
+
+      {created && <QrPrompt eventId={eventId} />}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
@@ -101,5 +107,3 @@ export default async function EditEventPage({
     </div>
   )
 }
-
-
