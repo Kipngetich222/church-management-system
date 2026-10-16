@@ -2,18 +2,37 @@ import Link from 'next/link'
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import {
   listRecurringServices,
+  listServiceExceptions,
   WEEKDAY_LABELS,
 } from '@/lib/services/recurring-services.service'
-import { nextOccurrence } from '@/lib/utils/recurrence'
+import { nextOccurrence, occurrenceKey, todayKey } from '@/lib/utils/recurrence'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { BackLink } from '@/components/shared/BackLink'
 import { ChevronRight, Plus, Repeat } from 'lucide-react'
 
+function addDays(key: string, days: number): string {
+  const d = new Date(`${key}T00:00:00`)
+  d.setDate(d.getDate() + days)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export default async function RecurringServicesPage() {
   const { churchId } = await getActiveChurch()
-  const services = await listRecurringServices(churchId)
+
+  const today = todayKey()
+  const [services, exceptions] = await Promise.all([
+    listRecurringServices(churchId),
+    listServiceExceptions(churchId, today, addDays(today, 400)),
+  ])
+
+  const hidden = new Set(
+    exceptions.map((e) => occurrenceKey(e.recurring_service_id, e.service_date))
+  )
 
   return (
     <div className="space-y-6">
@@ -59,7 +78,7 @@ export default async function RecurringServicesPage() {
                     <div className="text-xs text-muted-foreground">
                       {(service.times ?? [])
                         .map((t) => `${t.label} ${t.start}`)
-                        .join(' · ') || 'No times set'}
+                        .join(' - ') || 'No times set'}
                     </div>
                     {service.location_name && (
                       <div className="text-xs text-muted-foreground">
@@ -67,7 +86,7 @@ export default async function RecurringServicesPage() {
                       </div>
                     )}
                     <div className="text-xs text-muted-foreground">
-                      Next: {nextOccurrence(service)}
+                      Next: {nextOccurrence(service, today, hidden)}
                     </div>
                   </div>
                   <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />

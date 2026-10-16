@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { appBaseUrl } from '@/lib/utils/app-url'
 import type { Metadata } from 'next'
 import { createPublicClient } from '@/lib/supabase/public'
 import { SermonPlayer } from '@/components/sermons/SermonPlayer'
@@ -37,7 +38,7 @@ export async function generateMetadata({
   const sermon = await loadSermon(sermonId)
   if (!sermon) return { title: 'Sermon not found' }
   return {
-    title: `${sermon.title} — ChurchOnline`,
+    title: `${sermon.title} ??? ChurchOnline`,
     description: sermon.description ?? undefined,
   }
 }
@@ -53,7 +54,7 @@ export default async function SermonPage({
 
   const churchRel = sermon.churches
   const church = Array.isArray(churchRel) ? churchRel[0] : churchRel
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+  const baseUrl = appBaseUrl()
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-3xl space-y-6">

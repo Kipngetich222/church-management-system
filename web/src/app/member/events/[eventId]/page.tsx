@@ -1,6 +1,7 @@
 import { getEventById } from '@/lib/services/events.service'
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { notFound } from 'next/navigation'
+import { appBaseUrl } from '@/lib/utils/app-url'
 import { formatEventDate } from '@/lib/utils/date'
 import { googleMapsUrl } from '@/lib/utils/maps'
 import { Button } from '@/components/ui/button'
@@ -82,7 +83,7 @@ export default async function MemberEventDetail({
 
       <div className="flex flex-wrap gap-2">
         <ShareButton
-          url={`${process.env.NEXT_PUBLIC_APP_URL}/e/${event.id}`}
+          url={`${appBaseUrl()}/e/${event.id}`}
           title={event.title}
         />
         {isOnline && event.meeting_link && !isPast && (

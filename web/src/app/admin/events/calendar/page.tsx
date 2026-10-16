@@ -1,8 +1,15 @@
 import Link from 'next/link'
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { listEvents } from '@/lib/services/events.service'
-import { listRecurringServices } from '@/lib/services/recurring-services.service'
-import { expandManyOccurrences, toDateKey } from '@/lib/utils/recurrence'
+import {
+  listRecurringServices,
+  listServiceExceptions,
+} from '@/lib/services/recurring-services.service'
+import {
+  expandManyOccurrences,
+  occurrenceKey,
+  toDateKey,
+} from '@/lib/utils/recurrence'
 import { CalendarView } from '@/components/events/CalendarView'
 import { BackLink } from '@/components/shared/BackLink'
 import { Button } from '@/components/ui/button'
@@ -10,10 +17,6 @@ import { Repeat } from 'lucide-react'
 
 export default async function AdminEventCalendarPage() {
   const { churchId } = await getActiveChurch()
-  const [events, services] = await Promise.all([
-    listEvents(churchId),
-    listRecurringServices(churchId),
-  ])
 
   // Expand recurring services across a wide window so month navigation always
   // has something to show.
@@ -21,17 +24,29 @@ export default async function AdminEventCalendarPage() {
   from.setMonth(from.getMonth() - 3)
   const to = new Date()
   to.setMonth(to.getMonth() + 12)
-  const occurrences = expandManyOccurrences(
-    services,
-    toDateKey(from),
-    toDateKey(to)
-  ).map((o) => ({
-    id: o.serviceId,
-    title: o.title,
-    date: o.date,
-    href: `/admin/events/recurring/${o.serviceId}?date=${o.date}`,
-    subtitle: o.times.map((t) => t.start).join(', '),
-  }))
+  const fromKey = toDateKey(from)
+  const toKey = toDateKey(to)
+
+  const [events, services, exceptions] = await Promise.all([
+    listEvents(churchId),
+    listRecurringServices(churchId),
+    listServiceExceptions(churchId, fromKey, toKey),
+  ])
+
+  // Occurrences an admin has hidden for a specific day; the calendar skips them.
+  const hidden = new Set(
+    exceptions.map((e) => occurrenceKey(e.recurring_service_id, e.service_date))
+  )
+
+  const occurrences = expandManyOccurrences(services, fromKey, toKey, hidden).map(
+    (o) => ({
+      id: o.serviceId,
+      title: o.title,
+      date: o.date,
+      href: `/admin/events/recurring/${o.serviceId}?date=${o.date}`,
+      subtitle: o.times.map((t) => t.start).join(', '),
+    })
+  )
 
   return (
     <div className="space-y-6">

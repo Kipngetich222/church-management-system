@@ -1,4 +1,5 @@
 import QRCode from 'qrcode'
+import { appBaseUrl } from '@/lib/utils/app-url'
 
 /**
  * Generate a data URL QR code that encodes a string payload (usually a URL).
@@ -19,8 +20,7 @@ export async function generateQrDataUrl(payload: string): Promise<string> {
  * and take an action such as registering or buying a ticket.
  */
 export function buildEventQrUrl(eventId: string): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  return `${base.replace(/\/$/, '')}/e/${eventId}`
+  return `${appBaseUrl()}/e/${eventId}`
 }
 
 /**
@@ -75,10 +75,8 @@ export function extractEventId(raw: string): string | null {
  * route sends members of the church to their service page, where the programme
  * lives and check-in opens on the day.
  */
-export function buildServiceQrUrl(serviceId: string, baseUrl?: string): string {
-  const base =
-    baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  return `${base.replace(/\/$/, '')}/s/${serviceId}`
+export function buildServiceQrUrl(serviceId: string): string {
+  return `${appBaseUrl()}/s/${serviceId}`
 }
 
 /** Pull a recurring service id out of a scanned `/s/:id` link. */

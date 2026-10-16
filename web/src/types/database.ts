@@ -2157,6 +2157,58 @@ export type Database = {
           },
         ]
       }
+      service_exceptions: {
+        Row: {
+          church_id: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          reason: string | null
+          recurring_service_id: string
+          service_date: string
+        }
+        Insert: {
+          church_id: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          reason?: string | null
+          recurring_service_id: string
+          service_date: string
+        }
+        Update: {
+          church_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          reason?: string | null
+          recurring_service_id?: string
+          service_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'service_exceptions_church_id_fkey'
+            columns: ['church_id']
+            isOneToOne: false
+            referencedRelation: 'churches'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'service_exceptions_created_by_fkey'
+            columns: ['created_by']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'service_exceptions_recurring_service_id_fkey'
+            columns: ['recurring_service_id']
+            isOneToOne: false
+            referencedRelation: 'recurring_services'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       service_programmes: {
         Row: {
           church_id: string

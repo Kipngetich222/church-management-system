@@ -3,7 +3,7 @@ import { generateQrDataUrl, buildServiceQrUrl } from '@/lib/services/qr.service'
 import { NextResponse } from 'next/server'
 
 export async function POST(
-  req: Request,
+  _req: Request,
   { params }: { params: Promise<{ serviceId: string }> }
 ) {
   const { serviceId } = await params
@@ -18,13 +18,11 @@ export async function POST(
   if (!service)
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  // Encode the URL of the app the admin is generating the code from, so a
-  // freshly generated code always points at a host that can serve `/s/:id`
-  // (falling back to the canonical app URL for server-side callers). The QR
-  // encodes a plain URL so any phone camera opens the service page, where
-  // members can follow the programme and check in on the day.
-  const origin = new URL(req.url).origin
-  const dataUrl = await generateQrDataUrl(buildServiceQrUrl(service.id, origin))
+  // Encode the canonical app URL (NEXT_PUBLIC_APP_URL) so a scanned code always
+  // opens the deployed app - never the machine the code happened to be
+  // generated on. The QR is a plain URL, so any phone camera opens the service
+  // page, where members follow the programme and check in on the day.
+  const dataUrl = await generateQrDataUrl(buildServiceQrUrl(service.id))
 
   await supabase
     .from('recurring_services')
