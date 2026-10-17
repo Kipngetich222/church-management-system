@@ -120,7 +120,7 @@ export async function listServiceAttendance(
   const { data, error } = await supabase
     .from('service_attendance')
     .select(
-      'id, service_date, method, scanned_at, church_memberships(id, users(full_name, email))'
+      'id, service_date, method, scanned_at, church_memberships(id, users!church_memberships_user_id_fkey(full_name, email))'
     )
     .eq('recurring_service_id', recurringServiceId)
     .eq('service_date', serviceDate)

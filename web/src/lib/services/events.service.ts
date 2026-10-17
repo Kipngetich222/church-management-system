@@ -291,7 +291,7 @@ export async function listEventRegistrations(
     .select(
       `id, guest_name, guest_email, guest_phone, status, payment_status,
        amount_paid, ticket_code, created_at,
-       church_memberships(id, users(full_name, email))`
+       church_memberships(id, users!church_memberships_user_id_fkey(full_name, email))`
     )
     .eq('event_id', eventId)
     .order('created_at', { ascending: false })
@@ -308,7 +308,7 @@ export async function listEventAttendanceForEvent(
     .from('event_attendance')
     .select(
       `id, scanned_at, method,
-       church_memberships(id, users(full_name, email))`
+       church_memberships(id, users!church_memberships_user_id_fkey(full_name, email))`
     )
     .eq('event_id', eventId)
     .order('scanned_at', { ascending: false })

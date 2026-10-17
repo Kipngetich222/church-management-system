@@ -23,14 +23,14 @@ export default async function GroupDetailPage({
   // All members for potential addition / leader selection
   const { data: allMembers } = await supabase
     .from('church_memberships')
-    .select('id, users(full_name, email)')
+    .select('id, users!church_memberships_user_id_fkey(full_name, email)')
     .eq('church_id', churchId)
     .order('joined_at')
 
   // Current group members
   const { data: groupMembers } = await supabase
     .from('small_group_members')
-    .select('id, membership_id, church_memberships(users(full_name, email))')
+    .select('id, membership_id, church_memberships(users!church_memberships_user_id_fkey(full_name, email))')
     .eq('group_id', groupId)
 
   return (

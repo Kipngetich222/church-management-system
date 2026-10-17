@@ -1,15 +1,11 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Table,
   TableBody,
@@ -18,86 +14,105 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Search, Download } from 'lucide-react'
-import { BadgeChip } from './BadgeChip'
-
-type Member = {
-  id: string
-  role: string
-  badges: string[]
-  is_baptized: boolean
-  users: {
-    email: string
-    full_name: string | null
-    avatar_url: string | null
-  } | null
-}
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Search, Smartphone, UserRound } from 'lucide-react'
+import { BadgeChip, findBadgeDefinition } from './BadgeChip'
+import { DeleteMemberButton } from './DeleteMemberButton'
+import { MEMBER_CATEGORY_LABELS } from '@/lib/constants/members'
+import {
+  effectiveMemberCategory,
+  memberAvatar,
+  memberEmail,
+  memberName,
+  memberPhone,
+  type MemberBadgeDefinition,
+  type MemberRecord,
+} from '@/lib/types/members'
 
 export function MembersTable({
   members,
-  churchId,
+  badges,
+  isSuperAdmin,
 }: {
-  members: Member[]
-  churchId: string
+  members: MemberRecord[]
+  badges: MemberBadgeDefinition[]
+  isSuperAdmin: boolean
 }) {
   const [q, setQ] = useState('')
+  const [category, setCategory] = useState('all')
+
+  const badgeMap = useMemo(
+    () =>
+      new Map(badges.map((badge) => [badge.name.trim().toLowerCase(), badge])),
+    [badges]
+  )
 
   const filtered = useMemo(() => {
-    if (!q) return members
-    const needle = q.toLowerCase()
-    return members.filter(
-      (m) =>
-        (m.users?.full_name ?? '').toLowerCase().includes(needle) ||
-        (m.users?.email ?? '').toLowerCase().includes(needle) ||
-        m.badges.some((b) => b.includes(needle))
-    )
-  }, [members, q])
+    const needle = q.trim().toLowerCase()
+    return members.filter((member) => {
+      if (category !== 'all' && effectiveMemberCategory(member) !== category) {
+        return false
+      }
+      if (!needle) return true
 
-  function exportCSV() {
-    const rows = [
-      ['Name', 'Email', 'Role', 'Badges', 'Baptized'],
-      ...filtered.map((m) => [
-        m.users?.full_name ?? '',
-        m.users?.email ?? '',
-        m.role,
-        m.badges.join('|'),
-        m.is_baptized ? 'yes' : 'no',
-      ]),
-    ]
-    const csv = rows.map((r) => r.map((v) => `"${v}"`).join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `members-${churchId}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
+      return (
+        memberName(member).toLowerCase().includes(needle) ||
+        memberEmail(member).toLowerCase().includes(needle) ||
+        memberPhone(member).toLowerCase().includes(needle) ||
+        member.badges.some((badge) => badge.toLowerCase().includes(needle)) ||
+        (MEMBER_CATEGORY_LABELS[effectiveMemberCategory(member) ?? ''] ?? '')
+          .toLowerCase()
+          .includes(needle)
+      )
+    })
+  }, [category, members, q])
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative w-full max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by name, email, or badge..."
+            placeholder="Search name, email, phone, or badge..."
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={(event) => setQ(event.target.value)}
             className="pl-9"
           />
         </div>
-        <Button variant="outline" onClick={exportCSV}>
-          <Download className="h-4 w-4 mr-2" /> Export
-        </Button>
+        <Select
+          value={category}
+          onValueChange={(value) => setCategory(value ?? 'all')}
+        >
+          <SelectTrigger className="w-full sm:w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            <SelectItem value="men">Men</SelectItem>
+            <SelectItem value="women">Women</SelectItem>
+            <SelectItem value="youth">Youth</SelectItem>
+            <SelectItem value="children">Children</SelectItem>
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground sm:ml-auto">
+          Showing {filtered.length} of {members.length}
+        </p>
       </div>
 
-      <div className="border rounded-lg bg-background">
+      <div className="overflow-x-auto rounded-lg border bg-background">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Member</TableHead>
-              <TableHead>Role</TableHead>
+              <TableHead>Category</TableHead>
               <TableHead>Badges</TableHead>
+              <TableHead>Account</TableHead>
               <TableHead>Baptized</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -106,58 +121,88 @@ export function MembersTable({
             {filtered.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={5}
-                  className="text-center py-12 text-muted-foreground"
+                  colSpan={6}
+                  className="py-12 text-center text-muted-foreground"
                 >
                   No members found
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((m) => {
-                const initials = (m.users?.full_name || m.users?.email || '??')
-                  .slice(0, 2)
-                  .toUpperCase()
+              filtered.map((member) => {
+                const name = memberName(member)
+                const initials = name.slice(0, 2).toUpperCase()
+                const email = memberEmail(member)
+                const phone = memberPhone(member)
+                const categoryValue = effectiveMemberCategory(member)
+
                 return (
-                  <TableRow key={m.id}>
+                  <TableRow key={member.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-9 w-9">
-                          <AvatarImage src={m.users?.avatar_url ?? undefined} />
+                          <AvatarImage
+                            src={memberAvatar(member) ?? undefined}
+                          />
                           <AvatarFallback>{initials}</AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col">
-                          <span className="font-medium">
-                            {m.users?.full_name || 'Unnamed'}
-                          </span>
+                          <span className="font-medium">{name}</span>
                           <span className="text-xs text-muted-foreground">
-                            {m.users?.email}
+                            {phone || email || 'No contact details'}
                           </span>
+                          {phone && email ? (
+                            <span className="text-[11px] text-muted-foreground">
+                              {email}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={
-                          m.role === 'super_admin' ? 'default' : 'secondary'
-                        }
-                      >
-                        {m.role.replace('_', ' ')}
+                      <Badge variant="secondary">
+                        {MEMBER_CATEGORY_LABELS[categoryValue ?? ''] ?? '—'}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {m.badges.slice(0, 3).map((b) => (
-                          <BadgeChip key={b} badge={b} />
+                        {member.badges.slice(0, 3).map((badge) => (
+                          <BadgeChip
+                            key={badge}
+                            badge={badge}
+                            definition={
+                              badgeMap.get(badge.trim().toLowerCase()) ??
+                              findBadgeDefinition(badge, badges)
+                            }
+                          />
                         ))}
-                        {m.badges.length > 3 && (
-                          <span className="text-xs text-muted-foreground">
-                            +{m.badges.length - 3}
+                        {member.badges.length > 3 ? (
+                          <span className="self-center text-xs text-muted-foreground">
+                            +{member.badges.length - 3}
                           </span>
-                        )}
+                        ) : null}
+                        {!member.badges.length ? (
+                          <span className="text-xs text-muted-foreground">
+                            None
+                          </span>
+                        ) : null}
                       </div>
                     </TableCell>
                     <TableCell>
-                      {m.is_baptized ? (
+                      {member.user_id ? (
+                        <Badge variant="outline" className="gap-1">
+                          <UserRound className="h-3 w-3" /> Account
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="gap-1 border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                        >
+                          <Smartphone className="h-3 w-3" /> Manual
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {member.is_baptized ? (
                         <Badge variant="default">Yes</Badge>
                       ) : (
                         <span className="text-xs text-muted-foreground">
@@ -166,13 +211,21 @@ export function MembersTable({
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        render={<Link href={`/admin/members/${m.id}`} />}
-                      >
-                        View
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          render={<Link href={`/admin/members/${member.id}`} />}
+                        >
+                          Edit
+                        </Button>
+                        {isSuperAdmin ? (
+                          <DeleteMemberButton
+                            memberId={member.id}
+                            memberName={name}
+                          />
+                        ) : null}
+                      </div>
                     </TableCell>
                   </TableRow>
                 )

@@ -9,7 +9,7 @@ async function loadWall() {
     .from('prayer_requests')
     .select(`
       id, title, body, created_at, visibility,
-      church_memberships!prayer_requests_membership_id_fkey(users(full_name)),
+      church_memberships!prayer_requests_membership_id_fkey(users!church_memberships_user_id_fkey(full_name)),
       churches(name)
     `)
     .in('visibility', ['public_anonymous', 'public_named'])

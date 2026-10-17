@@ -1,4 +1,4 @@
-﻿import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 export type OfferingRow = {
   id: string
@@ -37,18 +37,31 @@ export async function listOfferings(
   const supabase = await createClient()
   let q = supabase
     .from('offerings')
-    .select(`
+    .select(
+      `
       id, church_id, membership_id, amount, currency, type, method,
       reference, notes, receipt_number, given_at,
-      church_memberships(users(full_name, email))
-    `)
+      church_memberships(users!church_memberships_user_id_fkey(full_name, email))
+    `
+    )
     .eq('church_id', churchId)
     .order('given_at', { ascending: false })
 
   if (filters?.from) q = q.gte('given_at', filters.from)
   if (filters?.to) q = q.lte('given_at', filters.to)
   if (filters?.type)
-    q = q.eq('type', filters.type as 'tithe' | 'general' | 'missions' | 'building_fund' | 'welfare' | 'thanksgiving' | 'pledge' | 'other')
+    q = q.eq(
+      'type',
+      filters.type as
+        | 'tithe'
+        | 'general'
+        | 'missions'
+        | 'building_fund'
+        | 'welfare'
+        | 'thanksgiving'
+        | 'pledge'
+        | 'other'
+    )
 
   const { data, error } = await q.limit(500)
   if (error) throw error
@@ -62,11 +75,13 @@ export async function listExpenses(
   const supabase = await createClient()
   let q = supabase
     .from('expenses')
-    .select(`
+    .select(
+      `
       id, church_id, category_id, amount, currency, description,
       method, reference, spent_at,
       expense_categories(name, color)
-    `)
+    `
+    )
     .eq('church_id', churchId)
     .order('spent_at', { ascending: false })
 
@@ -83,10 +98,12 @@ export async function listCampaigns(churchId: string) {
   const supabase = await createClient()
   const { data } = await supabase
     .from('campaigns')
-    .select(`
+    .select(
+      `
       *,
       offerings(amount)
-    `)
+    `
+    )
     .eq('church_id', churchId)
     .order('created_at', { ascending: false })
   return data ?? []
@@ -106,12 +123,14 @@ export async function listPledges(churchId: string) {
   const supabase = await createClient()
   const { data } = await supabase
     .from('pledges')
-    .select(`
+    .select(
+      `
       *,
-      church_memberships(users(full_name, email)),
+      church_memberships(users!church_memberships_user_id_fkey(full_name, email)),
       campaigns(name),
       offerings(amount)
-    `)
+    `
+    )
     .eq('church_id', churchId)
     .order('created_at', { ascending: false })
   return data ?? []
@@ -134,15 +153,28 @@ export async function getFinanceSummary(
   const supabase = await createClient()
 
   const [{ data: offerings }, { data: expenses }] = await Promise.all([
-    supabase.from('offerings').select('amount, type, given_at').eq('church_id', churchId)
-      .gte('given_at', from).lte('given_at', to),
-    supabase.from('expenses')
+    supabase
+      .from('offerings')
+      .select('amount, type, given_at')
+      .eq('church_id', churchId)
+      .gte('given_at', from)
+      .lte('given_at', to),
+    supabase
+      .from('expenses')
       .select('amount, spent_at, expense_categories(name, color)')
-      .eq('church_id', churchId).gte('spent_at', from).lte('spent_at', to),
+      .eq('church_id', churchId)
+      .gte('spent_at', from)
+      .lte('spent_at', to),
   ])
 
-  const totalIncome = (offerings ?? []).reduce((s, o) => s + Number(o.amount), 0)
-  const totalExpense = (expenses ?? []).reduce((s, e) => s + Number(e.amount), 0)
+  const totalIncome = (offerings ?? []).reduce(
+    (s, o) => s + Number(o.amount),
+    0
+  )
+  const totalExpense = (expenses ?? []).reduce(
+    (s, e) => s + Number(e.amount),
+    0
+  )
 
   const typeMap = new Map<string, number>()
   offerings?.forEach((o) => {
@@ -184,4 +216,3 @@ export async function getFinanceSummary(
       .sort((a, b) => a.month.localeCompare(b.month)),
   }
 }
-

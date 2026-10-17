@@ -26,7 +26,9 @@ export function PastoralNotesPanel({
     if (!body.trim()) return
     setSaving(true)
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     const { data: author } = await supabase
       .from('church_memberships')
       .select('id')
@@ -46,7 +48,6 @@ export function PastoralNotesPanel({
   }
 
   return (
-    
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -74,7 +75,5 @@ export function PastoralNotesPanel({
         </Button>
       </CardContent>
     </Card>
-    
   )
-
 }

@@ -1,25 +1,86 @@
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { DEFAULT_MEMBER_BADGES } from '@/lib/constants/members'
+import type { MemberBadgeDefinition } from '@/lib/types/members'
+import { BadgeIcon } from './BadgeIcon'
 
-const BADGE_STYLES: Record<string, string> = {
-  pastor: 'bg-purple-100 text-purple-800 border-purple-200',
-  usher: 'bg-blue-100 text-blue-800 border-blue-200',
-  worship: 'bg-pink-100 text-pink-800 border-pink-200',
-  choir: 'bg-rose-100 text-rose-800 border-rose-200',
-  media: 'bg-cyan-100 text-cyan-800 border-cyan-200',
-  youth: 'bg-orange-100 text-orange-800 border-orange-200',
-  children: 'bg-green-100 text-green-800 border-green-200',
-  baptized: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-  elder: 'bg-amber-100 text-amber-800 border-amber-200',
-  deacon: 'bg-teal-100 text-teal-800 border-teal-200',
+const FALLBACK_COLORS = [
+  '#7c3aed',
+  '#2563eb',
+  '#0d9488',
+  '#db2777',
+  '#ea580c',
+  '#16a34a',
+  '#0891b2',
+  '#e11d48',
+]
+
+export function findBadgeDefinition(
+  name: string,
+  definitions: MemberBadgeDefinition[] = []
+): MemberBadgeDefinition {
+  const needle = name.trim().toLowerCase()
+
+  if (needle === 'baptized') {
+    return {
+      name: 'Baptized',
+      description: 'Has been baptized',
+      color: '#0284c7',
+      icon: 'droplets',
+    }
+  }
+
+  const found = definitions.find(
+    (badge) => badge.name.trim().toLowerCase() === needle
+  )
+  if (found) return found
+
+  const preset = DEFAULT_MEMBER_BADGES.find((badge) => badge.name === needle)
+  if (preset) {
+    return {
+      name: preset.name,
+      description: preset.description,
+      color: preset.color,
+      icon: preset.icon,
+      sort_order: preset.sort_order,
+    }
+  }
+
+  let hash = 0
+  for (let i = 0; i < needle.length; i += 1) {
+    hash = (hash * 31 + needle.charCodeAt(i)) >>> 0
+  }
+
+  return {
+    name,
+    description: null,
+    color: FALLBACK_COLORS[hash % FALLBACK_COLORS.length],
+    icon: 'award',
+  }
 }
 
-export function BadgeChip({ badge }: { badge: string }) {
+export function BadgeChip({
+  badge,
+  definition,
+  className,
+}: {
+  badge: string
+  definition?: MemberBadgeDefinition
+  className?: string
+}) {
+  const visual = definition ?? findBadgeDefinition(badge)
+
   return (
     <Badge
       variant="outline"
-      className={cn('text-xs capitalize', BADGE_STYLES[badge] ?? '')}
+      className={cn('gap-1 text-xs capitalize', className)}
+      style={{
+        color: visual.color,
+        borderColor: `${visual.color}66`,
+        backgroundColor: `${visual.color}14`,
+      }}
     >
+      <BadgeIcon name={visual.icon} className="h-3 w-3" />
       {badge}
     </Badge>
   )

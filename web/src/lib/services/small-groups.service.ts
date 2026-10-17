@@ -25,7 +25,7 @@ export async function listSmallGroups(
       `
       id, name, description, meeting_day, meeting_time, location, leader_membership_id,
       leader:church_memberships!small_groups_leader_membership_id_fkey(
-        id, users(full_name, email)
+        id, users!church_memberships_user_id_fkey(full_name, email)
       ),
       small_group_members(id)
     `

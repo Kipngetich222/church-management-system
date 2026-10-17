@@ -19,12 +19,16 @@ const schema = z.object({
 export async function POST(req: Request) {
   const body = await req.json()
   const parsed = schema.safeParse(body)
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.message }, { status: 400 })
+  if (!parsed.success)
+    return NextResponse.json({ error: parsed.error.message }, { status: 400 })
   const input = parsed.data
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user)
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: membership } = await supabase
     .from('church_memberships')
@@ -46,20 +50,25 @@ export async function POST(req: Request) {
   // Resolve recipients
   let query = admin
     .from('church_memberships')
-    .select('id, users!inner(phone, email, full_name)')
+    .select(
+      'id, phone, full_name, email, users!church_memberships_user_id_fkey(phone, email, full_name)'
+    )
     .eq('church_id', input.churchId)
 
-  if (input.recipientFilter.type === 'department' && input.recipientFilter.ids?.length) {
+  if (
+    input.recipientFilter.type === 'department' &&
+    input.recipientFilter.ids?.length
+  ) {
     // Dept admins can only message their own departments
     const allowedDepts =
       membership.role === 'dept_admin'
-        ? (
+        ? ((
             await admin
               .from('department_members')
               .select('department_id')
               .eq('membership_id', membership.id)
               .eq('is_leader', true)
-          ).data?.map((d: any) => d.department_id) ?? []
+          ).data?.map((d: any) => d.department_id) ?? [])
         : input.recipientFilter.ids
 
     const filteredDepts =
@@ -67,7 +76,11 @@ export async function POST(req: Request) {
         ? input.recipientFilter.ids.filter((id) => allowedDepts.includes(id))
         : input.recipientFilter.ids
 
-    if (!filteredDepts.length) return NextResponse.json({ error: 'No allowed departments' }, { status: 403 })
+    if (!filteredDepts.length)
+      return NextResponse.json(
+        { error: 'No allowed departments' },
+        { status: 403 }
+      )
 
     const { data: memberIds } = await admin
       .from('department_members')
@@ -75,20 +88,31 @@ export async function POST(req: Request) {
       .in('department_id', filteredDepts)
 
     const ids = memberIds?.map((m) => m.membership_id) ?? []
-    if (!ids.length) return NextResponse.json({ error: 'No recipients' }, { status: 400 })
+    if (!ids.length)
+      return NextResponse.json({ error: 'No recipients' }, { status: 400 })
     query = query.in('id', ids) as any
-  } else if (input.recipientFilter.type === 'group' && input.recipientFilter.ids?.length) {
+  } else if (
+    input.recipientFilter.type === 'group' &&
+    input.recipientFilter.ids?.length
+  ) {
     const { data: memberIds } = await admin
       .from('small_group_members')
       .select('membership_id')
       .in('group_id', input.recipientFilter.ids)
     const ids = memberIds?.map((m) => m.membership_id) ?? []
-    if (!ids.length) return NextResponse.json({ error: 'No recipients' }, { status: 400 })
+    if (!ids.length)
+      return NextResponse.json({ error: 'No recipients' }, { status: 400 })
     query = query.in('id', ids) as any
-  } else if (input.recipientFilter.type === 'custom' && input.recipientFilter.ids?.length) {
+  } else if (
+    input.recipientFilter.type === 'custom' &&
+    input.recipientFilter.ids?.length
+  ) {
     query = query.in('id', input.recipientFilter.ids) as any
   } else if (membership.role === 'dept_admin') {
-    return NextResponse.json({ error: 'Dept admins can only message their departments' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Dept admins can only message their departments' },
+      { status: 403 }
+    )
   }
 
   const { data: recipients } = await query
@@ -110,7 +134,11 @@ export async function POST(req: Request) {
     .select('id')
     .single()
 
-  if (!campaign) return NextResponse.json({ error: 'Failed to create campaign' }, { status: 500 })
+  if (!campaign)
+    return NextResponse.json(
+      { error: 'Failed to create campaign' },
+      { status: 500 }
+    )
 
   // If scheduled, return without sending
   if (input.scheduledAt) {
@@ -122,7 +150,9 @@ export async function POST(req: Request) {
     const phones: string[] = []
     const messageRows: any[] = []
     for (const r of recipients ?? []) {
-      const phone = (r as any).users?.phone
+      // Manual members have no auth user, so their contact details live on
+      // the membership row. Fall back to the user row for account members.
+      const phone = (r as any).phone ?? (r as any).users?.phone
       if (!phone) {
         messageRows.push({
           campaign_id: campaign.id,

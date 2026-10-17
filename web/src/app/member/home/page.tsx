@@ -10,7 +10,8 @@ import { addDaysToKey, occurrenceKey, todayKey } from '@/lib/utils/recurrence'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
-import { BadgeChip } from '@/components/members/BadgeChip'
+import { BadgeChip, findBadgeDefinition } from '@/components/members/BadgeChip'
+import { listMemberBadges } from '@/lib/services/members.service'
 import { MemberEventsSection } from '@/components/events/MemberEventsSection'
 import { UpcomingServices } from '@/components/events/UpcomingServices'
 import { Button } from '@/components/ui/button'
@@ -81,7 +82,10 @@ export default async function MemberHomePage() {
       .eq('church_id', churchId)
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true }),
+
   ])
+
+  const badgeDefinitions = await listMemberBadges(churchId)
 
   // Build the member badge list
   const badges: string[] = [...(membership?.badges ?? [])]
@@ -114,7 +118,11 @@ WELCOME SECTION
         {badges.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-4">
             {badges.map((badge) => (
-              <BadgeChip key={badge} badge={badge} />
+              <BadgeChip
+                key={badge}
+                badge={badge}
+                definition={findBadgeDefinition(badge, badgeDefinitions ?? [])}
+              />
             ))}
           </div>
         )}
@@ -135,7 +143,7 @@ WELCOME SECTION
           </p>
 
           <p className="text-sm text-muted-foreground mt-2">
-            â€” {scripture.reference}
+            — {scripture.reference}
           </p>
         </CardContent>
       </Card>

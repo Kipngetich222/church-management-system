@@ -26,7 +26,7 @@ export default async function EditShiftPage({
 
   const { data: signups } = await supabase
     .from('volunteer_signups')
-    .select('id, status, signed_up_at, membership_id, church_memberships(users(full_name, email))')
+    .select('id, status, signed_up_at, membership_id, church_memberships(users!church_memberships_user_id_fkey(full_name, email))')
     .eq('shift_id', shiftId)
     .order('signed_up_at')
 

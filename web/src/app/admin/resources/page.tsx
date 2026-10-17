@@ -15,7 +15,7 @@ export default async function ResourcesPage() {
     supabase.from('resources').select('*').eq('church_id', ctx.churchId).eq('active', true).order('name'),
     supabase
       .from('resource_bookings')
-      .select('*, resources(name), church_memberships(users(full_name))')
+      .select('*, resources(name), church_memberships(users!church_memberships_user_id_fkey(full_name))')
       .eq('church_id', ctx.churchId)
       .gte('starts_at', new Date().toISOString())
       .order('starts_at'),

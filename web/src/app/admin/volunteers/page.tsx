@@ -16,7 +16,7 @@ export default async function VolunteersPage() {
     .select(`
       *,
       volunteer_roles(name, color),
-      volunteer_signups(id, status, church_memberships(users(full_name)))
+      volunteer_signups(id, status, church_memberships(users!church_memberships_user_id_fkey(full_name)))
     `)
     .eq('church_id', ctx.churchId)
     .gte('starts_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())

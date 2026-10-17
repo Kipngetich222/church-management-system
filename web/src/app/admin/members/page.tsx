@@ -1,37 +1,60 @@
-﻿import { getActiveChurch } from '@/lib/utils/church-scope'
-import { listMembers } from '@/lib/services/members.service'
+import { listMembers, listMemberBadges } from '@/lib/services/members.service'
+import { getMemberStats } from '@/lib/types/members'
 import { getPlanUsage } from '@/lib/services/plan.service'
+import { MemberStatsCards } from '@/components/members/MemberStatsCards'
 import { MembersTable } from '@/components/members/MembersTable'
+import { MemberExportDialog } from '@/components/members/MemberExportDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import Link from 'next/link'
-import { AlertTriangle, Plus, Upload } from 'lucide-react'
+import { AlertTriangle, Award, Plus, Upload } from 'lucide-react'
 import { requirePermission } from '@/lib/auth/guard'
 
 export default async function MembersPage() {
-  const { church, churchId } = await getActiveChurch()
-  const members = await listMembers(churchId)
-  await requirePermission('members:read')
-  const usage = await getPlanUsage(churchId)
+  const { church, churchId, role } = await requirePermission('members:read')
+
+  const [members, usage] = await Promise.all([
+    listMembers(churchId),
+    getPlanUsage(churchId),
+  ])
+  const badges = await listMemberBadges(churchId, members)
+  const stats = getMemberStats(members)
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Members</h1>
           <p className="text-sm text-muted-foreground">
             {usage.memberCount} member{usage.memberCount !== 1 ? 's' : ''}
             {usage.memberLimit
-              ? ' of ' + usage.memberLimit + ' on the ' + usage.planName + ' plan'
-              : ' - unlimited on the ' + usage.planName + ' plan'}
+              ? ' of ' +
+                usage.memberLimit +
+                ' on the ' +
+                usage.planName +
+                ' plan'
+              : ' — unlimited on the ' + usage.planName + ' plan'}
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" render={<Link href="/admin/members/import" />}>
-            <Upload className="h-4 w-4 mr-2" /> Import CSV
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            render={<Link href="/admin/members/import" />}
+          >
+            <Upload className="mr-2 h-4 w-4" /> Import CSV
           </Button>
+          <Button
+            variant="outline"
+            render={<Link href="/admin/members/badges" />}
+          >
+            <Award className="mr-2 h-4 w-4" /> Badges
+          </Button>
+          <MemberExportDialog
+            churchName={church?.name ?? 'Church'}
+            members={members}
+          />
           <Button render={<Link href="/admin/members/new" />}>
-            <Plus className="h-4 w-4 mr-2" /> Add member
+            <Plus className="mr-2 h-4 w-4" /> Add member
           </Button>
         </div>
       </div>
@@ -41,7 +64,8 @@ export default async function MembersPage() {
           <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4 text-sm">
             <span className="flex items-start gap-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-              {church?.name ?? 'Your church'} has reached the {usage.memberLimit}
+              {church?.name ?? 'Your church'} has reached the{' '}
+              {usage.memberLimit}
               -member limit on the {usage.planName} plan. Nobody new can join
               until you upgrade to the Growth plan.
             </span>
@@ -52,7 +76,13 @@ export default async function MembersPage() {
         </Card>
       )}
 
-      <MembersTable members={members} churchId={churchId} />
+      <MemberStatsCards stats={stats} />
+
+      <MembersTable
+        members={members}
+        badges={badges}
+        isSuperAdmin={role === 'super_admin'}
+      />
     </div>
   )
 }

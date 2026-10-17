@@ -2,6 +2,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger'
 import {
   IsArray,
   IsBoolean,
+  IsEmail,
   IsIn,
   IsOptional,
   IsString,
@@ -14,6 +15,22 @@ import {
 } from '../../common/phone.config'
 
 export class UpdateMemberDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  fullName?: string
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsEmail()
+  email?: string
+
+  @ApiPropertyOptional({ enum: ['men', 'women', 'youth', 'children'] })
+  @IsOptional()
+  @IsIn(['men', 'women', 'youth', 'children'])
+  category?: 'men' | 'women' | 'youth' | 'children'
+
   @ApiPropertyOptional({ enum: ['super_admin', 'dept_admin', 'member'] })
   @IsOptional()
   @IsIn(['super_admin', 'dept_admin', 'member'])

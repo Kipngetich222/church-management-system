@@ -63,7 +63,7 @@ export class MembershipsService {
   private async notify(churchId: string, subject: string, html: string) {
     const { data } = await this.supabase.admin
       .from('church_memberships')
-      .select('users(email)')
+      .select('users!church_memberships_user_id_fkey(email)')
       .eq('church_id', churchId)
       .eq('role', 'super_admin')
 

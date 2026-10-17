@@ -37,7 +37,7 @@ export default async function EditProfilePage() {
   const { data } = await supabase
     .from('church_memberships')
     .select(
-      'id, address, users(full_name, phone, avatar_url, date_of_birth, gender, category)'
+      'id, address, users!church_memberships_user_id_fkey(full_name, phone, avatar_url, date_of_birth, gender, category)'
     )
     .eq('user_id', user!.id)
     .eq('church_id', churchId)

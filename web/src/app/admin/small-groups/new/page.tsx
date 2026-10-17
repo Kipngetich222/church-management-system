@@ -9,7 +9,7 @@ export default async function NewGroupPage() {
 
   const { data: leaders } = await supabase
     .from('church_memberships')
-    .select('id, users(full_name, email)')
+    .select('id, users!church_memberships_user_id_fkey(full_name, email)')
     .eq('church_id', churchId)
     .order('joined_at')
 

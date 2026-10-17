@@ -211,7 +211,9 @@ export class EventsService {
   async listAttendance(eventId: string) {
     const { data, error } = await this.supabase.admin
       .from('event_attendance')
-      .select('*, church_memberships(id, users(full_name, email))')
+      .select(
+        '*, church_memberships(id, users!church_memberships_user_id_fkey(full_name, email))'
+      )
       .eq('event_id', eventId)
       .order('scanned_at', { ascending: false })
     return this.supabase.unwrap(data ?? [], error)

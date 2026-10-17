@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { appBaseUrl } from '@/lib/utils/app-url'
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { BadgeChip } from '@/components/members/BadgeChip'
+import { BadgeChip, findBadgeDefinition } from '@/components/members/BadgeChip'
+import { listMemberBadges } from '@/lib/services/members.service'
 import { ShareButton } from '@/components/shared/ShareButton'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -32,6 +33,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   men: 'Men',
   women: 'Women',
   youth: 'Youth',
+  children: 'Children',
 }
 
 export default async function MemberProfilePage() {
@@ -43,11 +45,13 @@ export default async function MemberProfilePage() {
     .from('church_memberships')
     .select(`
       id, badges, is_baptized, joined_at, address,
-      users(full_name, email, phone, avatar_url, date_of_birth, gender, category)
+      users!church_memberships_user_id_fkey(full_name, email, phone, avatar_url, date_of_birth, gender, category)
     `)
     .eq('user_id', user!.id)
     .eq('church_id', churchId)
     .single()
+
+  const badgeDefinitions = await listMemberBadges(churchId)
 
   const m = membership as unknown as MembershipProfile | null
   const badges = [...(m?.badges ?? [])]
@@ -71,7 +75,7 @@ export default async function MemberProfilePage() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             {m?.users?.full_name}
-            <ShareButton url={shareUrl} title={`${m?.users?.full_name} ??? ${church?.name}`} />
+            <ShareButton url={shareUrl} title={`${m?.users?.full_name} · ${church?.name}`} />
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -81,28 +85,34 @@ export default async function MemberProfilePage() {
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Phone</p>
-            <p>{m?.users?.phone ?? '???'}</p>
+            <p>{m?.users?.phone ?? '—'}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Gender</p>
-            <p className="capitalize">{m?.users?.gender ?? '???'}</p>
+            <p className="capitalize">{m?.users?.gender ?? '—'}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Category</p>
-            <p>{m?.users?.category ? CATEGORY_LABELS[m.users.category] ?? m.users.category : '???'}</p>
+            <p>{m?.users?.category ? CATEGORY_LABELS[m.users.category] ?? m.users.category : '—'}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Date of birth</p>
-            <p>{m?.users?.date_of_birth ? format(new Date(m.users.date_of_birth), 'MMMM d') : '???'}</p>
+            <p>{m?.users?.date_of_birth ? format(new Date(m.users.date_of_birth), 'MMMM d') : '—'}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Member since</p>
-            <p>{m ? format(new Date(m.joined_at), 'MMMM yyyy') : '???'}</p>
+            <p>{m ? format(new Date(m.joined_at), 'MMMM yyyy') : '—'}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground mb-2">Badges</p>
             <div className="flex flex-wrap gap-2">
-              {badges.length ? badges.map((b) => <BadgeChip key={b} badge={b} />) : (
+              {badges.length ? badges.map((b) => (
+                <BadgeChip
+                  key={b}
+                  badge={b}
+                  definition={findBadgeDefinition(b, badgeDefinitions)}
+                />
+              )) : (
                 <p className="text-sm">No badges yet</p>
               )}
             </div>
