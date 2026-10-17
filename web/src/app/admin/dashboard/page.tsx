@@ -24,6 +24,7 @@ import {
   Crown,
   MapPin,
   Users,
+  UsersRound,
 } from 'lucide-react'
 
 const STEP_ICONS: Record<
@@ -46,7 +47,7 @@ function StatCard({
 }: {
   label: string
   value: string
-  hint?: string
+  hint?: React.ReactNode
   icon: React.ComponentType<{ className?: string }>
   href?: string
 }) {
@@ -79,6 +80,9 @@ export default async function AdminDashboardPage() {
     upcoming,
     past,
     memberCount,
+    baptizedCount,
+    departmentCount,
+    smallGroupCount,
     offerings,
   ] = await Promise.all([
     getChurchSetup(churchId, church),
@@ -87,6 +91,19 @@ export default async function AdminDashboardPage() {
     listPastEvents(churchId, 5),
     supabase
       .from('church_memberships')
+      .select('id', { count: 'exact', head: true })
+      .eq('church_id', churchId),
+    supabase
+      .from('church_memberships')
+      .select('id', { count: 'exact', head: true })
+      .eq('church_id', churchId)
+      .eq('is_baptized', true),
+    supabase
+      .from('departments')
+      .select('id', { count: 'exact', head: true })
+      .eq('church_id', churchId),
+    supabase
+      .from('small_groups')
       .select('id', { count: 'exact', head: true })
       .eq('church_id', churchId),
     supabase
@@ -100,6 +117,9 @@ export default async function AdminDashboardPage() {
     (sum, o) => sum + Number(o.amount ?? 0),
     0
   )
+  const totalMembers = memberCount.count ?? 0
+  const baptizedMembers = Math.min(baptizedCount.count ?? 0, totalMembers)
+  const unbaptizedMembers = Math.max(totalMembers - baptizedMembers, 0)
 
   return (
     <div className="space-y-6">
@@ -181,9 +201,32 @@ export default async function AdminDashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           label="Members"
-          value={String(memberCount.count ?? 0)}
+          value={String(totalMembers)}
+          hint={
+            <>
+              <span className="text-green-600">
+                {baptizedMembers.toLocaleString()} baptized
+              </span>
+              {' / '}
+              <span>{unbaptizedMembers.toLocaleString()} not baptized</span>
+            </>
+          }
           icon={Users}
           href="/admin/members"
+        />
+        <StatCard
+          label="Departments"
+          value={String(departmentCount.count ?? 0)}
+          hint="Manage departments and teams"
+          icon={Building2}
+          href="/admin/departments"
+        />
+        <StatCard
+          label="Small Groups"
+          value={String(smallGroupCount.count ?? 0)}
+          hint="Manage groups and leaders"
+          icon={UsersRound}
+          href="/admin/small-groups"
         />
         <StatCard
           label="This Week's Giving"
