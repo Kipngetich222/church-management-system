@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import {
@@ -87,6 +88,12 @@ export async function POST(req: Request) {
       color: parsed.data.color,
       icon: parsed.data.icon,
     })
+
+    revalidatePath('/admin/members')
+    revalidatePath('/admin/members/badges')
+    revalidatePath('/member/profile')
+    revalidatePath('/member/home')
+
     return NextResponse.json({ badge }, { status: 201 })
   } catch (error) {
     return NextResponse.json(

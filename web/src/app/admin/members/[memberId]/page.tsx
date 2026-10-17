@@ -40,7 +40,14 @@ export default async function MemberDetailPage({
     : { data: [] }
 
   const name = memberName(member)
-  const assignedBadges = member.badges.map((badge) =>
+  const assignedBadgeNames = [...member.badges]
+  if (
+    member.is_baptized &&
+    !assignedBadgeNames.some((badge) => badge.toLowerCase() === 'baptized')
+  ) {
+    assignedBadgeNames.push('baptized')
+  }
+  const assignedBadges = assignedBadgeNames.map((badge) =>
     findBadgeDefinition(badge, badges)
   )
 

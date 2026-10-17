@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import {
@@ -83,6 +84,13 @@ export async function PATCH(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    revalidatePath('/admin/members')
+    revalidatePath(`/admin/members/${memberId}`)
+    revalidatePath('/admin/members/badges')
+    revalidatePath('/member/profile')
+    revalidatePath('/member/home')
+    revalidatePath(`/members/${memberId}`)
+
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json(
@@ -139,6 +147,9 @@ export async function DELETE(
         { status: 400 }
       )
     }
+
+    revalidatePath('/admin/members')
+    revalidatePath('/admin/members/badges')
 
     return NextResponse.json({ ok: true })
   } catch (error) {
