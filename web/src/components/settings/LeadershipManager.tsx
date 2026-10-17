@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { ImageUpload } from '@/components/settings/ImageUpload'
+import { PhoneInput } from '@/components/shared/PhoneInput'
 import { Mail, Pencil, Phone, Plus, Trash2, X } from 'lucide-react'
 
 export type Leader = {
@@ -272,13 +273,9 @@ export function LeadershipManager({
 
                 <div className="space-y-2">
                   <Label>Phone</Label>
-                  <Input
-                    type="tel"
+                  <PhoneInput
                     value={form.phone}
-                    onChange={(e) =>
-                      setForm({ ...form, phone: e.target.value })
-                    }
-                    placeholder="Optional, e.g. +254 7xx xxx xxx"
+                    onChange={(phone) => setForm({ ...form, phone })}
                   />
                 </div>
 

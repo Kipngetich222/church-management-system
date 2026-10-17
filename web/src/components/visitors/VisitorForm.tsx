@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
+import { PhoneInput } from '@/components/shared/PhoneInput'
 
 export function VisitorForm({ churchId }: { churchId: string }) {
   const router = useRouter()
@@ -65,7 +66,10 @@ export function VisitorForm({ churchId }: { churchId: string }) {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label>Phone</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              <PhoneInput
+                value={form.phone}
+                onChange={(phone) => setForm({ ...form, phone })}
+              />
             </div>
             <div className="space-y-2">
               <Label>Email</Label>

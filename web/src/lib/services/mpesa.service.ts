@@ -1,3 +1,5 @@
+import { toMpesaPhone } from '@/lib/phone'
+
 const BASE_URL =
   process.env.MPESA_ENV === 'production'
     ? 'https://api.safaricom.co.ke'
@@ -8,9 +10,12 @@ async function getAccessToken(): Promise<string> {
   const secret = process.env.MPESA_CONSUMER_SECRET!
   const auth = Buffer.from(`${key}:${secret}`).toString('base64')
 
-  const res = await fetch(`${BASE_URL}/oauth/v1/generate?grant_type=client_credentials`, {
-    headers: { Authorization: `Basic ${auth}` },
-  })
+  const res = await fetch(
+    `${BASE_URL}/oauth/v1/generate?grant_type=client_credentials`,
+    {
+      headers: { Authorization: `Basic ${auth}` },
+    }
+  )
   const data = await res.json()
   return data.access_token
 }
@@ -28,6 +33,7 @@ export async function stkPush({
   transactionDesc: string
   callbackUrl: string
 }) {
+  const mpesaPhone = toMpesaPhone(phone)
   const token = await getAccessToken()
   const shortcode = process.env.MPESA_SHORTCODE!
   const passkey = process.env.MPESA_PASSKEY!
@@ -35,7 +41,9 @@ export async function stkPush({
     .toISOString()
     .replace(/[^0-9]/g, '')
     .slice(0, 14)
-  const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString('base64')
+  const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString(
+    'base64'
+  )
 
   const res = await fetch(`${BASE_URL}/mpesa/stkpush/v1/processrequest`, {
     method: 'POST',
@@ -49,9 +57,9 @@ export async function stkPush({
       Timestamp: timestamp,
       TransactionType: 'CustomerPayBillOnline',
       Amount: Math.round(amount),
-      PartyA: phone,
+      PartyA: mpesaPhone,
       PartyB: shortcode,
-      PhoneNumber: phone,
+      PhoneNumber: mpesaPhone,
       CallBackURL: callbackUrl,
       AccountReference: accountReference,
       TransactionDesc: transactionDesc,

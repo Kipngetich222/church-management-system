@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PhoneInput } from '@/components/shared/PhoneInput'
 import { CheckCircle2, Loader2, Copy } from 'lucide-react'
 import type { PaymentMethod } from '@/lib/services/events.service'
 
@@ -155,9 +156,9 @@ export function RegisterForEvent({
           </div>
           <div className="space-y-2">
             <Label>Phone (optional)</Label>
-            <Input
+            <PhoneInput
               value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              onChange={(phone) => setForm({ ...form, phone })}
             />
           </div>
 

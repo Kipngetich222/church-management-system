@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PhoneInput } from '@/components/shared/PhoneInput'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -84,10 +85,9 @@ export function GivingForm({
           </div>
           <div className="space-y-2">
             <Label>M-Pesa phone</Label>
-            <Input
+            <PhoneInput
               value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              placeholder="254712345678"
+              onChange={(phone) => setForm({ ...form, phone })}
               required
             />
           </div>

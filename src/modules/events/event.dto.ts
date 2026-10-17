@@ -8,8 +8,13 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   MaxLength,
 } from 'class-validator'
+import {
+  PHONE_PATTERN,
+  PHONE_VALIDATION_MESSAGE,
+} from '../../common/phone.config'
 
 const STATUSES = ['draft', 'published', 'cancelled', 'completed'] as const
 const VISIBILITIES = [
@@ -194,6 +199,7 @@ export class RegisterEventDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @Matches(PHONE_PATTERN, { message: PHONE_VALIDATION_MESSAGE })
   phone?: string
 }
 

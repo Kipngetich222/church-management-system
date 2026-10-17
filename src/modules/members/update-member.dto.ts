@@ -1,57 +1,63 @@
-import { ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiPropertyOptional } from '@nestjs/swagger'
 import {
   IsArray,
   IsBoolean,
   IsIn,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
-} from "class-validator";
+} from 'class-validator'
+import {
+  PHONE_PATTERN,
+  PHONE_VALIDATION_MESSAGE,
+} from '../../common/phone.config'
 
 export class UpdateMemberDto {
-  @ApiPropertyOptional({ enum: ["super_admin", "dept_admin", "member"] })
+  @ApiPropertyOptional({ enum: ['super_admin', 'dept_admin', 'member'] })
   @IsOptional()
-  @IsIn(["super_admin", "dept_admin", "member"])
-  role?: "super_admin" | "dept_admin" | "member";
+  @IsIn(['super_admin', 'dept_admin', 'member'])
+  role?: 'super_admin' | 'dept_admin' | 'member'
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsArray()
-  badges?: string[];
+  badges?: string[]
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
-  isBaptized?: boolean;
+  isBaptized?: boolean
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   @MaxLength(40)
-  status?: string;
+  status?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  dateOfBirth?: string;
+  dateOfBirth?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  gender?: string;
+  gender?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  phone?: string;
+  @Matches(PHONE_PATTERN, { message: PHONE_VALIDATION_MESSAGE })
+  phone?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  address?: string;
+  address?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  notes?: string;
+  notes?: string
 }

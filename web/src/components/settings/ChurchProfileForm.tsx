@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { LogoUpload } from '@/components/shared/LogoUpload'
 import { MapPicker } from '@/components/maps/MapPicker'
+import { PhoneInput } from '@/components/shared/PhoneInput'
 
 type Church = {
   id: string
@@ -153,11 +154,11 @@ export function ChurchProfileForm({ church }: { church: Church }) {
               <Label htmlFor="church-phone">
                 Phone <Required />
               </Label>
-              <Input
+              <PhoneInput
                 id="church-phone"
                 required
                 value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                onChange={(phone) => setForm({ ...form, phone })}
               />
             </div>
             <div className="space-y-2">

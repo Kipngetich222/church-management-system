@@ -2,6 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/types/database'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminRole } from '@/lib/auth/redirect'
+import {
+  isValidPhone,
+  normalizePhone,
+  PHONE_VALIDATION_MESSAGE,
+} from '@/lib/phone'
 
 export type MemberRow = {
   id: string
@@ -119,7 +124,8 @@ export async function updateMemberProfile(params: {
   if (input.phone !== undefined) {
     const phone = (input.phone ?? '').trim()
     if (!phone) throw new Error('A phone number is required.')
-    userUpdate.phone = phone
+    if (!isValidPhone(phone)) throw new Error(PHONE_VALIDATION_MESSAGE)
+    userUpdate.phone = normalizePhone(phone)
   }
   if (input.date_of_birth !== undefined)
     userUpdate.date_of_birth = input.date_of_birth || null
