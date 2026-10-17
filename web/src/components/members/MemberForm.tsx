@@ -19,6 +19,7 @@ import {
 import { CATEGORY_OPTIONS, GENDER_OPTIONS } from '@/lib/auth/profile'
 import { cn } from '@/lib/utils'
 import { ShareButton } from '@/components/shared/ShareButton'
+import { PhoneInput } from '@/components/shared/PhoneInput'
 import type { Database } from '@/types/database'
 
 type BadgeType = Database['public']['Enums']['badge_type']
@@ -180,10 +181,9 @@ export function MemberForm({
               <Label>
                 Phone <span className="text-destructive">*</span>
               </Label>
-              <Input
+              <PhoneInput
                 value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="+254..."
+                onChange={(phone) => setForm({ ...form, phone })}
                 required
               />
             </div>

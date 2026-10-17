@@ -3,18 +3,30 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { randomBytes } from 'crypto'
+import {
+  isValidPhone,
+  normalizePhone,
+  PHONE_VALIDATION_MESSAGE,
+} from '@/lib/phone'
 
 const schema = z.object({
   eventId: z.string().uuid(),
   name: z.string().min(1),
   email: z.string().email(),
-  phone: z.string().optional().default(''),
+  phone: z
+    .string()
+    .optional()
+    .default('')
+    .refine((value) => value === '' || isValidPhone(value), {
+      message: PHONE_VALIDATION_MESSAGE,
+    }),
 })
 
 export async function POST(req: Request) {
   const body = await req.json()
   const parsed = schema.safeParse(body)
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.message }, { status: 400 })
+  if (!parsed.success)
+    return NextResponse.json({ error: parsed.error.message }, { status: 400 })
   const { eventId, name, email, phone } = parsed.data
 
   const admin = createAdmin(
@@ -26,7 +38,9 @@ export async function POST(req: Request) {
   // Fetch event
   const { data: event } = await admin
     .from('events')
-    .select('id, price, capacity, is_registration_required, status, registration_deadline')
+    .select(
+      'id, price, capacity, is_registration_required, status, registration_deadline'
+    )
     .eq('id', eventId)
     .single()
 
@@ -35,8 +49,14 @@ export async function POST(req: Request) {
   }
 
   // Deadline check
-  if (event.registration_deadline && new Date(event.registration_deadline) < new Date()) {
-    return NextResponse.json({ error: 'Registration is closed' }, { status: 400 })
+  if (
+    event.registration_deadline &&
+    new Date(event.registration_deadline) < new Date()
+  ) {
+    return NextResponse.json(
+      { error: 'Registration is closed' },
+      { status: 400 }
+    )
   }
 
   // Capacity check
@@ -53,7 +73,9 @@ export async function POST(req: Request) {
 
   // Link to a logged-in user if possible
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   const ticket_code = randomBytes(8).toString('hex')
   const isPaid = (event.price ?? 0) > 0
@@ -65,7 +87,7 @@ export async function POST(req: Request) {
       user_id: user?.id ?? null,
       guest_name: user ? null : name,
       guest_email: user ? null : email,
-      guest_phone: user ? null : phone,
+      guest_phone: user ? null : normalizePhone(phone) || null,
       payment_status: isPaid ? 'pending' : 'free',
       amount_paid: isPaid ? null : 0,
       ticket_code,

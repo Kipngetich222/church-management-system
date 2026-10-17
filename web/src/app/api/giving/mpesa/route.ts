@@ -2,13 +2,18 @@ import { createClient } from '@/lib/supabase/server'
 import { appBaseUrl } from '@/lib/utils/app-url'
 import { createClient as createAdmin } from '@supabase/supabase-js'
 import { stkPush } from '@/lib/services/mpesa.service'
+import {
+  isValidPhone,
+  PHONE_VALIDATION_MESSAGE,
+  toMpesaPhone,
+} from '@/lib/phone'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
 const schema = z.object({
   churchId: z.string().uuid(),
   amount: z.number().positive(),
-  phone: z.string().min(9),
+  phone: z.string().refine(isValidPhone, { message: PHONE_VALIDATION_MESSAGE }),
   type: z.string().default('general'),
 })
 
@@ -43,7 +48,7 @@ export async function POST(req: Request) {
   const reference = `MPESA-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
   const res = await stkPush({
-    phone: parsed.data.phone,
+    phone: toMpesaPhone(parsed.data.phone),
     amount: parsed.data.amount,
     accountReference: reference,
     transactionDesc: 'Church giving',

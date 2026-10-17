@@ -6,8 +6,13 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  Matches,
   MaxLength,
 } from 'class-validator'
+import {
+  PHONE_PATTERN,
+  PHONE_VALIDATION_MESSAGE,
+} from '../../common/phone.config'
 
 export class CreateChurchDto {
   @ApiProperty()
@@ -38,6 +43,7 @@ export class CreateChurchDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @Matches(PHONE_PATTERN, { message: PHONE_VALIDATION_MESSAGE })
   phone?: string
 
   @ApiPropertyOptional()

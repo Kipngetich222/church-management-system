@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { CATEGORY_OPTIONS, GENDER_OPTIONS } from '@/lib/auth/profile'
+import { PhoneInput } from '@/components/shared/PhoneInput'
 
 export type MemberProfileView = {
   id: string
@@ -96,10 +97,9 @@ export function MemberSelfEditForm({
             <Label>
               Phone <span className="text-destructive">*</span>
             </Label>
-            <Input
-              type="tel"
+            <PhoneInput
               value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              onChange={(phone) => setForm({ ...form, phone })}
               required
             />
           </div>

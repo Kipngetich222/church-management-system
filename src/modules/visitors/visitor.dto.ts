@@ -1,41 +1,53 @@
-import { ApiProperty, ApiPropertyOptional, PartialType } from "@nestjs/swagger";
-import { IsEmail, IsOptional, IsString, IsUUID, MaxLength } from "class-validator";
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  MaxLength,
+} from 'class-validator'
+import {
+  PHONE_PATTERN,
+  PHONE_VALIDATION_MESSAGE,
+} from '../../common/phone.config'
 
 export class CreateVisitorDto {
   @ApiProperty()
   @IsString()
   @MaxLength(160)
-  fullName!: string;
+  fullName!: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  phone?: string;
+  @Matches(PHONE_PATTERN, { message: PHONE_VALIDATION_MESSAGE })
+  phone?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsEmail()
-  email?: string;
+  email?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  firstVisitDate?: string;
+  firstVisitDate?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsUUID()
-  invitedByMembershipId?: string;
+  invitedByMembershipId?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  notes?: string;
+  notes?: string
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  status?: string;
+  status?: string
 }
 
 export class UpdateVisitorDto extends PartialType(CreateVisitorDto) {}
@@ -44,9 +56,9 @@ export class FollowUpDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  method?: string;
+  method?: string
 
   @ApiProperty()
   @IsString()
-  notes!: string;
+  notes!: string
 }

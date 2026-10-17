@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PhoneInput } from '@/components/shared/PhoneInput'
 import {
   Card,
   CardContent,
@@ -124,13 +125,10 @@ export function ProfileCompletionForm({
             <Label htmlFor="phone">
               Phone number <Required />
             </Label>
-            <Input
+            <PhoneInput
               id="phone"
-              type="tel"
-              autoComplete="tel"
-              placeholder="+254 7xx xxx xxx"
               value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              onChange={(phone) => setForm({ ...form, phone })}
               required
             />
             <p className="text-xs text-muted-foreground">

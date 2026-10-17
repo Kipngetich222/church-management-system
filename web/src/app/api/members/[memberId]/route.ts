@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { updateMemberProfile } from '@/lib/services/members.service'
+import { isValidPhone, PHONE_VALIDATION_MESSAGE } from '@/lib/phone'
 
 /**
  * Update a member's profile.
@@ -13,7 +14,13 @@ import { updateMemberProfile } from '@/lib/services/members.service'
  */
 const bodySchema = z.object({
   full_name: z.string().trim().min(1).max(120).optional(),
-  phone: z.string().trim().max(40).nullish(),
+  phone: z
+    .string()
+    .trim()
+    .refine((value) => isValidPhone(value), {
+      message: PHONE_VALIDATION_MESSAGE,
+    })
+    .nullish(),
   date_of_birth: z
     .string()
     .refine((value) => value === '' || /^\d{4}-\d{2}-\d{2}$/.test(value), {

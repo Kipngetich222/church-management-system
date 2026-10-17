@@ -1,3 +1,5 @@
+import { normalizePhoneForSms } from '@/lib/phone'
+
 const AT_API_URL =
   process.env.AFRICAS_TALKING_ENV === 'production'
     ? 'https://api.africastalking.com/version1/messaging'
@@ -36,9 +38,5 @@ export async function sendSms({
 }
 
 export function normalizePhone(phone: string): string {
-  const digits = phone.replace(/\D/g, '')
-  if (digits.startsWith('0')) return `+254${digits.slice(1)}`
-  if (digits.startsWith('254')) return `+${digits}`
-  if (digits.startsWith('+')) return phone
-  return `+${digits}`
+  return normalizePhoneForSms(phone)
 }

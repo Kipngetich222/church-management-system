@@ -3,12 +3,23 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getPlanUsage, isMemberLimitError } from '@/lib/services/plan.service'
+import {
+  isValidPhone,
+  normalizePhone,
+  PHONE_VALIDATION_MESSAGE,
+} from '@/lib/phone'
 
 const bodySchema = z.object({
   churchId: z.string().uuid(),
   full_name: z.string().min(1),
   email: z.string().email(),
-  phone: z.string().optional().default(''),
+  phone: z
+    .string()
+    .optional()
+    .default('')
+    .refine((value) => value === '' || isValidPhone(value), {
+      message: PHONE_VALIDATION_MESSAGE,
+    }),
   date_of_birth: z.string().optional().default(''),
   gender: z.string().optional().default(''),
   category: z.enum(['men', 'women', 'youth']).nullish(),
@@ -86,7 +97,7 @@ export async function POST(req: Request) {
     .from('users')
     .update({
       full_name: input.full_name,
-      phone: input.phone,
+      phone: normalizePhone(input.phone),
       date_of_birth: input.date_of_birth || null,
       gender: input.gender || null,
       category: input.category ?? null,

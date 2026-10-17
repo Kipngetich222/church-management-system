@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select'
 import { PosterUpload } from './PosterUpload'
 import { MapPicker } from '@/components/maps/MapPicker'
+import { PhoneInput } from '@/components/shared/PhoneInput'
 import { slugify } from '@/lib/utils/slug'
 import type { EventVisibility } from '@/lib/constants/events'
 import { Link2, MapPin } from 'lucide-react'
@@ -551,13 +552,22 @@ export function EventForm({
                           ? 'Paybill number'
                           : 'Phone number'}
                     </Label>
-                    <Input
-                      value={form.payment_number}
-                      onChange={(e) =>
-                        setForm({ ...form, payment_number: e.target.value })
-                      }
-                      placeholder={form.payment_method === 'phone' ? '0712 345 678' : '123456'}
-                    />
+                    {form.payment_method === 'phone' ? (
+                      <PhoneInput
+                        value={form.payment_number}
+                        onChange={(phone) =>
+                          setForm({ ...form, payment_number: phone })
+                        }
+                      />
+                    ) : (
+                      <Input
+                        value={form.payment_number}
+                        onChange={(e) =>
+                          setForm({ ...form, payment_number: e.target.value })
+                        }
+                        placeholder="123456"
+                      />
+                    )}
                   </div>
                   {form.payment_method === 'paybill' && (
                     <div className="space-y-2">
