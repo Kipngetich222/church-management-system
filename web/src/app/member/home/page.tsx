@@ -11,7 +11,7 @@ import { addDaysToKey, occurrenceKey, todayKey } from '@/lib/utils/recurrence'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 import { BadgeChip } from '@/components/members/BadgeChip'
-import { UpcomingEvents } from '@/components/events/UpcomingEvents'
+import { MemberEventsSection } from '@/components/events/MemberEventsSection'
 import { UpcomingServices } from '@/components/events/UpcomingServices'
 import { Button } from '@/components/ui/button'
 import { ChurchMap } from '@/components/maps/ChurchMap'
@@ -190,16 +190,11 @@ WELCOME SECTION
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Upcoming Events */}
 
-        <UpcomingEvents events={upcoming} basePath="/member/events" />
-
-        {past.length > 0 && (
-          <UpcomingEvents
-            events={past}
-            basePath="/member/events"
-            title="Past events"
-            emptyText="No past events yet."
-          />
-        )}
+        <MemberEventsSection
+          upcoming={upcoming}
+          past={past}
+          basePath="/member/events"
+        />
 
         {/* Announcements */}
 
