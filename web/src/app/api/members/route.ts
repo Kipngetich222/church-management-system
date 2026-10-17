@@ -1,6 +1,7 @@
 import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { getPlanUsage, isMemberLimitError } from '@/lib/services/plan.service'
 import {
@@ -186,6 +187,9 @@ export async function POST(req: Request) {
       },
     })
 
+    revalidatePath('/admin/members')
+    revalidatePath('/admin/members/badges')
+
     return NextResponse.json({ ok: true, id: created.id, mode })
   }
 
@@ -286,6 +290,9 @@ export async function POST(req: Request) {
     entity_id: created.id,
     metadata: { email: input.email },
   })
+
+  revalidatePath('/admin/members')
+  revalidatePath('/admin/members/badges')
 
   return NextResponse.json({ ok: true, id: created.id, mode })
 }

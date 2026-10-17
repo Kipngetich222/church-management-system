@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import {
@@ -71,6 +72,12 @@ export async function PATCH(
       color: parsed.data.color,
       icon: parsed.data.icon,
     })
+
+    revalidatePath('/admin/members')
+    revalidatePath('/admin/members/badges')
+    revalidatePath('/member/profile')
+    revalidatePath('/member/home')
+
     return NextResponse.json({ badge })
   } catch (error) {
     return NextResponse.json(
@@ -101,6 +108,12 @@ export async function DELETE(
       actorId: auth.user.id,
       badgeId,
     })
+
+    revalidatePath('/admin/members')
+    revalidatePath('/admin/members/badges')
+    revalidatePath('/member/profile')
+    revalidatePath('/member/home')
+
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json(

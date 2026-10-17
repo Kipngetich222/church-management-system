@@ -387,7 +387,9 @@ export async function updateMemberProfile(params: {
 
   let { data: membership, error: lookupError } = await admin
     .from('church_memberships')
-    .select('id, user_id, church_id, badges, full_name, email, phone, category')
+    .select(
+      'id, user_id, church_id, role, badges, full_name, email, phone, category'
+    )
     .eq('id', params.membershipId)
     .maybeSingle()
 
@@ -396,7 +398,7 @@ export async function updateMemberProfile(params: {
     legacySchema = true
     ;({ data: membership, error: lookupError } = await admin
       .from('church_memberships')
-      .select('id, user_id, church_id, badges')
+      .select('id, user_id, church_id, role, badges')
       .eq('id', params.membershipId)
       .maybeSingle())
   }
@@ -407,7 +409,12 @@ export async function updateMemberProfile(params: {
   const isSelf = Boolean(
     membership.user_id && membership.user_id === params.actorId
   )
-  let actorRole: string | null = null
+  // Self-edits still need the caller's role: an admin editing their own
+  // membership must be able to change badges (and baptism, for super admins).
+  // Regular members fall through with role "member" and stay restricted.
+  let actorRole: string | null = isSelf
+    ? String(membership.role ?? 'member')
+    : null
 
   if (!isSelf) {
     const { data: actor } = await admin
@@ -499,12 +506,14 @@ export async function updateMemberProfile(params: {
   if (input.address !== undefined)
     membershipUpdate.address = input.address || null
 
-  // Badges and baptism are super-admin-only fields.
+  // Church admins may assign badges; only super admins may set baptism.
   if (actorRole && isAdminRole(actorRole) && input.badges !== undefined) {
-    membershipUpdate.badges = input.badges
-      .map((badge) => badge.trim())
-      .filter(Boolean)
-      .slice(0, 20)
+    const uniqueBadges = new Map<string, string>()
+    for (const badge of input.badges) {
+      const name = badge.trim()
+      if (name) uniqueBadges.set(name.toLowerCase(), name)
+    }
+    membershipUpdate.badges = Array.from(uniqueBadges.values()).slice(0, 20)
   }
   if (actorRole === 'super_admin' && input.is_baptized !== undefined)
     membershipUpdate.is_baptized = input.is_baptized
