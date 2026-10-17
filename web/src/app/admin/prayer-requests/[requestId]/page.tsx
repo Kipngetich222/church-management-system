@@ -17,9 +17,9 @@ export default async function AdminPrayerDetail({
     .from('prayer_requests')
     .select(`
       *,
-      church_memberships(id, users(full_name, email)),
+      church_memberships(id, users!church_memberships_user_id_fkey(full_name, email)),
       prayer_interactions(id, body, is_internal, created_at,
-        church_memberships(users(full_name)))
+        church_memberships(users!church_memberships_user_id_fkey(full_name)))
     `)
     .eq('id', requestId)
     .eq('church_id', churchId)

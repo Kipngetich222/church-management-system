@@ -8,7 +8,9 @@ export async function GET(req: Request) {
   if (!churchId) return new Response('Missing churchId', { status: 400 })
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return new Response('Unauthorized', { status: 401 })
 
   // Verify the current user is an admin of this church
@@ -27,10 +29,13 @@ export async function GET(req: Request) {
     supabase.from('churches').select('name').eq('id', churchId).single(),
     supabase
       .from('church_memberships')
-      .select(`
+      .select(
+        `
         role, badges, is_baptized, joined_at,
-        users(full_name, email, phone)
-      `)
+        full_name, email, phone, category,
+        users!church_memberships_user_id_fkey(full_name, email, phone)
+      `
+      )
       .eq('church_id', churchId)
       .order('joined_at'),
   ])
@@ -38,9 +43,9 @@ export async function GET(req: Request) {
   if (!church) return new Response('Church not found', { status: 404 })
 
   const rows = (members ?? []).map((m: any) => ({
-    full_name: m.users?.full_name ?? null,
-    email: m.users?.email ?? '',
-    phone: m.users?.phone ?? null,
+    full_name: m.users?.full_name ?? m.full_name ?? null,
+    email: m.users?.email ?? m.email ?? '',
+    phone: m.users?.phone ?? m.phone ?? null,
     role: m.role,
     badges: m.badges ?? [],
     is_baptized: m.is_baptized ?? false,

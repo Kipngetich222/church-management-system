@@ -101,7 +101,7 @@ async function notifySuperAdmins(
 ) {
   const { data } = await admin
     .from('church_memberships')
-    .select('users(email)')
+    .select('users!church_memberships_user_id_fkey(email)')
     .eq('church_id', churchId)
     .eq('role', 'super_admin')
 
@@ -665,7 +665,7 @@ export async function finalizeChurchDeletions(): Promise<{
     const emails = await (async () => {
       const { data } = await admin
         .from('church_memberships')
-        .select('users(email)')
+        .select('users!church_memberships_user_id_fkey(email)')
         .eq('church_id', request.church_id)
         .eq('role', 'super_admin')
       return ((data ?? []) as unknown as NestedUser[])

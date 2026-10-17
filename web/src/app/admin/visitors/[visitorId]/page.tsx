@@ -24,7 +24,7 @@ export default async function VisitorDetailPage({
 
   const { data: followups } = await supabase
     .from('visitor_followups')
-    .select('id, method, notes, created_at, author_membership_id, church_memberships(users(full_name))')
+    .select('id, method, notes, created_at, author_membership_id, church_memberships(users!church_memberships_user_id_fkey(full_name))')
     .eq('visitor_id', visitorId)
     .order('created_at', { ascending: false })
 

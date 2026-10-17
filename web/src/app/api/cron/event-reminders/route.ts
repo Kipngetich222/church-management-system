@@ -29,18 +29,22 @@ export async function GET(req: Request) {
   for (const event of events ?? []) {
     const { data: members } = await admin
       .from('church_memberships')
-      .select('id, users!inner(phone)')
+      .select('id, phone, users!church_memberships_user_id_fkey(phone)')
       .eq('church_id', event.church_id)
 
     const phones = (members ?? [])
-      .map((m: any) => m.users?.phone)
+      .map((m: any) => m.phone ?? m.users?.phone)
       .filter(Boolean)
       .map((p: string) => normalizePhone(p))
 
     if (!phones.length) continue
 
     const time = new Date(event.start_time).toLocaleString('en-KE', {
-      weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
     })
 
     const message = `Reminder: ${event.title} is tomorrow at ${time}${
@@ -63,5 +67,9 @@ export async function GET(req: Request) {
     totalSent += phones.length
   }
 
-  return NextResponse.json({ ok: true, events: events?.length ?? 0, sent: totalSent })
+  return NextResponse.json({
+    ok: true,
+    events: events?.length ?? 0,
+    sent: totalSent,
+  })
 }

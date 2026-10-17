@@ -11,7 +11,7 @@ export async function listDepartments(churchId: string) {
         id, is_leader,
         church_memberships(
           id, user_id,
-          users(full_name, email, avatar_url)
+          users!church_memberships_user_id_fkey(full_name, email, avatar_url)
         )
       )
     `

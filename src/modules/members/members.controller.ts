@@ -90,8 +90,9 @@ export class MembersController {
   @ApiOperation({ summary: 'Remove a member from the church' })
   remove(
     @Param('churchId') churchId: string,
-    @Param('membershipId') membershipId: string
+    @Param('membershipId') membershipId: string,
+    @CurrentMembership() membership: MembershipSummary
   ) {
-    return this.membersService.remove(churchId, membershipId)
+    return this.membersService.remove(churchId, membershipId, membership?.role)
   }
 }

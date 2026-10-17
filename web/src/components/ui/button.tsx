@@ -45,6 +45,8 @@ function Button({
   variant = 'default',
   size = 'default',
   asChild = false,
+  nativeButton,
+  render,
   children,
   ...props
 }: ButtonPrimitive.Props &
@@ -60,7 +62,7 @@ function Button({
       <ButtonPrimitive
         data-slot="button"
         className={classes}
-        nativeButton={false}
+        nativeButton={nativeButton ?? false}
         render={child}
         {...props}
       />
@@ -68,7 +70,13 @@ function Button({
   }
 
   return (
-    <ButtonPrimitive data-slot="button" className={classes} {...props}>
+    <ButtonPrimitive
+      data-slot="button"
+      className={classes}
+      nativeButton={nativeButton ?? !render}
+      render={render}
+      {...props}
+    >
       {children}
     </ButtonPrimitive>
   )

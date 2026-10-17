@@ -137,7 +137,7 @@ export async function notifyMemberLimitReached(params: {
 
   const { data } = await admin
     .from('church_memberships')
-    .select('users(email)')
+    .select('users!church_memberships_user_id_fkey(email)')
     .eq('church_id', params.churchId)
     .eq('role', 'super_admin')
 

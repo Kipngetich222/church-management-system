@@ -1,23 +1,28 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
-import { updateMemberProfile } from '@/lib/services/members.service'
+import {
+  deleteMember,
+  updateMemberProfile,
+} from '@/lib/services/members.service'
 import { isValidPhone, PHONE_VALIDATION_MESSAGE } from '@/lib/phone'
 
-/**
- * Update a member's profile.
- *
- * Used by both a member editing their own profile and an admin editing a member.
- * Writes go through the service-role client so they are not blocked by RLS (see
- * updateMemberProfile); authorization is enforced in the service - the caller
- * must own the membership or be an admin of its church.
- */
+const emailSchema = z
+  .string()
+  .trim()
+  .max(200)
+  .refine(
+    (value) => value === '' || z.string().email().safeParse(value).success,
+    { message: 'Enter a valid email address.' }
+  )
+
 const bodySchema = z.object({
-  full_name: z.string().trim().min(1).max(120).optional(),
+  full_name: z.string().trim().min(1).max(160).optional(),
+  email: emailSchema.nullish(),
   phone: z
     .string()
     .trim()
-    .refine((value) => isValidPhone(value), {
+    .refine((value) => value === '' || isValidPhone(value), {
       message: PHONE_VALIDATION_MESSAGE,
     })
     .nullish(),
@@ -28,7 +33,7 @@ const bodySchema = z.object({
     })
     .nullish(),
   gender: z.string().trim().max(40).nullish(),
-  category: z.enum(['men', 'women', 'youth']).nullish(),
+  category: z.enum(['men', 'women', 'youth', 'children']).nullish(),
   address: z.string().trim().max(300).nullish(),
   badges: z.array(z.string()).optional(),
   is_baptized: z.boolean().optional(),
@@ -82,6 +87,63 @@ export async function PATCH(
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error).message || 'Could not update profile' },
+      { status: 400 }
+    )
+  }
+}
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ memberId: string }> }
+) {
+  const { memberId } = await params
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { data: membership } = await supabase
+    .from('church_memberships')
+    .select('church_id')
+    .eq('id', memberId)
+    .maybeSingle()
+
+  if (!membership) {
+    return NextResponse.json({ error: 'Member not found' }, { status: 404 })
+  }
+
+  try {
+    const result = await deleteMember({
+      actorId: user.id,
+      churchId: membership.church_id,
+      membershipId: memberId,
+    })
+
+    if (result.status === 'not_found') {
+      return NextResponse.json({ error: 'Member not found' }, { status: 404 })
+    }
+    if (result.status === 'forbidden') {
+      return NextResponse.json(
+        { error: 'Only a super admin can delete a member.' },
+        { status: 403 }
+      )
+    }
+    if (result.status === 'self') {
+      return NextResponse.json(
+        { error: 'You cannot delete your own membership.' },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    return NextResponse.json(
+      { error: (error as Error).message || 'Could not delete member' },
       { status: 400 }
     )
   }

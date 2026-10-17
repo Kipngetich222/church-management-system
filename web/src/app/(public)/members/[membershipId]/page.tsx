@@ -17,7 +17,7 @@ export async function generateMetadata({
   const supabase = await createClient()
   const { data } = await supabase
     .from('church_memberships')
-    .select('users(full_name), churches(name)')
+    .select('users!church_memberships_user_id_fkey(full_name), churches(name)')
     .eq('id', membershipId)
     .single()
 
@@ -40,7 +40,7 @@ export default async function PublicMemberPage({
     .select(
       `
       id, badges, is_baptized,
-      users(full_name, avatar_url),
+      users!church_memberships_user_id_fkey(full_name, avatar_url),
       churches(name, logo_url)
     `
     )

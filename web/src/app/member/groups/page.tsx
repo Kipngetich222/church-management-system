@@ -23,7 +23,7 @@ export default async function MemberGroupsPage() {
     .from('small_groups')
     .select(`
       *,
-      leader:church_memberships!small_groups_leader_membership_id_fkey(users(full_name)),
+      leader:church_memberships!small_groups_leader_membership_id_fkey(users!church_memberships_user_id_fkey(full_name)),
       small_group_members(id, membership_id)
     `)
     .eq('church_id', churchId)

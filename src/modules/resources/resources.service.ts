@@ -1,6 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { SupabaseService } from '../../supabase/supabase.service';
-import { CreateBookingDto, CreateResourceDto, UpdateResourceDto } from './resource.dto';
+import { Injectable } from '@nestjs/common'
+import { SupabaseService } from '../../supabase/supabase.service'
+import {
+  CreateBookingDto,
+  CreateResourceDto,
+  UpdateResourceDto,
+} from './resource.dto'
 
 @Injectable()
 export class ResourcesService {
@@ -11,8 +15,8 @@ export class ResourcesService {
       .from('resources')
       .select('*')
       .eq('church_id', churchId)
-      .order('name');
-    return this.supabase.unwrap(data ?? [], error);
+      .order('name')
+    return this.supabase.unwrap(data ?? [], error)
   }
 
   async create(churchId: string, dto: CreateResourceDto) {
@@ -28,8 +32,8 @@ export class ResourcesService {
         active: dto.active ?? true,
       })
       .select()
-      .single();
-    return this.supabase.unwrap(data, error);
+      .single()
+    return this.supabase.unwrap(data, error)
   }
 
   async update(churchId: string, resourceId: string, dto: UpdateResourceDto) {
@@ -39,8 +43,8 @@ export class ResourcesService {
       .eq('church_id', churchId)
       .eq('id', resourceId)
       .select()
-      .single();
-    return this.supabase.unwrap(data, error);
+      .single()
+    return this.supabase.unwrap(data, error)
   }
 
   async remove(churchId: string, resourceId: string) {
@@ -48,21 +52,27 @@ export class ResourcesService {
       .from('resources')
       .delete()
       .eq('church_id', churchId)
-      .eq('id', resourceId);
-    if (error) this.supabase.unwrap(null, error);
-    return { success: true };
+      .eq('id', resourceId)
+    if (error) this.supabase.unwrap(null, error)
+    return { success: true }
   }
 
   async listBookings(churchId: string) {
     const { data, error } = await this.supabase.admin
       .from('resource_bookings')
-      .select('*, resources(name, type), church_memberships(id, users(full_name, email))')
+      .select(
+        '*, resources(name, type), church_memberships(id, users!church_memberships_user_id_fkey(full_name, email))'
+      )
       .eq('church_id', churchId)
-      .order('starts_at', { ascending: false });
-    return this.supabase.unwrap(data ?? [], error);
+      .order('starts_at', { ascending: false })
+    return this.supabase.unwrap(data ?? [], error)
   }
 
-  async createBooking(churchId: string, dto: CreateBookingDto, membershipId: string) {
+  async createBooking(
+    churchId: string,
+    dto: CreateBookingDto,
+    membershipId: string
+  ) {
     const { data, error } = await this.supabase.admin
       .from('resource_bookings')
       .insert({
@@ -76,19 +86,24 @@ export class ResourcesService {
         status: 'pending',
       })
       .select()
-      .single();
-    return this.supabase.unwrap(data, error);
+      .single()
+    return this.supabase.unwrap(data, error)
   }
 
-  async updateBookingStatus(churchId: string, bookingId: string, status: string, userId: string) {
+  async updateBookingStatus(
+    churchId: string,
+    bookingId: string,
+    status: string,
+    userId: string
+  ) {
     const { data, error } = await this.supabase.admin
       .from('resource_bookings')
       .update({ status, approved_by: userId })
       .eq('church_id', churchId)
       .eq('id', bookingId)
       .select()
-      .single();
-    return this.supabase.unwrap(data, error);
+      .single()
+    return this.supabase.unwrap(data, error)
   }
 
   async removeBooking(churchId: string, bookingId: string) {
@@ -96,8 +111,8 @@ export class ResourcesService {
       .from('resource_bookings')
       .delete()
       .eq('church_id', churchId)
-      .eq('id', bookingId);
-    if (error) this.supabase.unwrap(null, error);
-    return { success: true };
+      .eq('id', bookingId)
+    if (error) this.supabase.unwrap(null, error)
+    return { success: true }
   }
 }

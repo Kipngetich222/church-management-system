@@ -20,7 +20,9 @@ export async function GET(req: Request) {
 
   const { data: members } = await admin
     .from('church_memberships')
-    .select('id, church_id, users!inner(full_name, phone), churches(name)')
+    .select(
+      'id, church_id, full_name, phone, date_of_birth, users!church_memberships_user_id_fkey(full_name, phone), churches(name)'
+    )
     .not('date_of_birth', 'is', null)
 
   const todayBirthdays = (members ?? []).filter((m: any) => {
@@ -31,9 +33,11 @@ export async function GET(req: Request) {
 
   let sent = 0
   for (const m of todayBirthdays as any[]) {
-    if (!m.users?.phone) continue
-    const message = `Happy birthday, ${m.users.full_name}! 🎉 ${m.churches.name} celebrates you today.`
-    await sendSms({ to: normalizePhone(m.users.phone), message })
+    const phone = m.phone ?? m.users?.phone
+    if (!phone) continue
+    const name = m.full_name ?? m.users?.full_name ?? 'friend'
+    const message = `Happy birthday, ${name}! 🎉 ${m.churches.name} celebrates you today.`
+    await sendSms({ to: normalizePhone(phone), message })
     sent++
   }
 

@@ -25,7 +25,7 @@ export class CronService {
     const { data } = await admin
       .from('church_memberships')
       .select(
-        'id, church_id, phone, date_of_birth, users(full_name, email, phone)'
+        'id, church_id, full_name, phone, date_of_birth, users!church_memberships_user_id_fkey(full_name, email, phone)'
       )
 
     const todayBirthdays = (data ?? []).filter((row: any) => {
@@ -42,7 +42,7 @@ export class CronService {
       try {
         await this.sms.send({
           to: this.sms.normalizePhone(phone),
-          message: `Happy birthday ${member.users?.full_name ?? 'friend'}! Blessings from your church family.`,
+          message: `Happy birthday ${member.full_name ?? member.users?.full_name ?? 'friend'}! Blessings from your church family.`,
         })
         sent += 1
       } catch (error) {

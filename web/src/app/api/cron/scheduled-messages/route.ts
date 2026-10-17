@@ -24,14 +24,55 @@ export async function GET(req: Request) {
 
   for (const campaign of due ?? []) {
     const filter = campaign.recipient_filter as any
-    // Reuse logic: simple version sends to all — extend as needed
-    const { data: recipients } = await admin
+    let query = admin
       .from('church_memberships')
-      .select('id, users!inner(phone)')
+      .select('id, phone, users!church_memberships_user_id_fkey(phone)')
       .eq('church_id', campaign.church_id)
 
+    if (filter?.type === 'department' && filter.ids?.length) {
+      const { data: rows } = await admin
+        .from('department_members')
+        .select('membership_id')
+        .in('department_id', filter.ids)
+      const ids = (rows ?? []).map((row) => row.membership_id)
+      if (!ids.length) {
+        await admin
+          .from('message_campaigns')
+          .update({
+            status: 'sent',
+            sent_at: new Date().toISOString(),
+            sent_count: 0,
+          })
+          .eq('id', campaign.id)
+        continue
+      }
+      query = query.in('id', ids) as any
+    } else if (filter?.type === 'group' && filter.ids?.length) {
+      const { data: rows } = await admin
+        .from('small_group_members')
+        .select('membership_id')
+        .in('group_id', filter.ids)
+      const ids = (rows ?? []).map((row) => row.membership_id)
+      if (!ids.length) {
+        await admin
+          .from('message_campaigns')
+          .update({
+            status: 'sent',
+            sent_at: new Date().toISOString(),
+            sent_count: 0,
+          })
+          .eq('id', campaign.id)
+        continue
+      }
+      query = query.in('id', ids) as any
+    } else if (filter?.type === 'custom' && filter.ids?.length) {
+      query = query.in('id', filter.ids) as any
+    }
+
+    const { data: recipients } = await query
+
     const phones = (recipients ?? [])
-      .map((r: any) => r.users?.phone)
+      .map((r: any) => r.phone ?? r.users?.phone)
       .filter(Boolean)
       .map((p: string) => normalizePhone(p))
 

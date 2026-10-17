@@ -15,7 +15,7 @@ export default async function AdminPrayerPage() {
     .from('prayer_requests')
     .select(`
       id, title, body, type, status, visibility, created_at,
-      church_memberships(users(full_name, email))
+      church_memberships(users!church_memberships_user_id_fkey(full_name, email))
     `)
     .eq('church_id', ctx.churchId)
     .order('created_at', { ascending: false })

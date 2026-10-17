@@ -26,13 +26,13 @@ export default async function DepartmentDetailPage({
 
   const { data: allMembers } = await supabase
     .from('church_memberships')
-    .select('id, users(full_name, email, avatar_url)')
+    .select('id, users!church_memberships_user_id_fkey(full_name, email, avatar_url)')
     .eq('church_id', churchId)
 
   const { data: deptMembers } = await supabase
     .from('department_members')
     .select(
-      'id, is_leader, membership_id, church_memberships(users(full_name, email))'
+      'id, is_leader, membership_id, church_memberships(users!church_memberships_user_id_fkey(full_name, email))'
     )
     .eq('department_id', deptId)
 
