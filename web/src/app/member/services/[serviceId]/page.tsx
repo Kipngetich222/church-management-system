@@ -14,7 +14,9 @@ import {
   occurrenceKey,
   todayKey,
 } from '@/lib/utils/recurrence'
+import { appBaseUrl } from '@/lib/utils/app-url'
 import { BackLink } from '@/components/shared/BackLink'
+import { ShareButton } from '@/components/shared/ShareButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -70,6 +72,7 @@ export default async function MemberServicePage({
   // with no programme never exposes another service's (or another day's) file.
   const programme = await getProgramme(service.id, occurrenceDate)
   const programmeUrl = await getProgrammeFileUrl(programme)
+  const shareUrl = `${appBaseUrl()}/s/${service.id}?date=${occurrenceDate}`
 
   let alreadyCheckedIn = false
   if (membership) {
@@ -91,10 +94,26 @@ export default async function MemberServicePage({
         <Badge variant="secondary">
           Every {WEEKDAY_LABELS[service.day_of_week]}
         </Badge>
-        {service.visibility === 'public' && <Badge variant="outline">Public</Badge>}
+        <Badge variant="outline">
+          {service.visibility === 'public' ? 'Public' : 'Members only'}
+        </Badge>
       </div>
 
-      <h1 className="text-3xl font-bold">{service.title}</h1>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <h1 className="text-3xl font-bold">{service.title}</h1>
+        <ShareButton
+          url={shareUrl}
+          title={service.title}
+          text={`${service.title} programme`}
+        />
+      </div>
+
+      {service.visibility !== 'public' && (
+        <p className="text-xs text-muted-foreground">
+          Only church members can open a members-only link. Ask an admin to set
+          this service to Public so visitors can download the programme too.
+        </p>
+      )}
 
       <div className="flex flex-wrap gap-4 text-muted-foreground">
         <div className="flex items-center gap-2">

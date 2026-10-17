@@ -115,8 +115,7 @@ export function ProfileCompletionForm({
       <CardHeader>
         <CardTitle>Tell us about yourself</CardTitle>
         <CardDescription>
-          We need a few details before you continue. Your phone number is
-          required; the rest is up to you.
+          We need a few details before you continue.
         </CardDescription>
       </CardHeader>
       <CardContent>

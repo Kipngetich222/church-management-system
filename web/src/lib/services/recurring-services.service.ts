@@ -81,6 +81,15 @@ function programmePathFromUrl(url: string | null | undefined): string | null {
   return decodeURIComponent(url.slice(index + marker.length))
 }
 
+/** The storage object path for a programme row, new column or legacy URL. */
+export function programmeStoragePath(
+  programme:
+    Pick<ServiceProgrammeRow, 'file_path' | 'file_url'> | null | undefined
+): string | null {
+  if (!programme) return null
+  return programme.file_path ?? programmePathFromUrl(programme.file_url)
+}
+
 /**
  * A short-lived URL a member or admin can open for a programme. The bucket is
  * private, so files are only reachable through a signed URL that our storage
@@ -92,7 +101,7 @@ export async function getProgrammeFileUrl(
 ): Promise<string | null> {
   if (!programme) return null
 
-  const path = programme.file_path ?? programmePathFromUrl(programme.file_url)
+  const path = programmeStoragePath(programme)
   if (!path) return programme.file_url
 
   const supabase = await createClient()
