@@ -1357,7 +1357,9 @@ export type Database = {
       }
       prayer_requests: {
         Row: {
+          archived_at: string | null
           assigned_to: string | null
+          audience: string
           body: string
           category: string | null
           church_id: string
@@ -1372,7 +1374,9 @@ export type Database = {
           visibility: Database['public']['Enums']['prayer_visibility']
         }
         Insert: {
+          archived_at?: string | null
           assigned_to?: string | null
+          audience?: string
           body: string
           category?: string | null
           church_id: string
@@ -1387,7 +1391,9 @@ export type Database = {
           visibility?: Database['public']['Enums']['prayer_visibility']
         }
         Update: {
+          archived_at?: string | null
           assigned_to?: string | null
+          audience?: string
           body?: string
           category?: string | null
           church_id?: string

@@ -2,18 +2,17 @@ import Link from 'next/link'
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { getChurchSetup } from '@/lib/utils/church-setup'
 import { getPlanUsage } from '@/lib/services/plan.service'
+import { prayerRetentionCutoff } from '@/lib/services/prayer.service'
 import { createClient } from '@/lib/supabase/server'
-import { listUpcomingEvents, listPastEvents } from '@/lib/services/events.service'
+import {
+  listUpcomingEvents,
+  listPastEvents,
+} from '@/lib/services/events.service'
 import type { SetupStepKey } from '@/lib/constants/setup-steps'
 import { ChurchLogo } from '@/components/shared/ChurchLogo'
 import { DashboardEvents } from '@/components/events/DashboardEvents'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   AlertTriangle,
   Building2,
@@ -22,6 +21,8 @@ import {
   Circle,
   Coins,
   Crown,
+  Heart,
+  HeartHandshake,
   MapPin,
   Users,
   UsersRound,
@@ -69,10 +70,12 @@ function StatCard({
 }
 
 export default async function AdminDashboardPage() {
-  const { church, churchId, role } = await getActiveChurch()
+  const { church, churchId, role, user } = await getActiveChurch()
   const supabase = await createClient()
 
-  const weekAgo = new Date(new Date().getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const weekAgo = new Date(
+    new Date().getTime() - 7 * 24 * 60 * 60 * 1000
+  ).toISOString()
 
   const [
     setup,
@@ -117,6 +120,54 @@ export default async function AdminDashboardPage() {
     (sum, o) => sum + Number(o.amount ?? 0),
     0
   )
+
+  const prayerCutoff = prayerRetentionCutoff()
+  const { data: dashboardMembership } = await supabase
+    .from('church_memberships')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('church_id', churchId)
+    .single()
+
+  const [
+    { count: prayerCount },
+    { count: counsellingCount },
+    { count: assignedPrayerCount },
+    { count: assignedCounsellingCount },
+  ] = await Promise.all([
+    supabase
+      .from('prayer_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('church_id', churchId)
+      .eq('type', 'prayer')
+      .is('archived_at', null)
+      .gte('created_at', prayerCutoff)
+      .in('status', ['open', 'in_progress']),
+    supabase
+      .from('prayer_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('church_id', churchId)
+      .eq('type', 'counseling')
+      .in('status', ['open', 'in_progress']),
+    dashboardMembership
+      ? supabase
+          .from('prayer_requests')
+          .select('id', { count: 'exact', head: true })
+          .eq('assigned_to', dashboardMembership.id)
+          .eq('type', 'prayer')
+          .is('archived_at', null)
+          .gte('created_at', prayerCutoff)
+          .in('status', ['open', 'in_progress'])
+      : Promise.resolve({ count: 0 }),
+    dashboardMembership
+      ? supabase
+          .from('prayer_requests')
+          .select('id', { count: 'exact', head: true })
+          .eq('assigned_to', dashboardMembership.id)
+          .eq('type', 'counseling')
+          .in('status', ['open', 'in_progress'])
+      : Promise.resolve({ count: 0 }),
+  ])
   const totalMembers = memberCount.count ?? 0
   const baptizedMembers = Math.min(baptizedCount.count ?? 0, totalMembers)
   const unbaptizedMembers = Math.max(totalMembers - baptizedMembers, 0)
@@ -159,7 +210,11 @@ export default async function AdminDashboardPage() {
                       ) : (
                         <Circle className="h-4 w-4 text-muted-foreground" />
                       )}
-                      <span className={step.done ? 'text-muted-foreground line-through' : ''}>
+                      <span
+                        className={
+                          step.done ? 'text-muted-foreground line-through' : ''
+                        }
+                      >
                         {step.label}
                       </span>
                     </span>
@@ -188,12 +243,14 @@ export default async function AdminDashboardPage() {
             <span className="flex items-start gap-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
               <span>
-                {church?.name ?? 'Your church'} has reached the {planUsage.memberLimit}-member
-                limit on the {planUsage.planName} plan. Nobody new can join until you upgrade
-                to the Growth plan.
+                {church?.name ?? 'Your church'} has reached the{' '}
+                {planUsage.memberLimit}-member limit on the {planUsage.planName}{' '}
+                plan. Nobody new can join until you upgrade to the Growth plan.
               </span>
             </span>
-            <Button render={<Link href="/admin/settings/plan" />}>Upgrade plan</Button>
+            <Button render={<Link href="/admin/settings/plan" />}>
+              Upgrade plan
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -229,6 +286,20 @@ export default async function AdminDashboardPage() {
           href="/admin/small-groups"
         />
         <StatCard
+          label="Prayer Requests"
+          value={String(prayerCount ?? 0)}
+          hint={`${assignedPrayerCount ?? 0} assigned to you`}
+          icon={Heart}
+          href="/admin/prayer-requests"
+        />
+        <StatCard
+          label="Counselling"
+          value={String(counsellingCount ?? 0)}
+          hint={`${assignedCounsellingCount ?? 0} assigned to you`}
+          icon={HeartHandshake}
+          href="/admin/prayer-requests"
+        />
+        <StatCard
           label="This Week's Giving"
           value={`KES ${weekGiving.toLocaleString()}`}
           icon={Coins}
@@ -240,4 +311,3 @@ export default async function AdminDashboardPage() {
     </div>
   )
 }
-

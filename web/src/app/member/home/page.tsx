@@ -1,7 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { getDailyScripture } from '@/lib/services/scripture.service'
-import { listUpcomingEvents, listPastEvents } from '@/lib/services/events.service'
+import {
+  listUpcomingEvents,
+  listPastEvents,
+} from '@/lib/services/events.service'
 import {
   listRecurringServices,
   listServiceExceptions,
@@ -9,9 +12,11 @@ import {
 import { addDaysToKey, occurrenceKey, todayKey } from '@/lib/utils/recurrence'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 
 import { BadgeChip, findBadgeDefinition } from '@/components/members/BadgeChip'
 import { listMemberBadges } from '@/lib/services/members.service'
+import { prayerRetentionCutoff } from '@/lib/services/prayer.service'
 import { MemberEventsSection } from '@/components/events/MemberEventsSection'
 import { UpcomingServices } from '@/components/events/UpcomingServices'
 import { Button } from '@/components/ui/button'
@@ -25,7 +30,7 @@ import { Pin, Heart, HeartHandshake, HandCoins, MapPin } from 'lucide-react'
 
 export default async function MemberHomePage() {
   // Get the currently active church and member role
-  const { churchId, church, role } = await getActiveChurch()
+  const { churchId, church } = await getActiveChurch()
 
   // Create Supabase server client
   const supabase = await createClient()
@@ -82,9 +87,25 @@ export default async function MemberHomePage() {
       .eq('church_id', churchId)
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true }),
-
   ])
 
+  const { data: assignedRows } = membership
+    ? await supabase
+        .from('prayer_requests')
+        .select('id, title, type, status, created_at')
+        .eq('assigned_to', membership.id)
+        .eq('church_id', churchId)
+        .neq('membership_id', membership.id)
+        .in('status', ['open', 'in_progress'])
+        .order('created_at', { ascending: false })
+    : { data: [] }
+
+  const prayerCutoff = new Date(prayerRetentionCutoff())
+  const assignedRequests = (assignedRows ?? []).filter(
+    (request) =>
+      request.type === 'counseling' ||
+      new Date(request.created_at ?? '') >= prayerCutoff
+  )
   const badgeDefinitions = await listMemberBadges(churchId)
 
   // Build the member badge list
@@ -152,7 +173,7 @@ WELCOME SECTION
       MEMBER QUICK ACTIONS
       ============================================ */}
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Button asChild size="lg" className="h-24 flex-col gap-1">
           <Link href="/member/giving">
             <HandCoins className="h-6 w-6" />
@@ -166,9 +187,21 @@ WELCOME SECTION
           size="lg"
           className="h-24 flex-col gap-1"
         >
-          <Link href="/member/prayer">
-            <HeartHandshake className="h-6 w-6" />
+          <Link href="/member/prayer#prayer">
+            <Heart className="h-6 w-6" />
             Prayer request
+          </Link>
+        </Button>
+
+        <Button
+          asChild
+          variant="outline"
+          size="lg"
+          className="h-24 flex-col gap-1 border-amber-500/30"
+        >
+          <Link href="/member/prayer#counselling">
+            <HeartHandshake className="h-6 w-6" />
+            Request counselling
           </Link>
         </Button>
 
@@ -185,6 +218,41 @@ WELCOME SECTION
         </Button>
       </div>
 
+      {assignedRequests.length > 0 && (
+        <Card className="border-primary/30">
+          <CardHeader>
+            <CardTitle>Requests assigned to you</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {assignedRequests.length} active request
+              {assignedRequests.length === 1 ? '' : 's'} have been channelled
+              directly to you.
+            </p>
+            {assignedRequests.slice(0, 3).map((request) => (
+              <div
+                key={request.id}
+                className="flex items-center justify-between gap-3 rounded-lg border p-3"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">
+                    {request.title}
+                  </p>
+                  <p className="text-xs capitalize text-muted-foreground">
+                    {request.type === 'counseling' ? 'Counselling' : 'Prayer'}
+                  </p>
+                </div>
+                <Badge variant="secondary">
+                  {request.status.replace('_', ' ')}
+                </Badge>
+              </div>
+            ))}
+            <Button variant="outline" asChild>
+              <Link href="/member/prayer#assigned">Open assigned requests</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
       {/* ============================================
       UPCOMING SERVICES (RECURRING)
       ============================================ */}
@@ -212,7 +280,7 @@ WELCOME SECTION
           </CardHeader>
 
           <CardContent className="space-y-4">
-            {(announcements ?? []).map((announcement: any) => (
+            {(announcements ?? []).map((announcement) => (
               <div
                 key={announcement.id}
                 className="border-b last:border-0 pb-3 last:pb-0"
@@ -294,6 +362,3 @@ WELCOME SECTION
     </div>
   )
 }
-
-
-
