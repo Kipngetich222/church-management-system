@@ -1,23 +1,7 @@
-import { createPublicClient } from '@/lib/supabase/public'
+import { listPublicPrayerRequests } from '@/lib/services/prayer.service'
 import { Card, CardContent } from '@/components/ui/card'
 import { format } from 'date-fns'
 import { Heart } from 'lucide-react'
-
-async function loadWall() {
-  const supabase = createPublicClient()
-  const { data } = await supabase
-    .from('prayer_requests')
-    .select(`
-      id, title, body, created_at, visibility,
-      church_memberships!prayer_requests_membership_id_fkey(users!church_memberships_user_id_fkey(full_name)),
-      churches(name)
-    `)
-    .in('visibility', ['public_anonymous', 'public_named'])
-    .eq('status', 'open')
-    .order('created_at', { ascending: false })
-    .limit(50)
-  return data ?? []
-}
 
 /** Normalise a PostgREST embedded relation that may come back as a value or array. */
 function first<T>(value: T | T[] | null | undefined): T | null {
@@ -26,7 +10,7 @@ function first<T>(value: T | T[] | null | undefined): T | null {
 }
 
 export default async function PrayerWallPage() {
-  const requests = await loadWall()
+  const requests = await listPublicPrayerRequests()
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-3xl">
@@ -57,7 +41,11 @@ export default async function PrayerWallPage() {
                     {author}
                     {church?.name && ` — ${church.name}`}
                   </span>
-                  <span>{format(new Date(r.created_at ?? ''), 'MMM d')}</span>
+                  <span>
+                    {r.created_at
+                      ? format(new Date(r.created_at), 'MMM d')
+                      : ''}
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -72,4 +60,3 @@ export default async function PrayerWallPage() {
     </div>
   )
 }
-

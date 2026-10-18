@@ -20,7 +20,7 @@ export const MEMBER_NAV: SidebarNavItem[] = [
   },
   { label: 'Giving', href: '/member/giving', icon: HandCoins, section: 'Main' },
   {
-    label: 'Prayer',
+    label: 'Prayer & Counselling',
     href: '/member/prayer',
     icon: HeartHandshake,
     section: 'Community',

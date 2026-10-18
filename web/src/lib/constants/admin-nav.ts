@@ -99,7 +99,7 @@ export const ADMIN_NAV: NavItem[] = [
     section: 'Ministry',
   },
   {
-    label: 'Prayer Requests',
+    label: 'Prayer & Counselling',
     href: '/admin/prayer-requests',
     icon: Heart,
     permission: 'prayer:read',
