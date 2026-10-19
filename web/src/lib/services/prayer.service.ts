@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createPublicClient } from '@/lib/supabase/public'
 
 export const PRAYER_RETENTION_DAYS = 7
 export const LEADER_BADGES = ['pastor', 'elder', 'deacon'] as const
@@ -142,9 +143,14 @@ export async function listPrayerTargets(
 export async function listPublicPrayerRequests(): Promise<
   PublicPrayerRequest[]
 > {
-  const admin = adminClient()
+  // Vercel does not expose sensitive/private environment variables during the
+  // build step. The public wall therefore falls back to the publishable client
+  // when the service-role key is unavailable (for example while prerendering).
+  const supabase = process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? adminClient()
+    : createPublicClient()
 
-  const { data } = await admin
+  const { data, error } = await supabase
     .from('prayer_requests')
     .select(
       `
@@ -154,12 +160,18 @@ export async function listPublicPrayerRequests(): Promise<
     `
     )
     .eq('type', 'prayer')
+    .eq('audience', 'church')
     .in('visibility', ['public_anonymous', 'public_named'])
     .is('archived_at', null)
     .in('status', ['open', 'in_progress'])
     .gte('created_at', prayerRetentionCutoff())
     .order('created_at', { ascending: false })
     .limit(50)
+
+  if (error) {
+    console.error('Failed to load public prayer requests:', error.message)
+    return []
+  }
 
   return (data ?? []) as unknown as PublicPrayerRequest[]
 }

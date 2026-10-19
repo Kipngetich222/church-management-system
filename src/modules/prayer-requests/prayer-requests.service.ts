@@ -133,7 +133,7 @@ export class PrayerRequestsService {
     }
 
     const visibility =
-      type === 'counseling' || audience === 'person'
+      type === 'counseling' || audience !== 'church'
         ? 'pastors_only'
         : (dto.visibility ?? 'pastors_only')
 
@@ -238,7 +238,7 @@ export class PrayerRequestsService {
     }
 
     const nextVisibility =
-      nextType === 'counseling' || nextAudience === 'person'
+      nextType === 'counseling' || nextAudience !== 'church'
         ? 'pastors_only'
         : (dto.visibility ?? existing.visibility)
 
