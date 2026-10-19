@@ -2,6 +2,7 @@ import { listPublicPrayerRequests } from '@/lib/services/prayer.service'
 import { Card, CardContent } from '@/components/ui/card'
 import { format } from 'date-fns'
 import { Heart } from 'lucide-react'
+import { connection } from 'next/server'
 
 /** Normalise a PostgREST embedded relation that may come back as a value or array. */
 function first<T>(value: T | T[] | null | undefined): T | null {
@@ -10,6 +11,10 @@ function first<T>(value: T | T[] | null | undefined): T | null {
 }
 
 export default async function PrayerWallPage() {
+  // Do not touch private server credentials while Next is prerendering this
+  // route. The wall is request-time data, so defer the query until a request
+  // is actually being served.
+  await connection()
   const requests = await listPublicPrayerRequests()
 
   return (
