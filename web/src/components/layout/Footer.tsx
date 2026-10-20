@@ -23,9 +23,10 @@ export function Footer() {
             <li>
               <Link href="/pricing">Pricing</Link>
             </li>
-            <li>
+            {/* Focus Mode is coming later. */}
+            {/* <li>
               <Link href="/focus-mode">Focus Mode</Link>
-            </li>
+            </li> */}
           </ul>
         </div>
         <div>

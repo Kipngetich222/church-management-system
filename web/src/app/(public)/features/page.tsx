@@ -16,7 +16,6 @@ import {
   QrCode,
   Building2,
   ShieldCheck,
-  Smartphone,
   BookOpen,
   HeartHandshake,
   ClipboardList,
@@ -102,11 +101,12 @@ const groups = [
         title: 'Sermons & resources',
         desc: 'Share sermon videos, series and ministry resources with your congregation.',
       },
-      {
-        icon: Smartphone,
-        title: 'Focus Mode',
-        desc: 'A mobile companion that removes distractions so members can engage with the Word.',
-      },
+      // Focus Mode is coming later.
+      // {
+      //   icon: Smartphone,
+      //   title: 'Focus Mode',
+      //   desc: 'A mobile companion that removes distractions so members can engage with the Word.',
+      // },
       {
         icon: ShieldCheck,
         title: 'Roles & security',

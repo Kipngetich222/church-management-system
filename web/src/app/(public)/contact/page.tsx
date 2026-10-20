@@ -6,7 +6,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Mail, MessageSquare, MapPin } from 'lucide-react'
+import { Mail, MessageSquare, MapPin, Phone } from 'lucide-react'
+
+const contactEmail =
+  process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? 'victoryegon222@gmail.com'
+const contactPhone =
+  process.env.NEXT_PUBLIC_CONTACT_PHONE ?? '+254 759 213 531'
+const contactPhoneHref = `tel:${contactPhone.replace(/[^\d+]/g, '')}`
 
 export const metadata: Metadata = {
   title: 'Contact — ChurchOnline',
@@ -42,7 +48,24 @@ export default function ContactPage() {
                 <Mail className="h-5 w-5 text-primary mt-0.5" />
                 <div>
                   <p className="font-medium">Email</p>
-                  <p className="text-muted-foreground">hello@yourchurch.app</p>
+                  <a
+                    href={`mailto:${contactEmail}`}
+                    className="text-muted-foreground hover:text-primary"
+                  >
+                    {contactEmail}
+                  </a>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Phone className="h-5 w-5 text-primary mt-0.5" />
+                <div>
+                  <p className="font-medium">Phone</p>
+                  <a
+                    href={contactPhoneHref}
+                    className="text-muted-foreground hover:text-primary"
+                  >
+                    {contactPhone}
+                  </a>
                 </div>
               </div>
               <div className="flex items-start gap-3">

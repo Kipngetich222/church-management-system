@@ -35,8 +35,8 @@ export async function Navbar() {
           <Link href="/sermons" className="text-sm hover:text-primary">
             Sermons
           </Link>
-          <Link href="/focus-mode" className="text-sm hover:text-primary">
-            Focus Mode
+          <Link href="/contact" className="text-sm hover:text-primary">
+            Contact
           </Link>
         </div>
 
