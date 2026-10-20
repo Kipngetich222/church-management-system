@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import {
+  renderContactNotificationEmail,
+  renderContactNotificationText,
+} from '@/lib/email/template'
 
 const contactSchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -9,15 +13,6 @@ const contactSchema = z.object({
 })
 
 const DEFAULT_CONTACT_EMAIL = 'victoryegon222@gmail.com'
-
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
 
 function contactRecipients() {
   return (process.env.CONTACT_EMAIL || DEFAULT_CONTACT_EMAIL)
@@ -49,18 +44,14 @@ export async function POST(request: Request) {
     }
 
     const { sendEmail } = await import('@/lib/services/email.service')
+    const notification = { name, email, church: church || undefined, message }
     const result = await sendEmail({
       to,
       replyTo: email,
       subject: `New enquiry from ${name}`,
-      html: `
-        <h2>New contact form submission</h2>
-        <p><strong>Name:</strong> ${escapeHtml(name)}</p>
-        <p><strong>Email:</strong> ${escapeHtml(email)}</p>
-        ${church ? `<p><strong>Church:</strong> ${escapeHtml(church)}</p>` : ''}
-        <p><strong>Message:</strong></p>
-        <p>${escapeHtml(message).replace(/\n/g, '<br />')}</p>
-      `,
+      html: renderContactNotificationEmail(notification),
+      text: renderContactNotificationText(notification),
+      template: false,
     })
 
     if (result.error) {

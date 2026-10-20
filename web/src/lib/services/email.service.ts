@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { renderEmailLayout } from '@/lib/email/template'
 
 // Construct the client lazily. `new Resend()` throws when the API key is
 // missing, and this module is imported by code that runs on every request (the
@@ -15,14 +16,29 @@ export async function sendEmail({
   to,
   subject,
   html,
+  text,
   from = process.env.RESEND_FROM || 'ChurchOnline <onboarding@resend.dev>',
   replyTo,
+  template = true,
 }: {
   to: string | string[]
   subject: string
   html: string
+  text?: string
   from?: string
   replyTo?: string
+  template?: boolean
 }) {
-  return getResend().emails.send({ from, to, subject, html, replyTo })
+  const renderedHtml = template
+    ? renderEmailLayout({ previewText: subject, title: subject, body: html })
+    : html
+
+  return getResend().emails.send({
+    from,
+    to,
+    subject,
+    html: renderedHtml,
+    text,
+    replyTo,
+  })
 }
