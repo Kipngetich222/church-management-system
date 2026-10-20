@@ -15,12 +15,14 @@ export async function sendEmail({
   to,
   subject,
   html,
-  from = process.env.RESEND_FROM ?? 'noreply@yourchurch.app',
+  from = process.env.RESEND_FROM || 'ChurchOnline <onboarding@resend.dev>',
+  replyTo,
 }: {
   to: string | string[]
   subject: string
   html: string
   from?: string
+  replyTo?: string
 }) {
-  return getResend().emails.send({ from, to, subject, html })
+  return getResend().emails.send({ from, to, subject, html, replyTo })
 }
