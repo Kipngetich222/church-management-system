@@ -5,8 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { lookupAccount } from '@/lib/auth/account'
+import { recordLegalConsent } from '@/lib/auth/legal'
 import { resolvePostAuthPath } from '@/lib/auth/redirect'
 import { friendlyAuthError, oauthAccountMessage } from '@/lib/auth/messages'
+import { LEGAL_VERSION } from '@/lib/legal'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { Input } from '@/components/ui/input'
@@ -21,6 +23,7 @@ import {
 } from '@/components/ui/card'
 import { ArrowLeft } from 'lucide-react'
 import { GoogleIcon } from '@/components/auth/GoogleIcon'
+import { LegalAgreement } from '@/components/legal/LegalAgreement'
 
 export function RegisterForm() {
   const router = useRouter()
@@ -39,6 +42,7 @@ export function RegisterForm() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [agreedToLegal, setAgreedToLegal] = useState(false)
 
   // Live feedback so the user knows their confirmation matches before they
   // even submit the form.
@@ -57,6 +61,13 @@ export function RegisterForm() {
     e.preventDefault()
     if (loading) return
     setError('')
+
+    if (!agreedToLegal) {
+      setError(
+        'Please read and agree to the Terms and Conditions and Privacy Policy to create an account.'
+      )
+      return
+    }
 
     if (form.password !== form.confirmPassword) {
       setError('Passwords do not match. Please re-enter your password.')
@@ -88,12 +99,20 @@ export function RegisterForm() {
       const supabase = createClient()
       const callbackUrl = new URL('/auth/callback', location.origin)
       if (afterAuthPath) callbackUrl.searchParams.set('next', afterAuthPath)
+      callbackUrl.searchParams.set('legal', LEGAL_VERSION)
+
+      const acceptedAt = new Date().toISOString()
 
       const { data, error } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
         options: {
-          data: { full_name: form.fullName },
+          data: {
+            full_name: form.fullName,
+            terms_accepted_at: acceptedAt,
+            privacy_accepted_at: acceptedAt,
+            legal_version: LEGAL_VERSION,
+          },
           emailRedirectTo: callbackUrl.toString(),
         },
       })
@@ -124,6 +143,15 @@ export function RegisterForm() {
       }
 
       // Confirmation disabled: the user is signed in immediately.
+      const consentError = await recordLegalConsent(
+        supabase,
+        data.user.id,
+        acceptedAt
+      )
+      if (consentError) {
+        console.error('Failed to record legal consent:', consentError)
+      }
+
       const destination =
         afterAuthPath ?? (await resolvePostAuthPath(supabase, data.user.id))
       router.push(destination)
@@ -137,12 +165,19 @@ export function RegisterForm() {
 
   async function handleGoogle() {
     if (googleLoading) return
+    if (!agreedToLegal) {
+      setError(
+        'Please read and agree to the Terms and Conditions and Privacy Policy to create an account.'
+      )
+      return
+    }
     setGoogleLoading(true)
     setError('')
     try {
       const supabase = createClient()
       const redirectTo = new URL('/auth/callback', location.origin)
       if (afterAuthPath) redirectTo.searchParams.set('next', afterAuthPath)
+      redirectTo.searchParams.set('legal', LEGAL_VERSION)
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -171,6 +206,14 @@ export function RegisterForm() {
             continue.
           </p>
         )}
+
+        <LegalAgreement
+          id="register-legal-consent"
+          checked={agreedToLegal}
+          onCheckedChange={setAgreedToLegal}
+          disabled={loading || googleLoading}
+          className="rounded-md border bg-muted/30 p-3"
+        />
 
         <Button
           variant="outline"

@@ -242,11 +242,14 @@ export type Database = {
           email: string | null
           id: string
           latitude: number | null
+          legal_version: string | null
           logo_url: string | null
           longitude: number | null
           name: string
           phone: string | null
           plan: Database['public']['Enums']['plan_tier'] | null
+          privacy_accepted_at: string | null
+          terms_accepted_at: string | null
           username: string
           updated_at: string | null
           website: string | null
@@ -259,11 +262,14 @@ export type Database = {
           email?: string | null
           id?: string
           latitude?: number | null
+          legal_version?: string | null
           logo_url?: string | null
           longitude?: number | null
           name: string
           phone?: string | null
           plan?: Database['public']['Enums']['plan_tier'] | null
+          privacy_accepted_at?: string | null
+          terms_accepted_at?: string | null
           username: string
           updated_at?: string | null
           website?: string | null
@@ -276,11 +282,14 @@ export type Database = {
           email?: string | null
           id?: string
           latitude?: number | null
+          legal_version?: string | null
           logo_url?: string | null
           longitude?: number | null
           name?: string
           phone?: string | null
           plan?: Database['public']['Enums']['plan_tier'] | null
+          privacy_accepted_at?: string | null
+          terms_accepted_at?: string | null
           username?: string
           updated_at?: string | null
           website?: string | null
@@ -1694,7 +1703,10 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          legal_version: string | null
           phone: string | null
+          privacy_accepted_at: string | null
+          terms_accepted_at: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1703,7 +1715,10 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          legal_version?: string | null
           phone?: string | null
+          privacy_accepted_at?: string | null
+          terms_accepted_at?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1712,7 +1727,10 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          legal_version?: string | null
           phone?: string | null
+          privacy_accepted_at?: string | null
+          terms_accepted_at?: string | null
           updated_at?: string | null
         }
         Relationships: []

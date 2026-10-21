@@ -52,6 +52,12 @@ export function Footer() {
             <li>
               <Link href="/contact">Contact</Link>
             </li>
+            <li>
+              <Link href="/terms">Terms and Conditions</Link>
+            </li>
+            <li>
+              <Link href="/privacy">Privacy Policy</Link>
+            </li>
           </ul>
         </div>
       </div>
