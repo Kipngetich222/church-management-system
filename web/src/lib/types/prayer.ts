@@ -29,6 +29,7 @@ export type PrayerRequestRow = {
   audience?: PrayerAudience | string | null
   visibility?: string
   created_at: string
+  closed_at?: string | null
   membership_id?: string
   assigned_to?: string | null
   church_id?: string

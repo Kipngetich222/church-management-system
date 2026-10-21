@@ -146,6 +146,7 @@ export default async function PrayerPage() {
   const [
     targets,
     prayerResult,
+    handledHistoryResult,
     counsellingResult,
     incomingResult,
     churchResult,
@@ -161,6 +162,15 @@ export default async function PrayerPage() {
       .gte('created_at', cutoff)
       .in('status', ['open', 'in_progress'])
       .order('created_at', { ascending: false }),
+
+    supabase
+      .from('prayer_requests')
+      .select(REQUEST_SELECT)
+      .eq('assigned_to', membership.id)
+      .eq('church_id', churchId)
+      .eq('type', 'counseling')
+      .eq('status', 'closed')
+      .order('closed_at', { ascending: false, nullsFirst: false }),
 
     supabase
       .from('prayer_requests')
@@ -199,6 +209,8 @@ export default async function PrayerPage() {
       request.type === 'counseling' ||
       new Date(request.created_at) >= cutoffDate
   )
+  const handledHistory = (handledHistoryResult.data ??
+    []) as PrayerRequestRow[]
   const churchPrayers = (churchResult.data ?? []) as PrayerRequestRow[]
 
   return (
@@ -259,11 +271,11 @@ export default async function PrayerPage() {
         </Card>
       </div>
 
-      {incoming.length > 0 && (
-        <div id="assigned">
+      {(incoming.length > 0 || handledHistory.length > 0) && (
+        <div id="assigned" className="space-y-6">
           <RequestSection
             title="Assigned to you"
-            description="Requests that a member has channelled directly to you."
+            description="Active requests that a member has channelled directly to you."
             requests={incoming}
             empty="Nothing assigned to you right now."
             actionsFor={(request) => (
@@ -275,6 +287,17 @@ export default async function PrayerPage() {
               />
             )}
           />
+
+          {handledHistory.length > 0 && (
+            <div id="counselling-history">
+              <RequestSection
+                title="Counselling history"
+                description="Counselling conversations you handled and closed."
+                requests={handledHistory}
+                empty="You have not closed any counselling requests yet."
+              />
+            </div>
+          )}
         </div>
       )}
 

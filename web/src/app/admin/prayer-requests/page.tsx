@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { format } from 'date-fns'
 import Link from 'next/link'
-import { Heart, HeartHandshake, Inbox } from 'lucide-react'
+import { Heart, HeartHandshake, History, Inbox } from 'lucide-react'
 import type { PrayerRequestRow } from '@/lib/types/prayer'
 import { prayerAuthorName } from '@/lib/types/prayer'
 
@@ -140,6 +140,9 @@ export default async function AdminPrayerPage({
     ? '/admin/prayer-requests'
     : '/admin/prayer-requests?assigned=me'
   const filterLabel = assignedOnly ? 'Show all requests' : 'Assigned to me'
+  const historyHref = assignedOnly
+    ? '/admin/prayer-requests/history?assigned=me'
+    : '/admin/prayer-requests/history'
 
   return (
     <div className="space-y-6">
@@ -151,12 +154,20 @@ export default async function AdminPrayerPage({
             below.
           </p>
         </div>
-        <Button variant="outline" asChild>
-          <Link href={filterHref}>
-            <Inbox className="mr-2 h-4 w-4" />
-            {filterLabel}
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" asChild>
+            <Link href={historyHref}>
+              <History className="mr-2 h-4 w-4" />
+              Counselling history
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href={filterHref}>
+              <Inbox className="mr-2 h-4 w-4" />
+              {filterLabel}
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -195,7 +206,8 @@ export default async function AdminPrayerPage({
             <p className="text-3xl font-bold">{counselling.length}</p>
             <p className="text-sm text-muted-foreground">
               Private conversations channelled to a pastor or leader. A request
-              stays open until the person handling it closes it.
+              stays open until the person handling it closes it, then moves to
+              counselling history.
             </p>
             <Button variant="outline" size="sm" asChild>
               <Link href="#counselling-queue">View counselling queue</Link>
