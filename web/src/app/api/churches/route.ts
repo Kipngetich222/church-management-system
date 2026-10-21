@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { slugify } from '@/lib/utils/slug'
 import { validateChurchUsername } from '@/lib/utils/church-username'
+import { LEGAL_VERSION } from '@/lib/legal'
 
 const bodySchema = z.object({
   name: z
@@ -14,6 +15,10 @@ const bodySchema = z.object({
   username: z.string().trim().max(120).optional(),
   description: z.string().trim().max(500).optional(),
   plan: z.enum(['starter', 'growth']).optional(),
+  legalAccepted: z.boolean().refine((value) => value === true, {
+    message:
+      'You must agree to the Terms and Conditions and Privacy Policy to create a church.',
+  }),
 })
 
 /**
@@ -90,6 +95,7 @@ export async function POST(request: Request) {
     )
   }
 
+  const acceptedAt = new Date().toISOString()
   const { data: church, error: createError } = await admin
     .from('churches')
     .insert({
@@ -98,6 +104,9 @@ export async function POST(request: Request) {
       description: parsed.data.description || null,
       created_by: user.id,
       plan: parsed.data.plan ?? 'starter',
+      terms_accepted_at: acceptedAt,
+      privacy_accepted_at: acceptedAt,
+      legal_version: LEGAL_VERSION,
     })
     .select('id')
     .single()

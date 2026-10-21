@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
+import { recordLegalConsent } from '@/lib/auth/legal'
 import { resolvePostAuthPath, safeRedirect } from '@/lib/auth/redirect'
+import { LEGAL_VERSION } from '@/lib/legal'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
@@ -14,11 +16,34 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      const metadata = user?.user_metadata
+      const acceptedVersion =
+        searchParams.get('legal') ??
+        (typeof metadata?.legal_version === 'string'
+          ? metadata.legal_version
+          : null)
+      const acceptedAt =
+        typeof metadata?.terms_accepted_at === 'string'
+          ? metadata.terms_accepted_at
+          : undefined
+
+      if (user && acceptedVersion === LEGAL_VERSION) {
+        const consentError = await recordLegalConsent(
+          supabase,
+          user.id,
+          acceptedAt
+        )
+        if (consentError) {
+          console.error('Failed to record legal consent:', consentError)
+        }
+      }
+
       let destination = requestedNext
       if (!destination) {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
         destination = user
           ? await resolvePostAuthPath(supabase, user.id)
           : '/onboarding'

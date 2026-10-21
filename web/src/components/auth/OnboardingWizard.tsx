@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/card'
 import { ArrowLeft, Plus, Search } from 'lucide-react'
 import { UsernameFeedback } from '@/components/shared/UsernameFeedback'
+import { LegalAgreement } from '@/components/legal/LegalAgreement'
 import { useChurchUsername } from '@/lib/hooks/useChurchUsername'
 import { validateChurchUsername } from '@/lib/utils/church-username'
 import { PLANS, formatPlanPrice, type PlanTier } from '@/lib/constants/plans'
@@ -60,6 +61,7 @@ export function OnboardingWizard({
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [joiningId, setJoiningId] = useState<string | null>(null)
+  const [agreedToLegal, setAgreedToLegal] = useState(false)
 
   const username = useChurchUsername(form.username)
 
@@ -108,6 +110,12 @@ export function OnboardingWizard({
       setError('That username is already taken. Please choose another one.')
       return
     }
+    if (!agreedToLegal) {
+      setError(
+        'Please read and agree to the Terms and Conditions and Privacy Policy to create a church.'
+      )
+      return
+    }
     setLoading(true)
     setError('')
     try {
@@ -122,6 +130,7 @@ export function OnboardingWizard({
           username: usernameCheck.username,
           description: form.description || undefined,
           plan,
+          legalAccepted: true,
         }),
       })
 
@@ -328,6 +337,14 @@ export function OnboardingWizard({
               from your admin dashboard.
             </p>
           </div>
+
+          <LegalAgreement
+            id="church-legal-consent"
+            checked={agreedToLegal}
+            onCheckedChange={setAgreedToLegal}
+            disabled={loading}
+            onBehalfOfChurch
+          />
 
           {errorBanner}
 
