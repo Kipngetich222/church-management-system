@@ -4,6 +4,7 @@ import { getChurchSetup } from '@/lib/utils/church-setup'
 import { getPlanUsage } from '@/lib/services/plan.service'
 import { prayerRetentionCutoff } from '@/lib/services/prayer.service'
 import { createClient } from '@/lib/supabase/server'
+import { getTimeOfDayGreeting } from '@/lib/utils/date'
 import {
   listUpcomingEvents,
   listPastEvents,
@@ -124,10 +125,17 @@ export default async function AdminDashboardPage() {
   const prayerCutoff = prayerRetentionCutoff()
   const { data: dashboardMembership } = await supabase
     .from('church_memberships')
-    .select('id')
+    .select('id, users!church_memberships_user_id_fkey(full_name)')
     .eq('user_id', user.id)
     .eq('church_id', churchId)
     .single()
+
+  const greeting = getTimeOfDayGreeting()
+  const memberName =
+    dashboardMembership?.users?.full_name?.trim() ||
+    (user.user_metadata?.full_name as string | undefined)?.trim() ||
+    user.email?.split('@')[0] ||
+    'friend'
 
   const [
     { count: prayerCount },
@@ -177,7 +185,11 @@ export default async function AdminDashboardPage() {
       <div className="flex items-center gap-3">
         <ChurchLogo name={church?.name} logoUrl={church?.logo_url} size="lg" />
         <div>
-          <h1 className="text-2xl font-bold">Welcome to {church?.name}</h1>
+          <h1 className="text-2xl font-bold">
+            {greeting || "Hello"}, {memberName || "Member"}
+<br />
+Welcome to {church?.name || "our church"}
+          </h1>
           <p className="text-muted-foreground">Signed in as {role}</p>
         </div>
       </div>
