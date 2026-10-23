@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button'
 import { ChurchMap } from '@/components/maps/ChurchMap'
 import { LeadershipSection } from '@/components/churches/LeadershipSection'
 import { googleMapsUrl } from '@/lib/utils/maps'
+import { getTimeOfDayGreeting } from '@/lib/utils/date'
 
 import Link from 'next/link'
 
@@ -55,7 +56,9 @@ export default async function MemberHomePage() {
   ] = await Promise.all([
     supabase
       .from('church_memberships')
-      .select('id, badges, is_baptized')
+      .select(
+        'id, badges, is_baptized, users!church_memberships_user_id_fkey(full_name)'
+      )
       .eq('user_id', user!.id)
       .eq('church_id', churchId)
       .single(),
@@ -125,6 +128,13 @@ export default async function MemberHomePage() {
     church?.address
   )
 
+  const greeting = getTimeOfDayGreeting()
+  const memberName =
+    membership?.users?.full_name?.trim() ||
+    (user?.user_metadata?.full_name as string | undefined)?.trim() ||
+    user?.email?.split('@')[0] ||
+    'friend'
+
   return (
     <div className="space-y-8">
       {/* ============================================
@@ -132,7 +142,11 @@ WELCOME SECTION
 ============================================ */}
 
       <div>
-        <h1 className="text-3xl font-bold">Welcome to {church?.name}</h1>
+        <h1 className="text-3xl font-bold">
+          {greeting || "Hello"}, {memberName || "Member"}
+          <br />
+          Welcome to {church?.name || "our church"}
+        </h1>
 
         <p className="text-muted-foreground">{church?.description}</p>
 

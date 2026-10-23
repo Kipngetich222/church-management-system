@@ -1,6 +1,26 @@
-import { format, formatDistanceToNow, isSameDay, isToday, isTomorrow } from 'date-fns'
+import {
+  format,
+  formatDistanceToNow,
+  isSameDay,
+  isToday,
+  isTomorrow,
+} from 'date-fns'
 
-export function formatEventDate(start: string, end?: string | null, allDay = false) {
+export function getTimeOfDayGreeting(
+  date: Date = new Date()
+): 'Good morning' | 'Good afternoon' | 'Good evening' {
+  const hour = date.getHours()
+
+  if (hour < 12) return 'Good morning'
+  if (hour < 17) return 'Good afternoon'
+  return 'Good evening'
+}
+
+export function formatEventDate(
+  start: string,
+  end?: string | null,
+  allDay = false
+) {
   const s = new Date(start)
   const e = end ? new Date(end) : null
 

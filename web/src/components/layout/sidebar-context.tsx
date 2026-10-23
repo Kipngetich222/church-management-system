@@ -7,9 +7,36 @@ import {
   useEffect,
   useMemo,
   useState,
+  useSyncExternalStore,
 } from 'react'
 
 const STORAGE_KEY = 'churchms-sidebar-collapsed'
+const CHANGE_EVENT = 'churchms-sidebar-change'
+
+let fallbackCollapsed = false
+
+function getCollapsedSnapshot() {
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY)
+    if (stored !== null) return stored === '1'
+  } catch {
+    // Fall back to the in-memory value when storage is unavailable.
+  }
+  return fallbackCollapsed
+}
+
+function getCollapsedServerSnapshot() {
+  return false
+}
+
+function subscribeToCollapsed(onChange: () => void) {
+  window.addEventListener('storage', onChange)
+  window.addEventListener(CHANGE_EVENT, onChange)
+  return () => {
+    window.removeEventListener('storage', onChange)
+    window.removeEventListener(CHANGE_EVENT, onChange)
+  }
+}
 
 type SidebarContextValue = {
   /** Desktop rail collapsed to icons only. */
@@ -23,26 +50,22 @@ type SidebarContextValue = {
 const SidebarContext = createContext<SidebarContextValue | null>(null)
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false
-    try {
-      return window.localStorage.getItem(STORAGE_KEY) === '1'
-    } catch {
-      return false
-    }
-  })
   const [mobileOpen, setMobileOpen] = useState(false)
+  const collapsed = useSyncExternalStore(
+    subscribeToCollapsed,
+    getCollapsedSnapshot,
+    getCollapsedServerSnapshot
+  )
 
   const toggleCollapsed = useCallback(() => {
-    setCollapsed((current) => {
-      const next = !current
-      try {
-        window.localStorage.setItem(STORAGE_KEY, next ? '1' : '0')
-      } catch {
-        // Storage may be unavailable; the rail still toggles in-session.
-      }
-      return next
-    })
+    const next = !getCollapsedSnapshot()
+    fallbackCollapsed = next
+    try {
+      window.localStorage.setItem(STORAGE_KEY, next ? '1' : '0')
+    } catch {
+      // Storage may be unavailable; the rail still toggles in-session.
+    }
+    window.dispatchEvent(new Event(CHANGE_EVENT))
   }, [])
 
   const setMobileOpenStable = useCallback((open: boolean) => {
