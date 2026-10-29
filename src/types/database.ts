@@ -1466,6 +1466,12 @@ export type Database = {
       }
       resources: {
         Row: {
+          file_path: string | null
+          file_name: string | null
+          file_size: number | null
+          mime_type: string | null
+          event_name: string | null
+          photo_date: string | null
           active: boolean | null
           capacity: number | null
           church_id: string
@@ -1477,6 +1483,12 @@ export type Database = {
           type: string
         }
         Insert: {
+          file_path?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          mime_type?: string | null
+          event_name?: string | null
+          photo_date?: string | null
           active?: boolean | null
           capacity?: number | null
           church_id: string
@@ -1488,6 +1500,12 @@ export type Database = {
           type: string
         }
         Update: {
+          file_path?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          mime_type?: string | null
+          event_name?: string | null
+          photo_date?: string | null
           active?: boolean | null
           capacity?: number | null
           church_id?: string

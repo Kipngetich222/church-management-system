@@ -240,44 +240,50 @@ member of that church, and admin-only routes require the `super_admin` or `dept_
 
 ### Prayer, communication & engagement
 
-| Method | Path                                                          | Access | Description                     |
-| ------ | ------------------------------------------------------------- | ------ | ------------------------------- |
-| GET    | `/churches/:churchId/prayer-requests` (`?status`)             | member | List visible prayer requests    |
-| POST   | `/churches/:churchId/prayer-requests`                         | member | Submit a prayer request         |
-| GET    | `/churches/:churchId/prayer-requests/:requestId`              | member | Get a prayer request            |
-| PATCH  | `/churches/:churchId/prayer-requests/:requestId`              | member | Update a prayer request         |
-| POST   | `/churches/:churchId/prayer-requests/:requestId/interactions` | member | Add an interaction              |
-| GET    | `/churches/:churchId/announcements`                           | public | Published announcements         |
-| GET    | `/churches/:churchId/announcements/manage`                    | admin  | All announcements               |
-| POST   | `/churches/:churchId/announcements`                           | admin  | Create an announcement          |
-| PATCH  | `/churches/:churchId/announcements/:announcementId`           | admin  | Update an announcement          |
-| DELETE | `/churches/:churchId/announcements/:announcementId`           | admin  | Delete an announcement          |
-| GET    | `/churches/:churchId/messages`                                | admin  | Message history                 |
-| GET    | `/churches/:churchId/messages/me`                             | member | Messages for the current member |
-| GET    | `/churches/:churchId/message-campaigns`                       | admin  | Bulk campaign history           |
-| POST   | `/churches/:churchId/messages/send`                           | admin  | Send an SMS/email campaign      |
-| GET    | `/churches/:churchId/volunteers/roles`                        | member | Volunteer roles                 |
-| POST   | `/churches/:churchId/volunteers/roles`                        | admin  | Create a role                   |
-| GET    | `/churches/:churchId/volunteers/shifts`                       | member | Volunteer shifts                |
-| POST   | `/churches/:churchId/volunteers/shifts`                       | admin  | Create a shift                  |
-| PATCH  | `/churches/:churchId/volunteers/shifts/:shiftId`              | admin  | Update a shift                  |
-| DELETE | `/churches/:churchId/volunteers/shifts/:shiftId`              | admin  | Delete a shift                  |
-| POST   | `/churches/:churchId/volunteers/shifts/:shiftId/signup`       | member | Sign up for a shift             |
-| DELETE | `/churches/:churchId/volunteers/shifts/:shiftId/signup`       | member | Cancel a sign-up                |
-| GET    | `/churches/:churchId/resources`                               | member | Bookable resources              |
-| POST   | `/churches/:churchId/resources`                               | admin  | Create a resource               |
-| PATCH  | `/churches/:churchId/resources/:resourceId`                   | admin  | Update a resource               |
-| DELETE | `/churches/:churchId/resources/:resourceId`                   | admin  | Delete a resource               |
-| GET    | `/churches/:churchId/resources/bookings`                      | member | Resource bookings               |
-| POST   | `/churches/:churchId/resources/bookings`                      | member | Request a booking               |
-| PATCH  | `/churches/:churchId/resources/bookings/:bookingId`           | admin  | Approve / update a booking      |
-| DELETE | `/churches/:churchId/resources/bookings/:bookingId`           | admin  | Delete a booking                |
-| GET    | `/churches/:churchId/visitors` (`?status`)                    | admin  | List visitors                   |
-| POST   | `/churches/:churchId/visitors`                                | admin  | Record a visitor                |
-| GET    | `/churches/:churchId/visitors/:visitorId`                     | admin  | Visitor + follow-ups            |
-| PATCH  | `/churches/:churchId/visitors/:visitorId`                     | admin  | Update a visitor                |
-| DELETE | `/churches/:churchId/visitors/:visitorId`                     | admin  | Delete a visitor                |
-| POST   | `/churches/:churchId/visitors/:visitorId/followups`           | admin  | Add a follow-up                 |
+| Method | Path                                                          | Access | Description                              |
+| ------ | ------------------------------------------------------------- | ------ | ---------------------------------------- |
+| GET    | `/churches/:churchId/prayer-requests` (`?status`)             | member | List visible prayer requests             |
+| POST   | `/churches/:churchId/prayer-requests`                         | member | Submit a prayer request                  |
+| GET    | `/churches/:churchId/prayer-requests/:requestId`              | member | Get a prayer request                     |
+| PATCH  | `/churches/:churchId/prayer-requests/:requestId`              | member | Update a prayer request                  |
+| POST   | `/churches/:churchId/prayer-requests/:requestId/interactions` | member | Add an interaction                       |
+| GET    | `/churches/:churchId/announcements`                           | public | Published announcements                  |
+| GET    | `/churches/:churchId/announcements/manage`                    | admin  | All announcements                        |
+| POST   | `/churches/:churchId/announcements`                           | admin  | Create an announcement                   |
+| PATCH  | `/churches/:churchId/announcements/:announcementId`           | admin  | Update an announcement                   |
+| DELETE | `/churches/:churchId/announcements/:announcementId`           | admin  | Delete an announcement                   |
+| GET    | `/churches/:churchId/messages`                                | admin  | Message history                          |
+| GET    | `/churches/:churchId/messages/me`                             | member | Messages for the current member          |
+| GET    | `/churches/:churchId/message-campaigns`                       | admin  | Bulk campaign history                    |
+| POST   | `/churches/:churchId/messages/send`                           | admin  | Send an SMS/email campaign               |
+| GET    | `/churches/:churchId/volunteers/roles`                        | member | Volunteer roles                          |
+| POST   | `/churches/:churchId/volunteers/roles`                        | admin  | Create a role                            |
+| GET    | `/churches/:churchId/volunteers/shifts`                       | member | Volunteer shifts                         |
+| POST   | `/churches/:churchId/volunteers/shifts`                       | admin  | Create a shift                           |
+| PATCH  | `/churches/:churchId/volunteers/shifts/:shiftId`              | admin  | Update a shift                           |
+| DELETE | `/churches/:churchId/volunteers/shifts/:shiftId`              | admin  | Delete a shift                           |
+| POST   | `/churches/:churchId/volunteers/shifts/:shiftId/signup`       | member | Sign up for a shift                      |
+| DELETE | `/churches/:churchId/volunteers/shifts/:shiftId/signup`       | member | Cancel a sign-up                         |
+| GET    | `/churches/:churchId/resources`                               | member | Downloadable documents, books and photos |
+| POST   | `/churches/:churchId/resources`                               | admin  | Upload a file (multipart form)           |
+| PATCH  | `/churches/:churchId/resources/:resourceId`                   | admin  | Update a resource                        |
+| DELETE | `/churches/:churchId/resources/:resourceId`                   | admin  | Delete a resource                        |
+| GET    | `/churches/:churchId/resources/:resourceId/download`          | member | Short-lived attachment download URL      |
+| GET    | `/churches/:churchId/resources/:resourceId/preview`           | member | Short-lived photo preview URL            |
+| GET    | `/churches/:churchId/visitors` (`?status`)                    | admin  | List visitors                            |
+| POST   | `/churches/:churchId/visitors`                                | admin  | Record a visitor                         |
+| GET    | `/churches/:churchId/visitors/:visitorId`                     | admin  | Visitor + follow-ups                     |
+| PATCH  | `/churches/:churchId/visitors/:visitorId`                     | admin  | Update a visitor                         |
+| DELETE | `/churches/:churchId/visitors/:visitorId`                     | admin  | Delete a visitor                         |
+| POST   | `/churches/:churchId/visitors/:visitorId/followups`           | admin  | Add a follow-up                          |
+
+### Resource library and photo gallery
+
+Apply `supabase/migrations/0037_resource_library.sql` before deploying the updated API and web app. It adds file metadata and a private `church-resources` storage bucket with church-scoped policies. Existing physical-resource records and booking history are retained; the application no longer creates bookings.
+
+Admins upload files from **Resources**. Documents and ebooks support PDF, EPUB, DOC/DOCX, ODT, TXT, RTF, PPT/PPTX and XLS/XLSX (up to 50 MB each). Photos support JPG, PNG, WebP and GIF (up to 10 MB each), with up to 30 files per web upload. Photos can share an event/album name and photo date; the gallery groups them by either field, newest dates first. Members can search, preview photos and download files directly. Only church admins can upload or delete; files remain private to that church's members.
+
+For API uploads, send `POST /churches/:churchId/resources` as multipart form data with `file`, `name` and `type` (`document`, `book`, or `image`). Optional fields: `description`, `eventName`, `photoDate` (`YYYY-MM-DD`). Download and preview endpoints return `{ url, expiresIn: 300 }`; request a fresh URL when opening a file. Download URLs set an attachment filename, including for photos.
 
 ### Account deletion
 
