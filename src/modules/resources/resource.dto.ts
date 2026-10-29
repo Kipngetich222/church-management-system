@@ -1,59 +1,41 @@
-import { ApiProperty, ApiPropertyOptional, PartialType } from "@nestjs/swagger";
-import { IsBoolean, IsInt, IsISO8601, IsOptional, IsString, IsUUID, MaxLength } from "class-validator";
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
+import {
+  IsIn,
+  IsISO8601,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+} from 'class-validator'
 
 export class CreateResourceDto {
   @ApiProperty()
   @IsString()
+  @Matches(/\S/, { message: 'A resource title is required' })
   @MaxLength(160)
-  name!: string;
+  name!: string
 
-  @ApiProperty()
-  @IsString()
-  type!: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsInt()
-  capacity?: number;
+  @ApiProperty({ enum: ['document', 'book', 'image'] })
+  @IsIn(['document', 'book', 'image'])
+  type!: 'document' | 'book' | 'image'
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  location?: string;
+  @MaxLength(2000)
+  description?: string
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Event or album name for photos' })
   @IsOptional()
   @IsString()
-  description?: string;
+  @MaxLength(160)
+  eventName?: string
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: '2026-10-29' })
   @IsOptional()
-  @IsBoolean()
-  active?: boolean;
+  @IsISO8601({ strict: true })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  photoDate?: string
 }
 
 export class UpdateResourceDto extends PartialType(CreateResourceDto) {}
-
-export class CreateBookingDto {
-  @ApiProperty()
-  @IsUUID()
-  resourceId!: string;
-
-  @ApiProperty()
-  @IsString()
-  @MaxLength(200)
-  title!: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  purpose?: string;
-
-  @ApiProperty()
-  @IsISO8601()
-  startsAt!: string;
-
-  @ApiProperty()
-  @IsISO8601()
-  endsAt!: string;
-}

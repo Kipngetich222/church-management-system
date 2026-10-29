@@ -1,11 +1,28 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CurrentMembership, CurrentUser } from '../../common/decorators/current-user.decorator';
-import { ChurchAdmin } from '../../common/decorators/roles.decorator';
-import { ChurchGuard } from '../../common/guards/church.guard';
-import type { AuthUser, MembershipSummary } from '../../common/interfaces/auth-user.interface';
-import { CreateBookingDto, CreateResourceDto, UpdateResourceDto } from './resource.dto';
-import { ResourcesService } from './resources.service';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger'
+import { ChurchAdmin } from '../../common/decorators/roles.decorator'
+import { ChurchGuard } from '../../common/guards/church.guard'
+import { CreateResourceDto, UpdateResourceDto } from './resource.dto'
+import { MAX_RESOURCE_BYTES, ResourcesService } from './resources.service'
+import type { ResourceUploadFile } from './resources.service'
 
 @ApiTags('resources')
 @ApiBearerAuth('supabase-jwt')
@@ -15,68 +32,82 @@ export class ResourcesController {
   constructor(private readonly resourcesService: ResourcesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List bookable resources' })
+  @ApiOperation({ summary: 'List downloadable documents, books and photos' })
   list(@Param('churchId') churchId: string) {
-    return this.resourcesService.list(churchId);
+    return this.resourcesService.list(churchId)
   }
 
   @ChurchAdmin()
   @Post()
-  @ApiOperation({ summary: 'Create a resource' })
-  create(@Param('churchId') churchId: string, @Body() dto: CreateResourceDto) {
-    return this.resourcesService.create(churchId, dto);
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: MAX_RESOURCE_BYTES, files: 1 },
+    })
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file', 'name', 'type'],
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        name: { type: 'string' },
+        type: { type: 'string', enum: ['document', 'book', 'image'] },
+        description: { type: 'string' },
+        eventName: { type: 'string' },
+        photoDate: { type: 'string', format: 'date' },
+      },
+    },
+  })
+  @ApiOperation({
+    summary: 'Upload a document, book or photo (50 MB files, 10 MB photos)',
+  })
+  create(
+    @Param('churchId') churchId: string,
+    @Body() dto: CreateResourceDto,
+    @UploadedFile() file?: ResourceUploadFile
+  ) {
+    return this.resourcesService.create(churchId, dto, file)
+  }
+
+  @Get(':resourceId/download')
+  @ApiOperation({ summary: 'Get a short-lived download URL for a resource' })
+  download(
+    @Param('churchId') churchId: string,
+    @Param('resourceId') resourceId: string
+  ) {
+    return this.resourcesService.fileUrl(churchId, resourceId)
+  }
+
+  @Get(':resourceId/preview')
+  @ApiOperation({ summary: 'Get a short-lived photo preview URL' })
+  preview(
+    @Param('churchId') churchId: string,
+    @Param('resourceId') resourceId: string
+  ) {
+    return this.resourcesService.fileUrl(churchId, resourceId, true)
   }
 
   @ChurchAdmin()
   @Patch(':resourceId')
-  @ApiOperation({ summary: 'Update a resource' })
+  @ApiOperation({
+    summary: 'Update a resource title, description or photo grouping',
+  })
   update(
     @Param('churchId') churchId: string,
     @Param('resourceId') resourceId: string,
-    @Body() dto: UpdateResourceDto,
+    @Body() dto: UpdateResourceDto
   ) {
-    return this.resourcesService.update(churchId, resourceId, dto);
+    return this.resourcesService.update(churchId, resourceId, dto)
   }
 
   @ChurchAdmin()
   @Delete(':resourceId')
-  @ApiOperation({ summary: 'Delete a resource' })
-  remove(@Param('churchId') churchId: string, @Param('resourceId') resourceId: string) {
-    return this.resourcesService.remove(churchId, resourceId);
-  }
-
-  @Get('bookings')
-  @ApiOperation({ summary: 'List resource bookings' })
-  listBookings(@Param('churchId') churchId: string) {
-    return this.resourcesService.listBookings(churchId);
-  }
-
-  @Post('bookings')
-  @ApiOperation({ summary: 'Request a resource booking' })
-  createBooking(
+  @ApiOperation({ summary: 'Delete a resource and its uploaded file' })
+  remove(
     @Param('churchId') churchId: string,
-    @CurrentMembership() membership: MembershipSummary,
-    @Body() dto: CreateBookingDto,
+    @Param('resourceId') resourceId: string
   ) {
-    return this.resourcesService.createBooking(churchId, dto, membership.id);
-  }
-
-  @ChurchAdmin()
-  @Patch('bookings/:bookingId')
-  @ApiOperation({ summary: 'Approve / update a booking status' })
-  updateBooking(
-    @Param('churchId') churchId: string,
-    @Param('bookingId') bookingId: string,
-    @CurrentUser() user: AuthUser,
-    @Body('status') status: string,
-  ) {
-    return this.resourcesService.updateBookingStatus(churchId, bookingId, status, user.id);
-  }
-
-  @ChurchAdmin()
-  @Delete('bookings/:bookingId')
-  @ApiOperation({ summary: 'Delete a booking' })
-  removeBooking(@Param('churchId') churchId: string, @Param('bookingId') bookingId: string) {
-    return this.resourcesService.removeBooking(churchId, bookingId);
+    return this.resourcesService.remove(churchId, resourceId)
   }
 }
