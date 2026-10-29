@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
 import {
   BookOpen,
+  ChevronLeft,
+  ChevronRight,
   Download,
   FileText,
   ImageIcon,
@@ -34,7 +36,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-function DownloadButton({ resource }: { resource: LibraryResource }) {
+function DownloadButton({
+  resource,
+  prominent = false,
+}: {
+  resource: LibraryResource
+  prominent?: boolean
+}) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   async function download() {
@@ -66,9 +74,11 @@ function DownloadButton({ resource }: { resource: LibraryResource }) {
   return (
     <div className="space-y-1">
       <Button
-        variant="outline"
+        variant={prominent ? 'default' : 'outline'}
+        className={prominent ? 'min-h-11 w-full px-4' : undefined}
         onClick={download}
         disabled={busy}
+        focusableWhenDisabled
         aria-label={`Download ${resource.name}`}
       >
         {busy ? (
@@ -104,6 +114,7 @@ function ResourceImage({
         <Button
           variant="outline"
           size="sm"
+          className="relative z-10"
           onClick={(event) => {
             event.stopPropagation()
             setFailed(false)
@@ -156,7 +167,13 @@ export function ResourceLibrary({
   const [uploadKind, setUploadKind] = useState<'document' | 'image' | null>(
     null
   )
-  const [preview, setPreview] = useState<LibraryResource | null>(null)
+  const [previewCollection, setPreviewCollection] = useState<{
+    label: string
+    photos: LibraryResource[]
+    index: number
+  } | null>(null)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
+  const preview = previewCollection?.photos[previewCollection.index]
   const [deleting, setDeleting] = useState<LibraryResource | null>(null)
   const [busy, setBusy] = useState(false)
   const [deleteError, setDeleteError] = useState('')
@@ -192,6 +209,18 @@ export function ResourceLibrary({
     const group = groups.get(key) ?? { label, photos: [] }
     group.photos.push(photo)
     groups.set(key, group)
+  }
+
+  function navigatePhoto(direction: -1 | 1) {
+    setPreviewCollection((collection) => {
+      if (!collection || collection.photos.length < 2) return collection
+      return {
+        ...collection,
+        index:
+          (collection.index + direction + collection.photos.length) %
+          collection.photos.length,
+      }
+    })
   }
 
   async function removeResource() {
@@ -357,7 +386,7 @@ export function ResourceLibrary({
             <div>
               <h2 className="font-semibold">Photo gallery</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Open any photo to view it in full.
+                Open a photo to browse its collection.
               </p>
             </div>
             <select
@@ -386,18 +415,22 @@ export function ResourceLibrary({
                 </span>
               </h3>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {group.photos.map((photo) => (
+                {group.photos.map((photo, index) => (
                   <Card key={photo.id} className="overflow-hidden py-0">
                     <div className="group relative overflow-hidden bg-muted">
                       <ResourceImage resource={photo} />
-                      <Button
-                        variant="secondary"
-                        className="absolute right-2 bottom-2"
-                        onClick={() => setPreview(photo)}
+                      <button
+                        type="button"
+                        className="absolute inset-0 cursor-zoom-in rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                        onClick={() =>
+                          setPreviewCollection({ ...group, index })
+                        }
                         aria-label={`View ${photo.name}`}
                       >
-                        View photo
-                      </Button>
+                        <span className="absolute right-2 bottom-2 rounded-lg bg-background/90 px-3 py-1.5 text-sm font-medium shadow-sm">
+                          View photo
+                        </span>
+                      </button>
                     </div>
                     <CardContent className="space-y-3 p-4">
                       <div>
@@ -438,28 +471,131 @@ export function ResourceLibrary({
         />
       )}
       <Dialog
-        open={!!preview}
+        open={!!previewCollection}
         onOpenChange={(open) => {
-          if (!open) setPreview(null)
+          if (!open) {
+            setPreviewCollection(null)
+            touchStart.current = null
+          }
         }}
       >
-        {preview && (
-          <DialogContent className="max-h-[95dvh] overflow-y-auto sm:max-w-4xl">
-            <DialogHeader>
+        {preview && previewCollection && (
+          <DialogContent
+            className="flex max-h-[95dvh] flex-col overflow-hidden sm:max-w-4xl"
+            onKeyDown={(event) => {
+              if (
+                previewCollection.photos.length < 2 ||
+                event.altKey ||
+                event.ctrlKey ||
+                event.metaKey ||
+                event.shiftKey ||
+                (event.target instanceof HTMLElement &&
+                  event.target.closest(
+                    'input, textarea, select, [contenteditable="true"]'
+                  ))
+              )
+                return
+              if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                event.preventDefault()
+                event.stopPropagation()
+                navigatePhoto(event.key === 'ArrowRight' ? 1 : -1)
+              }
+            }}
+          >
+            <DialogHeader className="shrink-0">
+              {previewCollection.label.trim().toLowerCase() !== 'all photos' && (
+                <p className="pr-6 text-xs font-medium text-muted-foreground break-words">
+                  {previewCollection.label}
+                </p>
+              )}
               <DialogTitle className="pr-6 break-words">
                 {preview.name}
               </DialogTitle>
               <DialogDescription>
                 {[preview.event_name, dateLabel(dateKey(preview))]
-                  .filter(Boolean)
+                  .filter(
+                    (label) => label && label.trim().toLowerCase() !== 'all photos'
+                  )
                   .join(' · ')}
               </DialogDescription>
             </DialogHeader>
-            <ResourceImage key={preview.id} resource={preview} large />
-            {preview.description && (
-              <p className="text-sm break-words">{preview.description}</p>
-            )}
-            <DownloadButton resource={preview} />
+            <div className="min-h-0 space-y-4 overflow-y-auto overscroll-contain">
+              <div
+                className="flex min-h-48 items-center justify-center rounded-lg bg-muted/30 [touch-action:pan-y_pinch-zoom] sm:min-h-80"
+                onTouchStart={(event) => {
+                  const touch = event.touches[0]
+                  touchStart.current =
+                    event.touches.length === 1
+                      ? { x: touch.clientX, y: touch.clientY }
+                      : null
+                }}
+                onTouchMove={(event) => {
+                  if (event.touches.length !== 1) touchStart.current = null
+                }}
+                onTouchCancel={() => {
+                  touchStart.current = null
+                }}
+                onTouchEnd={(event) => {
+                  const start = touchStart.current
+                  touchStart.current = null
+                  const end = event.changedTouches[0]
+                  if (!start || !end || event.touches.length) return
+                  const distanceX = end.clientX - start.x
+                  const distanceY = end.clientY - start.y
+                  if (
+                    Math.abs(distanceX) >= 50 &&
+                    Math.abs(distanceX) > Math.abs(distanceY) * 1.5
+                  ) {
+                    navigatePhoto(distanceX < 0 ? 1 : -1)
+                  }
+                }}
+              >
+                <ResourceImage key={preview.id} resource={preview} large />
+              </div>
+              {preview.description && (
+                <p className="text-sm break-words">{preview.description}</p>
+              )}
+            </div>
+            <div className="grid shrink-0 gap-3 border-t pt-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
+              <div
+                className="flex min-w-0 items-center justify-between gap-3 sm:gap-4"
+                role="group"
+                aria-label="Photo navigation"
+              >
+                {previewCollection.photos.length > 1 && (
+                  <Button
+                    variant="outline"
+                    className="size-11 sm:w-auto sm:px-3"
+                    onClick={() => navigatePhoto(-1)}
+                    aria-label="Previous photo"
+                  >
+                    <ChevronLeft className="size-4" />
+                    <span className="hidden sm:inline">Previous</span>
+                  </Button>
+                )}
+                <p
+                  role="status"
+                  aria-atomic="true"
+                  className="flex-1 text-center text-sm whitespace-nowrap tabular-nums text-muted-foreground"
+                >
+                  Photo {previewCollection.index + 1} of{' '}
+                  {previewCollection.photos.length}
+                  <span className="sr-only">: {preview.name}</span>
+                </p>
+                {previewCollection.photos.length > 1 && (
+                  <Button
+                    variant="outline"
+                    className="size-11 sm:w-auto sm:px-3"
+                    onClick={() => navigatePhoto(1)}
+                    aria-label="Next photo"
+                  >
+                    <span className="hidden sm:inline">Next</span>
+                    <ChevronRight className="size-4" />
+                  </Button>
+                )}
+              </div>
+              <DownloadButton key={preview.id} resource={preview} prominent />
+            </div>
           </DialogContent>
         )}
       </Dialog>
