@@ -30,6 +30,7 @@ import { ContactModule } from './modules/contact/contact.module'
 import { AuditModule } from './modules/audit/audit.module'
 import { CronModule } from './modules/cron/cron.module'
 import { DeletionModule } from './modules/deletion/deletion.module'
+import { NotificationsModule } from './modules/notifications/notifications.module'
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { DeletionModule } from './modules/deletion/deletion.module'
     AuditModule,
     CronModule,
     DeletionModule,
+    NotificationsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

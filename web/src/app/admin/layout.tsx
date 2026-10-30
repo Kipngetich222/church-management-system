@@ -3,6 +3,7 @@ import { PageBackdrop } from '@/components/backgrounds/page-backdrop'
 import { AdminSidebar } from '@/components/layout/AdminSidebar'
 import { AdminTopbar } from '@/components/layout/AdminTopbar'
 import { SidebarProvider } from '@/components/layout/sidebar-context'
+import { NotificationsProvider } from '@/components/notifications/NotificationsProvider'
 
 export default async function AdminLayout({
   children,
@@ -12,30 +13,39 @@ export default async function AdminLayout({
   const ctx = await getActiveChurch()
 
   return (
-    <SidebarProvider>
-      <div className="relative min-h-screen md:grid md:grid-cols-[auto_1fr]">
-        <PageBackdrop variant="dashboard" />
+    <NotificationsProvider
+      key={`${ctx.churchId}:${ctx.user.id}`}
+      churchId={ctx.churchId}
+      userId={ctx.user.id}
+      view="admin"
+    >
+      <SidebarProvider>
+        <div className="relative min-h-screen md:grid md:grid-cols-[auto_1fr]">
+          <PageBackdrop variant="dashboard" />
 
-        <AdminSidebar
-          churchId={ctx.churchId}
-          role={ctx.role}
-          churchName={ctx.church?.name}
-          churchLogoUrl={ctx.church?.logo_url}
-        />
-
-        <div className="relative z-10 flex min-h-screen flex-col">
-          <AdminTopbar
-            user={{
-              email: ctx.user.email!,
-              full_name: (ctx.user.user_metadata?.full_name as string) ?? null,
-              avatar_url: (ctx.user.user_metadata?.avatar_url as string) ?? null,
-            }}
-            memberships={ctx.memberships}
-            activeChurchId={ctx.churchId}
+          <AdminSidebar
+            churchId={ctx.churchId}
+            role={ctx.role}
+            churchName={ctx.church?.name}
+            churchLogoUrl={ctx.church?.logo_url}
           />
-          <main className="flex-1 bg-muted/10 p-4 md:p-8">{children}</main>
+
+          <div className="relative z-10 flex min-h-screen flex-col">
+            <AdminTopbar
+              user={{
+                email: ctx.user.email!,
+                full_name:
+                  (ctx.user.user_metadata?.full_name as string) ?? null,
+                avatar_url:
+                  (ctx.user.user_metadata?.avatar_url as string) ?? null,
+              }}
+              memberships={ctx.memberships}
+              activeChurchId={ctx.churchId}
+            />
+            <main className="flex-1 bg-muted/10 p-4 md:p-8">{children}</main>
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </NotificationsProvider>
   )
 }

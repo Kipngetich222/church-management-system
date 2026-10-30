@@ -277,6 +277,26 @@ member of that church, and admin-only routes require the `super_admin` or `dept_
 | DELETE | `/churches/:churchId/visitors/:visitorId`                     | admin  | Delete a visitor                         |
 | POST   | `/churches/:churchId/visitors/:visitorId/followups`           | admin  | Add a follow-up                          |
 
+### Dashboard notifications
+
+Apply `supabase/migrations/0038_dashboard_notifications.sql` and then `supabase/migrations/0039_notification_delivery_fixes.sql` before deploying this feature. Members and admins have a notification bell, a recent-updates card on their dashboard, and an inbox at `/member/notifications` or `/admin/notifications`. Read/unread state is stored per recipient and church, shared across sessions and dashboard views. The inbox supports unread filtering, older messages, individual read/unread controls and marking all current notifications as read. Announcements and messages open in a full-message reader; other alerts link to the relevant page.
+
+Migration 0039 fixes notifications for repeated volunteer status changes and signup cancellations. The API persists in-app messages for active account recipients, and empty targeted audiences do not fall back to the whole church. Prayer notifications link directly to the request, including resolved requests, and open message readers refresh edited or withdrawn content. Run `npm run test:notifications` in `web/` to check notification destinations and message loading.
+
+Database triggers deliver notifications for published announcements, events, sermons and resources; event changes and cancellations; new memberships and role changes; prayer/counselling assignments, replies and status changes; volunteer signups and schedule changes; and successfully sent SMS/email/in-app message records. The same rules apply to writes from the web app or API. Drafts, inactive recipients and manual members without accounts are skipped. Existing activity is not backfilled.
+
+Notifications are private to their recipient. Event audience and source access rules are checked again when reading, and internal pastoral notes never generate member alerts. Unpublishing or deleting content removes its notifications. The migration adds the table to the existing `supabase_realtime` publication. Visible dashboards also refresh every 30 seconds and on focus/reconnection, so interrupted live connections recover automatically.
+
+The REST endpoints use the caller's JWT with RLS; set `SUPABASE_ANON_KEY` on the API alongside the existing Supabase configuration.
+
+| Method | Path                                                | Description                                                      |
+| ------ | --------------------------------------------------- | ---------------------------------------------------------------- |
+| GET    | `/churches/:churchId/notifications`                 | Own inbox, unread count and server snapshot                      |
+| PATCH  | `/churches/:churchId/notifications/:notificationId` | Body `{ "read": true }` or `{ "read": false }`                   |
+| POST   | `/churches/:churchId/notifications/read-all`        | Body `{ "before": "<snapshot_at>" }`; newer arrivals stay unread |
+
+The inbox accepts `limit` (1–50, default 20), `unreadOnly` (`true`/`false`), and the paired cursor fields `beforeCreatedAt` and `beforeId` from the last item. Responses contain `{ items, unread_count, has_more, snapshot_at }`. Run `npm run test:notifications-db` to apply every migration in an isolated local PostgreSQL engine and verify delivery, privacy and read-state behavior without connecting to a live Supabase project.
+
 ### Resource library and photo gallery
 
 Apply `supabase/migrations/0037_resource_library.sql` before deploying the updated API and web app. It adds file metadata and a private `church-resources` storage bucket with church-scoped policies. Existing physical-resource records and booking history are retained; the application no longer creates bookings.

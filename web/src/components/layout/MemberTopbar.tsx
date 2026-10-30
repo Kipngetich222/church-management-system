@@ -15,6 +15,7 @@ import { ChevronsUpDown, LogOut, Shield } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { ChurchLogo } from '@/components/shared/ChurchLogo'
 import { SidebarToggle } from './SidebarToggle'
+import { NotificationBell } from '@/components/notifications/NotificationCenter'
 
 type Membership = {
   church_id: string
@@ -104,6 +105,7 @@ export function MemberTopbar({
       </div>
 
       <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
+        <NotificationBell />
         <ThemeToggle />
         {isAdmin && (
           <Button

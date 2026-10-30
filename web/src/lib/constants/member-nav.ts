@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Bell,
   CalendarDays,
   ClipboardList,
   HandCoins,
@@ -12,6 +13,12 @@ import type { SidebarNavItem } from '@/components/layout/AppSidebar'
 
 export const MEMBER_NAV: SidebarNavItem[] = [
   { label: 'Home', href: '/member/home', icon: Home, section: 'Main' },
+  {
+    label: 'Notifications',
+    href: '/member/notifications',
+    icon: Bell,
+    section: 'Main',
+  },
   {
     label: 'Calendar',
     href: '/member/calendar',

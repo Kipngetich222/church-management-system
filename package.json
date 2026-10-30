@@ -17,6 +17,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
+    "test:notifications-db": "node --test test/notifications.database.test.mjs",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -44,6 +45,7 @@
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.13",
     "@eslint/js": "^9.39.5",
     "@nestjs/cli": "^10.4.9",
     "@nestjs/schematics": "^10.2.3",

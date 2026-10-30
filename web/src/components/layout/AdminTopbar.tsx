@@ -17,6 +17,7 @@ import { ChevronsUpDown, LogOut, User, Shield, UserCircle2 } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { ChurchLogo } from '@/components/shared/ChurchLogo'
 import { SidebarToggle } from './SidebarToggle'
+import { NotificationBell } from '@/components/notifications/NotificationCenter'
 
 type Props = {
   user: { email: string; full_name: string | null; avatar_url: string | null }
@@ -109,6 +110,7 @@ export function AdminTopbar({ user, memberships, activeChurchId }: Props) {
 
       {/* Role switch + user menu */}
       <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
+        <NotificationBell />
         <ThemeToggle />
         <Button
           variant="outline"

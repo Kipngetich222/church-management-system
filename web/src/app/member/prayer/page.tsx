@@ -6,78 +6,15 @@ import {
 } from '@/lib/services/prayer.service'
 import { PrayerRequestForm } from '@/components/prayer/PrayerRequestForm'
 import { MemberRequestActions } from '@/components/prayer/MemberRequestActions'
+import { MemberPrayerRequestCard } from '@/components/prayer/MemberPrayerRequestCard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { format } from 'date-fns'
 import { Heart, HeartHandshake } from 'lucide-react'
-import type { PrayerInteractionRow, PrayerRequestRow } from '@/lib/types/prayer'
+import type { PrayerRequestRow } from '@/lib/types/prayer'
 
 const REQUEST_SELECT = `
   *,
   prayer_interactions(id, body, created_at, is_internal, author_membership_id)
 `
-
-function statusBadge(status: string) {
-  const label = status.replace('_', ' ')
-  if (status === 'answered' || status === 'closed') {
-    return <Badge variant="default">{label}</Badge>
-  }
-  return <Badge variant="secondary">{label}</Badge>
-}
-
-function audienceLabel(request: PrayerRequestRow) {
-  if (request.type === 'counseling') return 'Counselling'
-  if (request.audience === 'church') return 'Whole church'
-  if (request.audience === 'person') return 'Specific leader'
-  return 'Pastors & leaders'
-}
-
-function RequestCard({
-  request,
-  actions,
-}: {
-  request: PrayerRequestRow
-  actions?: React.ReactNode
-}) {
-  const replies = (request.prayer_interactions ?? []).filter(
-    (interaction: PrayerInteractionRow) => !interaction.is_internal
-  )
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
-          <span>{request.title}</span>
-          <span className="flex items-center gap-2">
-            <Badge variant="outline">{audienceLabel(request)}</Badge>
-            {statusBadge(request.status)}
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-sm whitespace-pre-wrap">{request.body}</p>
-        <p className="text-xs text-muted-foreground">
-          {format(new Date(request.created_at), 'MMM d, yyyy')}
-        </p>
-
-        {replies.length > 0 && (
-          <div className="space-y-2 border-t pt-3">
-            {replies.map((reply: PrayerInteractionRow) => (
-              <div key={reply.id} className="border-l-2 border-primary/40 pl-3">
-                <p className="text-sm">{reply.body}</p>
-                <p className="text-xs text-muted-foreground">
-                  {format(new Date(reply.created_at), 'MMM d, h:mm a')}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {actions}
-      </CardContent>
-    </Card>
-  )
-}
 
 function RequestSection({
   title,
@@ -101,7 +38,7 @@ function RequestSection({
         )}
       </div>
       {requests.map((request) => (
-        <RequestCard
+        <MemberPrayerRequestCard
           key={request.id}
           request={request}
           actions={actionsFor?.(request)}
@@ -209,8 +146,7 @@ export default async function PrayerPage() {
       request.type === 'counseling' ||
       new Date(request.created_at) >= cutoffDate
   )
-  const handledHistory = (handledHistoryResult.data ??
-    []) as PrayerRequestRow[]
+  const handledHistory = (handledHistoryResult.data ?? []) as PrayerRequestRow[]
   const churchPrayers = (churchResult.data ?? []) as PrayerRequestRow[]
 
   return (

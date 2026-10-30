@@ -1,11 +1,11 @@
-import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import {
-  createClient,
-  SupabaseClient,
-  type User,
-} from "@supabase/supabase-js";
-import type { Database } from "../types/database";
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { createClient, SupabaseClient, type User } from '@supabase/supabase-js'
+import type { Database } from '../types/database'
 
 /**
  * Central Supabase access point for the API.
@@ -16,57 +16,81 @@ import type { Database } from "../types/database";
  */
 @Injectable()
 export class SupabaseService {
-  private readonly logger = new Logger(SupabaseService.name);
-  private readonly client: SupabaseClient<Database>;
+  private readonly logger = new Logger(SupabaseService.name)
+  private readonly client: SupabaseClient<Database>
 
   constructor(private readonly config: ConfigService) {
-    const url = this.config.get<string>("supabase.url");
-    const serviceRoleKey = this.config.get<string>("supabase.serviceRoleKey");
+    const url = this.config.get<string>('supabase.url')
+    const serviceRoleKey = this.config.get<string>('supabase.serviceRoleKey')
 
     if (!url || !serviceRoleKey) {
       this.logger.warn(
-        "SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are not configured. Data endpoints will fail until they are set.",
-      );
+        'SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are not configured. Data endpoints will fail until they are set.'
+      )
     }
 
-    this.client = createClient<Database>(url || "http://localhost", serviceRoleKey || "missing", {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    this.client = createClient<Database>(
+      url || 'http://localhost',
+      serviceRoleKey || 'missing',
+      {
+        auth: { autoRefreshToken: false, persistSession: false },
+      }
+    )
   }
 
   /** Service-role client. Bypasses RLS - always scope queries manually. */
   get admin(): SupabaseClient<Database> {
-    return this.client;
+    return this.client
+  }
+
+  /** Run recipient-facing queries with the caller's JWT and database RLS. */
+  forUser(accessToken: string): SupabaseClient<Database> {
+    const url = this.config.get<string>('supabase.url')
+    const anonKey = this.config.get<string>('supabase.anonKey')
+    if (!url || !anonKey || !accessToken) {
+      throw new InternalServerErrorException(
+        'Authenticated database access is not configured'
+      )
+    }
+    return createClient<Database>(url, anonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: { headers: { Authorization: `Bearer ${accessToken}` } },
+    })
   }
 
   /** Verify a Supabase access token and return the matching auth user. */
   async getUserFromToken(accessToken: string): Promise<User | null> {
-    if (!accessToken) return null;
+    if (!accessToken) return null
     try {
-      const { data, error } = await this.client.auth.getUser(accessToken);
-      if (error) return null;
-      return data.user ?? null;
+      const { data, error } = await this.client.auth.getUser(accessToken)
+      if (error) return null
+      return data.user ?? null
     } catch (error) {
-      this.logger.debug(`Token verification failed: ${(error as Error).message}`);
-      return null;
+      this.logger.debug(
+        `Token verification failed: ${(error as Error).message}`
+      )
+      return null
     }
   }
 
   /** Throw a 500 when a Supabase query returns an error. */
   unwrap<T>(data: T | null, error: { message: string } | null): T {
     if (error) {
-      this.logger.error(error.message);
-      throw new InternalServerErrorException(error.message);
+      this.logger.error(error.message)
+      throw new InternalServerErrorException(error.message)
     }
-    return data as T;
+    return data as T
   }
 
   /** Single row or null (ignores "no rows" errors). */
-  single<T>(data: T | null, error: { code?: string; message: string } | null): T | null {
-    if (error && error.code !== "PGRST116") {
-      this.logger.error(error.message);
-      throw new InternalServerErrorException(error.message);
+  single<T>(
+    data: T | null,
+    error: { code?: string; message: string } | null
+  ): T | null {
+    if (error && error.code !== 'PGRST116') {
+      this.logger.error(error.message)
+      throw new InternalServerErrorException(error.message)
     }
-    return (data as T) ?? null;
+    return (data as T) ?? null
   }
 }
