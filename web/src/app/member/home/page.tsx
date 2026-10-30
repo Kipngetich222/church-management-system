@@ -19,7 +19,6 @@ import { listMemberBadges } from '@/lib/services/members.service'
 import { prayerRetentionCutoff } from '@/lib/services/prayer.service'
 import { MemberEventsSection } from '@/components/events/MemberEventsSection'
 import { UpcomingServices } from '@/components/events/UpcomingServices'
-import { DashboardNotifications } from '@/components/notifications/NotificationCenter'
 import { Button } from '@/components/ui/button'
 import { ChurchMap } from '@/components/maps/ChurchMap'
 import { LeadershipSection } from '@/components/churches/LeadershipSection'
@@ -163,8 +162,6 @@ WELCOME SECTION
           </div>
         )}
       </div>
-
-      <DashboardNotifications />
 
       {/* ============================================
       VERSE OF THE DAY

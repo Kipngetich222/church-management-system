@@ -12,7 +12,6 @@ import {
 import type { SetupStepKey } from '@/lib/constants/setup-steps'
 import { ChurchLogo } from '@/components/shared/ChurchLogo'
 import { DashboardEvents } from '@/components/events/DashboardEvents'
-import { DashboardNotifications } from '@/components/notifications/NotificationCenter'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -321,7 +320,6 @@ Welcome to {church?.name || "our church"}
       </div>
 
       <DashboardEvents upcoming={upcoming} past={past} />
-      <DashboardNotifications />
     </div>
   )
 }
