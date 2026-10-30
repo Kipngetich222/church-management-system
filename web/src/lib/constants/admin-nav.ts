@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  Bell,
   Users,
   Building2,
   Calendar,
@@ -33,6 +34,12 @@ export const ADMIN_NAV: NavItem[] = [
     label: 'Dashboard',
     href: '/admin/dashboard',
     icon: LayoutDashboard,
+    section: 'Main',
+  },
+  {
+    label: 'Notifications',
+    href: '/admin/notifications',
+    icon: Bell,
     section: 'Main',
   },
   {

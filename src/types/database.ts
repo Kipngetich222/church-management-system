@@ -14,6 +14,55 @@ export type Database = {
   }
   public: {
     Tables: {
+      notifications: {
+        Row: {
+          id: string
+          church_id: string
+          recipient_id: string
+          kind: string
+          title: string
+          body: string
+          source_type: string
+          source_id: string
+          event_key: string
+          admin_only: boolean
+          read_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          church_id: string
+          recipient_id: string
+          kind: string
+          title: string
+          body: string
+          source_type: string
+          source_id: string
+          event_key: string
+          admin_only?: boolean
+          read_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          read_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'notifications_church_id_fkey'
+            columns: ['church_id']
+            isOneToOne: false
+            referencedRelation: 'churches'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'notifications_recipient_membership_fkey'
+            columns: ['recipient_id', 'church_id']
+            isOneToOne: false
+            referencedRelation: 'church_memberships'
+            referencedColumns: ['user_id', 'church_id']
+          },
+        ]
+      }
       announcements: {
         Row: {
           body: string
@@ -2015,6 +2064,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_notifications: {
+        Args: {
+          p_church_id: string
+          p_limit?: number
+          p_unread_only?: boolean
+          p_before_created_at?: string
+          p_before_id?: string
+        }
+        Returns: Json
+      }
+      set_notification_read: {
+        Args: {
+          p_church_id: string
+          p_notification_id: string
+          p_read?: boolean
+        }
+        Returns: boolean
+      }
+      mark_all_notifications_read: {
+        Args: { p_church_id: string; p_before: string }
+        Returns: number
+      }
       attendance_by_event: {
         Args: { p_church_id: string }
         Returns: {

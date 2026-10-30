@@ -4,6 +4,7 @@ import { MemberSidebar } from '@/components/layout/MemberSidebar'
 import { MemberTopbar } from '@/components/layout/MemberTopbar'
 import { SidebarProvider } from '@/components/layout/sidebar-context'
 import { isAdminRole } from '@/lib/auth/redirect'
+import { NotificationsProvider } from '@/components/notifications/NotificationsProvider'
 
 export default async function MemberLayout({
   children,
@@ -14,24 +15,31 @@ export default async function MemberLayout({
   const isAdmin = isAdminRole(ctx.role)
 
   return (
-    <SidebarProvider>
-      <div className="relative min-h-screen md:grid md:grid-cols-[auto_1fr]">
-        <PageBackdrop variant="dashboard" />
+    <NotificationsProvider
+      key={`${ctx.churchId}:${ctx.user.id}`}
+      churchId={ctx.churchId}
+      userId={ctx.user.id}
+      view="member"
+    >
+      <SidebarProvider>
+        <div className="relative min-h-screen md:grid md:grid-cols-[auto_1fr]">
+          <PageBackdrop variant="dashboard" />
 
-        <MemberSidebar
-          churchName={ctx.church?.name}
-          churchLogoUrl={ctx.church?.logo_url}
-        />
-
-        <div className="relative z-10 flex min-h-screen flex-col">
-          <MemberTopbar
-            isAdmin={isAdmin}
-            memberships={ctx.memberships}
-            activeChurchId={ctx.churchId}
+          <MemberSidebar
+            churchName={ctx.church?.name}
+            churchLogoUrl={ctx.church?.logo_url}
           />
-          <main className="flex-1 bg-muted/10 p-4 md:p-8">{children}</main>
+
+          <div className="relative z-10 flex min-h-screen flex-col">
+            <MemberTopbar
+              isAdmin={isAdmin}
+              memberships={ctx.memberships}
+              activeChurchId={ctx.churchId}
+            />
+            <main className="flex-1 bg-muted/10 p-4 md:p-8">{children}</main>
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </NotificationsProvider>
   )
 }
