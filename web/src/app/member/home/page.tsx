@@ -233,8 +233,6 @@ WELCOME SECTION
         </Button>
       </div>
 
-      <VolunteerOverview churchId={churchId} />
-
       {assignedRequests.length > 0 && (
         <Card className="border-primary/30">
           <CardHeader>
@@ -275,6 +273,8 @@ WELCOME SECTION
       ============================================ */}
 
       <UpcomingServices services={services} hidden={hiddenOccurrences} />
+
+      <VolunteerOverview churchId={churchId} />
 
       {/* ============================================
       UPCOMING EVENTS + ANNOUNCEMENTS

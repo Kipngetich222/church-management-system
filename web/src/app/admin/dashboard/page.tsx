@@ -250,8 +250,6 @@ Welcome to {church?.name || "our church"}
         </Card>
       )}
 
-      <VolunteerOverview churchId={churchId} adminRole={role} />
-
       {planUsage.atLimit && (
         <Card className="border-destructive/40 bg-destructive/5">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4 text-sm">
@@ -321,6 +319,8 @@ Welcome to {church?.name || "our church"}
           href="/admin/finance/offerings"
         />
       </div>
+
+      <VolunteerOverview churchId={churchId} adminRole={role} />
 
       <DashboardEvents upcoming={upcoming} past={past} />
     </div>
