@@ -563,7 +563,7 @@ describe(
     it('confirms volunteer signups and sends schedule changes only to volunteers on the shift', async () => {
       const created = await act(admin, () =>
         db.query(
-          "INSERT INTO public.volunteer_shifts(church_id, title, starts_at, ends_at) VALUES ($1, 'Welcome team', NOW() + INTERVAL '1 day', NOW() + INTERVAL '2 days') RETURNING id",
+          "INSERT INTO public.volunteer_shifts(church_id, title, location, starts_at, ends_at) VALUES ($1, 'Welcome team', 'Main entrance', NOW() + INTERVAL '1 day', NOW() + INTERVAL '2 days') RETURNING id",
           [church]
         )
       )
@@ -619,7 +619,7 @@ describe(
       const {
         rows: [shift],
       } = await db.query(
-        "INSERT INTO public.volunteer_shifts(church_id, title, starts_at, ends_at) VALUES ($1, 'Welcome team', NOW() + INTERVAL '1 day', NOW() + INTERVAL '2 days') RETURNING id",
+        "INSERT INTO public.volunteer_shifts(church_id, title, location, starts_at, ends_at) VALUES ($1, 'Welcome team', 'Main entrance', NOW() + INTERVAL '1 day', NOW() + INTERVAL '2 days') RETURNING id",
         [church]
       )
       const {

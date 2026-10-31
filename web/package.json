@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:notifications": "node --test test/notifications.test.mjs",
+    "test:volunteers": "node --test test/volunteers.test.mjs",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {

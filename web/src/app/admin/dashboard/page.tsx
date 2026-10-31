@@ -5,6 +5,7 @@ import { getPlanUsage } from '@/lib/services/plan.service'
 import { prayerRetentionCutoff } from '@/lib/services/prayer.service'
 import { createClient } from '@/lib/supabase/server'
 import { getTimeOfDayGreeting } from '@/lib/utils/date'
+import { VolunteerOverview } from '@/components/volunteers/VolunteerOverview'
 import {
   listUpcomingEvents,
   listPastEvents,
@@ -248,6 +249,8 @@ Welcome to {church?.name || "our church"}
           </CardContent>
         </Card>
       )}
+
+      <VolunteerOverview churchId={churchId} adminRole={role} />
 
       {planUsage.atLimit && (
         <Card className="border-destructive/40 bg-destructive/5">
