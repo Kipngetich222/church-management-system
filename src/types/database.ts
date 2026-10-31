@@ -224,6 +224,9 @@ export type Database = {
       }
       church_memberships: {
         Row: {
+          full_name: string | null
+          email: string | null
+          phone: string | null
           address: string | null
           badges: Database['public']['Enums']['badge_type'][] | null
           church_id: string
@@ -238,6 +241,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          full_name?: string | null
+          email?: string | null
+          phone?: string | null
           address?: string | null
           badges?: Database['public']['Enums']['badge_type'][] | null
           church_id: string
@@ -252,6 +258,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          full_name?: string | null
+          email?: string | null
+          phone?: string | null
           address?: string | null
           badges?: Database['public']['Enums']['badge_type'][] | null
           church_id?: string
@@ -1948,6 +1957,11 @@ export type Database = {
       }
       volunteer_shifts: {
         Row: {
+          category: string
+          recurrence: string
+          recurrence_until: string | null
+          timezone: string
+          is_active: boolean
           church_id: string
           created_at: string | null
           created_by: string | null
@@ -1957,11 +1971,16 @@ export type Database = {
           location: string | null
           notes: string | null
           role_id: string | null
-          slots: number
+          slots: number | null
           starts_at: string
           title: string
         }
         Insert: {
+          category?: string
+          recurrence?: string
+          recurrence_until?: string | null
+          timezone?: string
+          is_active?: boolean
           church_id: string
           created_at?: string | null
           created_by?: string | null
@@ -1971,11 +1990,16 @@ export type Database = {
           location?: string | null
           notes?: string | null
           role_id?: string | null
-          slots?: number
+          slots?: number | null
           starts_at: string
           title: string
         }
         Update: {
+          category?: string
+          recurrence?: string
+          recurrence_until?: string | null
+          timezone?: string
+          is_active?: boolean
           church_id?: string
           created_at?: string | null
           created_by?: string | null
@@ -1985,7 +2009,7 @@ export type Database = {
           location?: string | null
           notes?: string | null
           role_id?: string | null
-          slots?: number
+          slots?: number | null
           starts_at?: string
           title?: string
         }
@@ -2064,6 +2088,33 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_volunteer_activities: {
+        Args: { p_church_id: string }
+        Returns: {
+          id: string
+          church_id: string
+          title: string
+          starts_at: string
+          ends_at: string
+          location: string | null
+          slots: number | null
+          notes: string | null
+          category: string
+          recurrence: string
+          recurrence_until: string | null
+          timezone: string
+          is_active: boolean
+          next_starts_at: string | null
+          next_ends_at: string | null
+          participant_count: number
+          my_signup_id: string | null
+          my_status: string | null
+        }[]
+      }
+      has_volunteer_permission: {
+        Args: { p_church_id: string; p_permission: string }
+        Returns: boolean
+      }
       get_notifications: {
         Args: {
           p_church_id: string

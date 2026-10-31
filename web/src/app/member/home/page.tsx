@@ -24,6 +24,7 @@ import { ChurchMap } from '@/components/maps/ChurchMap'
 import { LeadershipSection } from '@/components/churches/LeadershipSection'
 import { googleMapsUrl } from '@/lib/utils/maps'
 import { getTimeOfDayGreeting } from '@/lib/utils/date'
+import { VolunteerOverview } from '@/components/volunteers/VolunteerOverview'
 
 import Link from 'next/link'
 
@@ -231,6 +232,8 @@ WELCOME SECTION
           </Link>
         </Button>
       </div>
+
+      <VolunteerOverview churchId={churchId} />
 
       {assignedRequests.length > 0 && (
         <Card className="border-primary/30">

@@ -1,50 +1,75 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { volunteerError } from '@/lib/volunteers'
+import { changeVolunteerParticipation } from '@/lib/volunteer-signups'
 
 export function SignUpShiftButton({
   shiftId,
   membershipId,
   signedUp,
+  signupId,
   full,
+  closed,
 }: {
   shiftId: string
   membershipId: string
   signedUp: boolean
+  signupId: string | null
   full: boolean
+  closed: boolean
 }) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
+  const [pending, startTransition] = useTransition()
+  const [error, setError] = useState('')
 
   async function toggle() {
+    if (busy || pending) return
     setBusy(true)
-    const supabase = createClient()
-    if (signedUp) {
-      await supabase
-        .from('volunteer_signups')
-        .delete()
-        .eq('shift_id', shiftId)
-        .eq('membership_id', membershipId)
-    } else {
-      await supabase
-        .from('volunteer_signups')
-        .insert({ shift_id: shiftId, membership_id: membershipId })
+    setError('')
+    try {
+      await changeVolunteerParticipation(createClient(), {
+        shiftId,
+        membershipId,
+        signedUp,
+        signupId,
+      })
+      startTransition(() => router.refresh())
+    } catch (err) {
+      setError(volunteerError(err))
+      startTransition(() => router.refresh())
+    } finally {
+      setBusy(false)
     }
-    router.refresh()
-    setBusy(false)
   }
 
   return (
-    <Button
-      onClick={toggle}
-      disabled={busy || (!signedUp && full)}
-      variant={signedUp ? 'outline' : 'default'}
-      className="w-full"
-    >
-      {busy ? '...' : signedUp ? 'Cancel signup' : full ? 'Full' : 'Sign up'}
-    </Button>
+    <div className="space-y-2">
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+      <Button
+        onClick={toggle}
+        disabled={busy || pending || (!signedUp && (full || closed))}
+        variant={signedUp ? 'outline' : 'default'}
+        className="w-full"
+      >
+        {busy || pending
+          ? 'Updating…'
+          : signedUp
+            ? 'Cancel participation'
+            : closed
+              ? 'Sign-ups closed'
+              : full
+                ? 'Activity full'
+                : 'Participate'}
+      </Button>
+    </div>
   )
 }
