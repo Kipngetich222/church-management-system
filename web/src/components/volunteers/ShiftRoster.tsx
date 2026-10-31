@@ -137,15 +137,6 @@ export function ShiftRoster({
                           {row.phone}
                         </a>
                       )}
-                      {row.signed_up_at && (
-                        <p className="text-xs text-muted-foreground">
-                          Joined{' '}
-                          {new Intl.DateTimeFormat('en-GB', {
-                            timeZone: 'Africa/Nairobi',
-                            dateStyle: 'medium',
-                          }).format(new Date(row.signed_up_at))}
-                        </p>
-                      )}
                     </td>
                     {showActivity && (
                       <td className="p-3">
