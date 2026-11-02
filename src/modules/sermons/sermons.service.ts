@@ -24,6 +24,7 @@ export class SermonsService {
       .from('sermons')
       .select('*, churches(id, name, username, logo_url)')
       .eq('id', sermonId)
+      .eq('published', true)
       .maybeSingle()
     const sermon = this.supabase.single(data, error)
     if (!sermon) throw new NotFoundException('Sermon not found')

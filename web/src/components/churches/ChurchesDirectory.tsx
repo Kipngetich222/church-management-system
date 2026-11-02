@@ -56,12 +56,6 @@ export function ChurchesDirectory({ churches }: { churches: ChurchSummary[] }) {
         />
       </div>
 
-      <ChurchMap
-        churches={churches as MapChurch[]}
-        focusId={focusId}
-        height={360}
-      />
-
       {filtered.length === 0 ? (
         <Card>
           <CardContent className="pt-10 pb-10 text-center space-y-4">
@@ -110,6 +104,12 @@ export function ChurchesDirectory({ churches }: { churches: ChurchSummary[] }) {
           ))}
         </div>
       )}
+
+      <ChurchMap
+        churches={churches as MapChurch[]}
+        focusId={focusId}
+        height={360}
+      />
     </div>
   )
 }

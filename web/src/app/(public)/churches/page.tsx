@@ -25,8 +25,8 @@ export default async function ChurchesPage() {
       <div className="max-w-3xl mb-8">
         <h1 className="text-4xl font-bold mb-3">Find a church</h1>
         <p className="text-muted-foreground">
-          Browse churches already using ChurchOnline on the map below, or start
-          your own. Search to narrow the map to a specific church.
+          Browse churches already using ChurchOnline, or start your own. Search
+          the listings by name or location and find churches on the map below.
         </p>
       </div>
 
