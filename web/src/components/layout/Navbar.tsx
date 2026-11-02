@@ -32,9 +32,6 @@ export async function Navbar() {
           <Link href="/events" className="text-sm hover:text-primary">
             Events
           </Link>
-          <Link href="/sermons" className="text-sm hover:text-primary">
-            Sermons
-          </Link>
           <Link href="/contact" className="text-sm hover:text-primary">
             Contact
           </Link>

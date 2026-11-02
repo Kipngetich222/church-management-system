@@ -16,6 +16,7 @@ import { googleMapsUrl } from '@/lib/utils/maps'
 import { ChurchMap } from '@/components/maps/ChurchMap'
 import { JoinChurchButton } from '@/components/churches/JoinChurchButton'
 import { LeadershipSection } from '@/components/churches/LeadershipSection'
+import { SermonCard } from '@/components/sermons/SermonCard'
 import { MapPin, CalendarDays, Mail, Globe, Phone } from 'lucide-react'
 import { BackLink } from '@/components/shared/BackLink'
 
@@ -28,7 +29,7 @@ async function loadChurch(username: string) {
     .select('*')
     .eq('username', username)
     .maybeSingle()
-  if (!church) return { church: null, events: [], leaders: [] }
+  if (!church) return { church: null, events: [], leaders: [], sermons: [] }
 
   const { data: events } = await supabase
     .from('events')
@@ -47,7 +48,15 @@ async function loadChurch(username: string) {
     .order('sort_order')
     .order('created_at')
 
-  return { church, events: events ?? [], leaders: leaders ?? [] }
+  const { data: sermons } = await supabase
+    .from('sermons')
+    .select('id, title, speaker, youtube_id, thumbnail_url, series, preached_at')
+    .eq('church_id', church.id)
+    .eq('published', true)
+    .order('preached_at', { ascending: false })
+    .limit(3)
+
+  return { church, events: events ?? [], leaders: leaders ?? [], sermons: sermons ?? [] }
 }
 
 export async function generateMetadata({
@@ -70,7 +79,7 @@ export default async function ChurchProfilePage({
   params: Promise<{ username: string }>
 }) {
   const { username } = await params
-  const { church, events, leaders } = await loadChurch(username)
+  const { church, events, leaders, sermons } = await loadChurch(username)
   if (!church) notFound()
 
   const supabase = await createClient()
@@ -198,6 +207,30 @@ export default async function ChurchProfilePage({
         <div className="mt-6">
           <LeadershipSection leaders={leaders} />
         </div>
+      )}
+
+      {sermons.length > 0 && (
+        <section className="mt-10 space-y-4" aria-labelledby="church-sermons">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="church-sermons" className="text-2xl font-bold">Sermons</h2>
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={<Link href={`/churches/${church.username}/sermons`} />}
+            >
+              View all sermons
+            </Button>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {sermons.map((sermon) => (
+              <SermonCard
+                key={sermon.id}
+                sermon={sermon}
+                basePath={`/churches/${church.username}/sermons`}
+              />
+            ))}
+          </div>
+        </section>
       )}
     </div>
   )

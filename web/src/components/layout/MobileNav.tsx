@@ -10,7 +10,6 @@ const links = [
   { href: '/pricing', label: 'Pricing' },
   { href: '/churches', label: 'Churches' },
   { href: '/events', label: 'Events' },
-  { href: '/sermons', label: 'Sermons' },
   { href: '/prayer-wall', label: 'Prayer Wall' },
   // Focus Mode is coming later.
   // { href: '/focus-mode', label: 'Focus Mode' },
