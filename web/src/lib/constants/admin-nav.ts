@@ -26,6 +26,7 @@ export type NavItem = {
   href: string
   icon: React.ComponentType<{ className?: string }>
   permission?: string
+  roles?: string[]
   section?: string
 }
 
@@ -68,6 +69,7 @@ export const ADMIN_NAV: NavItem[] = [
     href: '/admin/visitors',
     icon: UserPlus,
     permission: 'visitors:*',
+    roles: ['super_admin'],
     section: 'People',
   },
   {

@@ -1811,6 +1811,74 @@ export type Database = {
         }
         Relationships: []
       }
+      visitor_portals: {
+        Row: {
+          church_id: string
+          token: string
+          welcome_message: string
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          church_id: string
+          token?: string
+          welcome_message?: string
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: { welcome_message?: string }
+        Relationships: [
+          {
+            foreignKeyName: 'visitor_portals_church_id_fkey'
+            columns: ['church_id']
+            isOneToOne: true
+            referencedRelation: 'churches'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      visitor_sessions: {
+        Row: {
+          token_hash: string
+          portal_token: string
+          visitor_id: string
+          expires_at: string
+        }
+        Insert: {
+          token_hash: string
+          portal_token: string
+          visitor_id: string
+          expires_at?: string
+        }
+        Update: { expires_at?: string }
+        Relationships: []
+      }
+      visitor_comments: {
+        Row: {
+          id: string
+          visitor_id: string
+          submission_id: string
+          body: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          visitor_id: string
+          submission_id: string
+          body: string
+          created_at?: string
+        }
+        Update: { body?: string }
+        Relationships: [
+          {
+            foreignKeyName: 'visitor_comments_visitor_id_fkey'
+            columns: ['visitor_id']
+            isOneToOne: false
+            referencedRelation: 'visitors'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       visitor_followups: {
         Row: {
           author_membership_id: string | null
@@ -1855,6 +1923,7 @@ export type Database = {
       }
       visitors: {
         Row: {
+          source: 'manual' | 'qr'
           assigned_to: string | null
           church_id: string
           created_at: string | null
@@ -1870,6 +1939,7 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          source?: 'manual' | 'qr'
           church_id: string
           created_at?: string | null
           email?: string | null
@@ -1884,6 +1954,7 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          source?: 'manual' | 'qr'
           church_id?: string
           created_at?: string | null
           email?: string | null
@@ -2088,6 +2159,36 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_visitor_admin: { Args: { p_church_id: string }; Returns: boolean }
+      ensure_visitor_portal: {
+        Args: { p_church_id: string }
+        Returns: Database['public']['Tables']['visitor_portals']['Row'][]
+      }
+      get_visitor_welcome: { Args: { p_token: string }; Returns: Json }
+      register_church_visitor: {
+        Args: {
+          p_token: string
+          p_full_name: string
+          p_session_token: string
+          p_phone?: string
+          p_email?: string
+          p_comment?: string
+        }
+        Returns: string
+      }
+      get_visitor_portal: {
+        Args: { p_token: string; p_session_token: string }
+        Returns: Json
+      }
+      add_visitor_comment: {
+        Args: {
+          p_token: string
+          p_session_token: string
+          p_body: string
+          p_submission_id: string
+        }
+        Returns: string
+      }
       get_volunteer_activities: {
         Args: { p_church_id: string }
         Returns: {

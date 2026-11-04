@@ -22,6 +22,8 @@ export type VisitorRow = {
   email: string | null
   first_visit_date: string | null
   status: string | null
+  source: 'manual' | 'qr'
+  visitor_comments: { count: number }[]
 }
 
 export function VisitorsTable({ visitors }: { visitors: VisitorRow[] }) {
@@ -47,6 +49,7 @@ export function VisitorsTable({ visitors }: { visitors: VisitorRow[] }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by name, phone, email, or status..."
+          aria-label="Search visitors"
           className="pl-9"
         />
       </div>
@@ -57,7 +60,10 @@ export function VisitorsTable({ visitors }: { visitors: VisitorRow[] }) {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Phone</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>First visit</TableHead>
+              <TableHead>Added through</TableHead>
+              <TableHead>Comments</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -66,7 +72,7 @@ export function VisitorsTable({ visitors }: { visitors: VisitorRow[] }) {
             {filtered.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={8}
                   className="text-center py-12 text-muted-foreground"
                 >
                   No visitors found
@@ -77,7 +83,14 @@ export function VisitorsTable({ visitors }: { visitors: VisitorRow[] }) {
                 <TableRow key={v.id}>
                   <TableCell className="font-medium">{v.full_name}</TableCell>
                   <TableCell>{v.phone ?? '-'}</TableCell>
+                  <TableCell>{v.email ?? '-'}</TableCell>
                   <TableCell>{v.first_visit_date ?? '-'}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {v.source === 'qr' ? 'QR registration' : 'Manual entry'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{v.visitor_comments[0]?.count ?? 0}</TableCell>
                   <TableCell>
                     <Badge
                       variant={
