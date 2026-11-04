@@ -6,6 +6,7 @@ import { prayerRetentionCutoff } from '@/lib/services/prayer.service'
 import { createClient } from '@/lib/supabase/server'
 import { getTimeOfDayGreeting } from '@/lib/utils/date'
 import { VolunteerOverview } from '@/components/volunteers/VolunteerOverview'
+import { VisitorOverview } from '@/components/visitors/VisitorOverview'
 import {
   listUpcomingEvents,
   listPastEvents,
@@ -321,6 +322,8 @@ Welcome to {church?.name || "our church"}
       </div>
 
       <VolunteerOverview churchId={churchId} adminRole={role} />
+
+      {role === 'super_admin' && <VisitorOverview churchId={churchId} />}
 
       <DashboardEvents upcoming={upcoming} past={past} />
     </div>

@@ -91,20 +91,21 @@ that controls what they can see and do.
 cp .env.example .env
 ```
 
-| Variable                         | Description                                             |
-| -------------------------------- | ------------------------------------------------------- |
-| `PORT`                           | Port the API listens on (default `4000`)                |
-| `API_PUBLIC_URL`                 | Public URL of the API, used to build provider callbacks |
-| `CORS_ORIGINS`                   | Comma-separated allowed origins (web app, mobile, ...)  |
-| `SUPABASE_URL`                   | Supabase project URL                                    |
-| `SUPABASE_SERVICE_ROLE_KEY`      | Service-role key (server only)                          |
-| `SUPABASE_ANON_KEY`              | Publishable/anon key                                    |
-| `CRON_SECRET`                    | Shared secret for the `/api/v1/cron/*` endpoints        |
-| `AFRICAS_TALKING_*`              | Africa's Talking credentials (SMS)                      |
-| `MPESA_*`                        | Safaricom Daraja credentials (payments)                 |
-| `RESEND_API_KEY` / `RESEND_FROM` | Resend credentials (email)                              |
-| `GOOGLE_MAPS_API_KEY`            | Google Maps key                                         |
-| `CONTACT_EMAIL`                  | Destination for the public contact form                 |
+| Variable                         | Description                                                                    |
+| -------------------------------- | ------------------------------------------------------------------------------ |
+| `PORT`                           | Port the API listens on (default `4000`)                                       |
+| `API_PUBLIC_URL`                 | Public URL of the API, used to build provider callbacks                        |
+| `WEB_APP_URL`                    | Public web URL for visitor QR codes; match the web app's `NEXT_PUBLIC_APP_URL` |
+| `CORS_ORIGINS`                   | Comma-separated allowed origins (web app, mobile, ...)                         |
+| `SUPABASE_URL`                   | Supabase project URL                                                           |
+| `SUPABASE_SERVICE_ROLE_KEY`      | Service-role key (server only)                                                 |
+| `SUPABASE_ANON_KEY`              | Publishable/anon key                                                           |
+| `CRON_SECRET`                    | Shared secret for the `/api/v1/cron/*` endpoints                               |
+| `AFRICAS_TALKING_*`              | Africa's Talking credentials (SMS)                                             |
+| `MPESA_*`                        | Safaricom Daraja credentials (payments)                                        |
+| `RESEND_API_KEY` / `RESEND_FROM` | Resend credentials (email)                                                     |
+| `GOOGLE_MAPS_API_KEY`            | Google Maps key                                                                |
+| `CONTACT_EMAIL`                  | Destination for the public contact form                                        |
 
 ### Web app (`./web/.env.local`)
 
@@ -277,6 +278,14 @@ member of that church, and admin-only routes require the `super_admin` or `dept_
 | PATCH  | `/churches/:churchId/visitors/:visitorId`                     | admin       | Update a visitor                         |
 | DELETE | `/churches/:churchId/visitors/:visitorId`                     | admin       | Delete a visitor                         |
 | POST   | `/churches/:churchId/visitors/:visitorId/followups`           | admin       | Add a follow-up                          |
+
+### Visitors
+
+Apply [0042_visitor_registration.sql](supabase/migrations/0042_visitor_registration.sql), then [0043_visitor_access_fixes.sql](supabase/migrations/0043_visitor_access_fixes.sql), before using the visitors pages. The first migration adds the shared QR code, public registration, private visitor sessions and comments. The second keeps legacy super admins with a null membership status able to manage visitors and record follow-ups; explicitly inactive admins remain blocked. Existing visitor records are retained.
+
+Super admins manage visitors at `/admin/visitors`, add them manually, edit contact details and status, and log internal follow-ups. Each church has one permanent QR link to `/visit/<token>`. Visitors can register without an account, view public church activities, and leave comments visible to that church's super admins. Sessions last 30 days; expired sessions offer registration again. Set the API's `WEB_APP_URL` to the same public web URL as `NEXT_PUBLIC_APP_URL` so downloaded codes open the correct site.
+
+Run `npm test -- --runInBand` and `npm run test:visitors-db` at the root, and `npm run test:visitors` in `web/`. Database tests run all migrations in an isolated PostgreSQL engine, including registration retries, permissions, comments, follow-ups and record deletion.
 
 ### Volunteering
 

@@ -17,7 +17,9 @@ export function AdminSidebar({
 }) {
   const { can, loading } = usePermissions(churchId, role)
   const items = ADMIN_NAV.filter(
-    (item) => !item.permission || can(item.permission)
+    (item) =>
+      (!item.roles || item.roles.includes(role)) &&
+      (!item.permission || can(item.permission))
   )
 
   return (

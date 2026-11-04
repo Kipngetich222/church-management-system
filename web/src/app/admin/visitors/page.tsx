@@ -1,22 +1,42 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { requirePermission } from '@/lib/auth/guard'
+import {
+  requireVisitorAdmin,
+  visitorQrCode,
+} from '@/lib/services/visitors.service'
 import { Button } from '@/components/ui/button'
 import { VisitorsTable } from '@/components/visitors/VisitorsTable'
+import { VisitorQrPanel } from '@/components/visitors/VisitorQrPanel'
+import { VisitorRefresh } from '@/components/visitors/VisitorRefresh'
 import { Plus } from 'lucide-react'
 
 export default async function VisitorsPage() {
-  const ctx = await requirePermission('visitors:*')
+  const ctx = await requireVisitorAdmin()
   const supabase = await createClient()
 
-  const { data: visitors } = await supabase
-    .from('visitors')
-    .select('id, full_name, phone, email, first_visit_date, status')
-    .eq('church_id', ctx.churchId)
-    .order('created_at', { ascending: false })
+  const [visitors, portal] = await Promise.all([
+    supabase
+      .from('visitors')
+      .select(
+        'id, full_name, phone, email, first_visit_date, status, source, visitor_comments(count)'
+      )
+      .eq('church_id', ctx.churchId)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('visitor_portals')
+      .select('*')
+      .eq('church_id', ctx.churchId)
+      .maybeSingle(),
+  ])
+  if (visitors.error || portal.error)
+    throw new Error('Unable to load visitors. Please try again shortly.')
+  const qr = portal.data
+    ? { ...portal.data, ...(await visitorQrCode(portal.data.token)) }
+    : null
 
   return (
     <div className="space-y-6">
+      <VisitorRefresh />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Visitors</h1>
         <Button
@@ -27,7 +47,8 @@ export default async function VisitorsPage() {
         </Button>
       </div>
 
-      <VisitorsTable visitors={visitors ?? []} />
+      <VisitorQrPanel churchId={ctx.churchId} initial={qr} />
+      <VisitorsTable visitors={visitors.data ?? []} />
     </div>
   )
 }
