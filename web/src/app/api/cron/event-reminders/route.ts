@@ -1,75 +1,16 @@
-import { createClient as createAdmin } from '@supabase/supabase-js'
-import { sendSms, normalizePhone } from '@/lib/services/sms.service'
-import { NextResponse } from 'next/server'
-
+import { communicationEngine } from '@/lib/services/communication.service'
+import { communicationFailure } from '@/lib/services/communication-api'
+import { runEventReminderMessages } from '../../../../../../src/modules/messages/communication-automation'
+export const maxDuration = 300
 export async function GET(req: Request) {
-  const auth = req.headers.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const admin = createAdmin(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
+  if (
+    !process.env.CRON_SECRET ||
+    req.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`
   )
-
-  const now = new Date()
-  const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000)
-
-  const { data: events } = await admin
-    .from('events')
-    .select('id, title, start_time, location_name, church_id')
-    .eq('status', 'published')
-    .gte('start_time', now.toISOString())
-    .lte('start_time', in24h.toISOString())
-
-  let totalSent = 0
-
-  for (const event of events ?? []) {
-    const { data: members } = await admin
-      .from('church_memberships')
-      .select('id, phone, users!church_memberships_user_id_fkey(phone)')
-      .eq('church_id', event.church_id)
-
-    const phones = (members ?? [])
-      .map((m: any) => m.phone ?? m.users?.phone)
-      .filter(Boolean)
-      .map((p: string) => normalizePhone(p))
-
-    if (!phones.length) continue
-
-    const time = new Date(event.start_time).toLocaleString('en-KE', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    })
-
-    const message = `Reminder: ${event.title} is tomorrow at ${time}${
-      event.location_name ? ` at ${event.location_name}` : ''
-    }.`
-
-    const result = await sendSms({ to: phones, message })
-
-    await admin.from('message_campaigns').insert({
-      church_id: event.church_id,
-      channel: 'sms',
-      body: message,
-      recipient_filter: { type: 'event_reminder', ids: [event.id] },
-      status: 'sent',
-      total_recipients: phones.length,
-      sent_count: phones.length,
-      sent_at: new Date().toISOString(),
-    })
-
-    totalSent += phones.length
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  try {
+    return Response.json(await runEventReminderMessages(communicationEngine()))
+  } catch (error) {
+    return communicationFailure(error)
   }
-
-  return NextResponse.json({
-    ok: true,
-    events: events?.length ?? 0,
-    sent: totalSent,
-  })
 }

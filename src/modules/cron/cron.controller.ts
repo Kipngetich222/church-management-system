@@ -19,13 +19,18 @@ export class CronController {
   }
 
   @Post('event-reminders')
-  @ApiOperation({ summary: 'Find events starting in the next 24 hours' })
+  @ApiOperation({
+    summary: 'Send audited reminders for events starting in the next 24 hours',
+  })
   eventReminders() {
     return this.cronService.runEventReminders()
   }
 
   @Post('scheduled-messages')
-  @ApiOperation({ summary: 'Flag scheduled message campaigns that are due' })
+  @ApiOperation({
+    summary:
+      'Dispatch due message campaigns using the shared church SMS balance',
+  })
   scheduledMessages() {
     return this.cronService.runScheduledMessages()
   }
