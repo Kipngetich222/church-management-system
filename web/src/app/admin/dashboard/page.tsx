@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getTimeOfDayGreeting } from '@/lib/utils/date'
 import { VolunteerOverview } from '@/components/volunteers/VolunteerOverview'
 import { VisitorOverview } from '@/components/visitors/VisitorOverview'
+import { SmsOverview } from '@/components/communication/SmsOverview'
 import {
   listUpcomingEvents,
   listPastEvents,
@@ -188,9 +189,9 @@ export default async function AdminDashboardPage() {
         <ChurchLogo name={church?.name} logoUrl={church?.logo_url} size="lg" />
         <div>
           <h1 className="text-2xl font-bold">
-            {greeting || "Hello"}, {memberName || "Member"}
-<br />
-Welcome to {church?.name || "our church"}
+            {greeting || 'Hello'}, {memberName || 'Member'}
+            <br />
+            Welcome to {church?.name || 'our church'}
           </h1>
           <p className="text-muted-foreground">Signed in as {role}</p>
         </div>
@@ -320,6 +321,8 @@ Welcome to {church?.name || "our church"}
           href="/admin/finance/offerings"
         />
       </div>
+
+      <SmsOverview churchId={churchId} role={role} />
 
       <VolunteerOverview churchId={churchId} adminRole={role} />
 

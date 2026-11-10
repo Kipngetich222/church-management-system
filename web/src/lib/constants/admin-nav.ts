@@ -104,7 +104,7 @@ export const ADMIN_NAV: NavItem[] = [
     label: 'Communication',
     href: '/admin/communication/sms',
     icon: MessageSquare,
-    permission: 'sms:*',
+    permission: 'sms:department',
     section: 'Ministry',
   },
   {

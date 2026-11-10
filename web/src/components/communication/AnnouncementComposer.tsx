@@ -25,21 +25,32 @@ export function AnnouncementComposer({ churchId }: { churchId: string }) {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const supabase = createClient()
-
-    const { error: err } = await supabase.from('announcements').insert({
-      church_id: churchId,
-      ...form,
-    })
-
-    if (err) {
-      setError(err.message)
+    try {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) throw new Error('Please sign in')
+      if (!form.title.trim() || !form.body.trim())
+        throw new Error('Enter a title and announcement text')
+      const { error: err } = await supabase.from('announcements').insert({
+        church_id: churchId,
+        ...form,
+        title: form.title.trim(),
+        body: form.body.trim(),
+        created_by: user.id,
+        published_at: form.published ? new Date().toISOString() : null,
+      })
+      if (err) throw new Error(err.message)
+      setForm({ title: '', body: '', pinned: false, published: true })
+      router.refresh()
+    } catch (error) {
+      setError(
+        error instanceof Error ? error.message : 'Unable to post announcement'
+      )
+    } finally {
       setLoading(false)
-      return
     }
-    setForm({ title: '', body: '', pinned: false, published: true })
-    router.refresh()
-    setLoading(false)
   }
 
   return (

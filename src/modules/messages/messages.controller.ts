@@ -1,11 +1,17 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CurrentMembership, CurrentUser } from '../../common/decorators/current-user.decorator';
-import { ChurchAdmin } from '../../common/decorators/roles.decorator';
-import { ChurchGuard } from '../../common/guards/church.guard';
-import type { AuthUser, MembershipSummary } from '../../common/interfaces/auth-user.interface';
-import { SendMessageDto } from './message.dto';
-import { MessagesService } from './messages.service';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common'
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
+import {
+  CurrentMembership,
+  CurrentUser,
+} from '../../common/decorators/current-user.decorator'
+import { ChurchAdmin } from '../../common/decorators/roles.decorator'
+import { ChurchGuard } from '../../common/guards/church.guard'
+import type {
+  AuthUser,
+  MembershipSummary,
+} from '../../common/interfaces/auth-user.interface'
+import { SendMessageDto } from './message.dto'
+import { MessagesService } from './messages.service'
 
 @ApiTags('communication')
 @ApiBearerAuth('supabase-jwt')
@@ -17,24 +23,27 @@ export class MessagesController {
   @ChurchAdmin()
   @Get('messages')
   @ApiOperation({ summary: 'List messages sent by the church (admin)' })
-  list(@Param('churchId') churchId: string) {
-    return this.messagesService.listMessages(churchId);
+  list(@Param('churchId') churchId: string, @CurrentUser() user: AuthUser) {
+    return this.messagesService.listMessages(churchId, user.id)
   }
 
   @ChurchAdmin()
   @Get('message-campaigns')
   @ApiOperation({ summary: 'List bulk message campaigns (admin)' })
-  listCampaigns(@Param('churchId') churchId: string) {
-    return this.messagesService.listCampaigns(churchId);
+  listCampaigns(
+    @Param('churchId') churchId: string,
+    @CurrentUser() user: AuthUser
+  ) {
+    return this.messagesService.listCampaigns(churchId, user.id)
   }
 
   @Get('messages/me')
   @ApiOperation({ summary: 'Messages addressed to the current member' })
   myMessages(
     @Param('churchId') churchId: string,
-    @CurrentMembership() membership: MembershipSummary,
+    @CurrentMembership() membership: MembershipSummary
   ) {
-    return this.messagesService.listMyMessages(churchId, membership.id);
+    return this.messagesService.listMyMessages(churchId, membership.id)
   }
 
   @ChurchAdmin()
@@ -43,8 +52,8 @@ export class MessagesController {
   send(
     @Param('churchId') churchId: string,
     @CurrentUser() user: AuthUser,
-    @Body() dto: SendMessageDto,
+    @Body() dto: SendMessageDto
   ) {
-    return this.messagesService.send(churchId, dto, user.id);
+    return this.messagesService.send(churchId, dto, user.id)
   }
 }

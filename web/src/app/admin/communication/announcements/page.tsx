@@ -10,12 +10,14 @@ export default async function AnnouncementsPage() {
   const { churchId } = await getActiveChurch()
   const supabase = await createClient()
 
-  const { data: announcements } = await supabase
+  const { data: announcements, error } = await supabase
     .from('announcements')
     .select('*')
     .eq('church_id', churchId)
     .order('pinned', { ascending: false })
     .order('published_at', { ascending: false })
+
+  if (error) throw new Error('Unable to load announcements')
 
   return (
     <div className="space-y-6">
@@ -24,7 +26,7 @@ export default async function AnnouncementsPage() {
       <AnnouncementComposer churchId={churchId} />
 
       <div className="space-y-3">
-        {(announcements ?? []).map((a: any) => (
+        {(announcements ?? []).map((a) => (
           <Card key={a.id}>
             <CardContent className="pt-6 space-y-2">
               <div className="flex items-center justify-between">
@@ -38,7 +40,9 @@ export default async function AnnouncementsPage() {
               </div>
               <p className="text-sm whitespace-pre-wrap">{a.body}</p>
               <p className="text-xs text-muted-foreground">
-                {format(new Date(a.published_at), 'MMM d, yyyy · h:mm a')}
+                {a.published_at
+                  ? format(new Date(a.published_at), 'MMM d, yyyy · h:mm a')
+                  : 'Unpublished draft'}
               </p>
             </CardContent>
           </Card>
