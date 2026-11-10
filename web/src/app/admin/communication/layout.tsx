@@ -33,6 +33,17 @@ export default async function CommunicationLayout({
           </Link>
         ))}
       </nav>
+      {process.env.SMS_SCHEDULER_MODE !== 'frequent' && (
+        <p
+          role="note"
+          className="rounded-lg border bg-muted/50 p-4 text-sm text-muted-foreground"
+        >
+          Scheduled messages are checked once daily, usually between 9–10 a.m.
+          East Africa Time. Your selected date and time is the earliest a
+          message can be sent; messages due after the daily check wait until the
+          next run. Use Send now for immediate delivery.
+        </p>
+      )}
       {children}
     </div>
   )

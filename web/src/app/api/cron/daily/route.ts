@@ -6,12 +6,15 @@ import { GET as runFinalizeDeletions } from '../finalize-deletions/route'
 /**
  * Single daily maintenance job.
  *
- * Precise scheduled communication runs separately every minute. This endpoint
- * handles daily greetings, reminders and deletion maintenance.
+ * On Vercel Hobby, scheduled communication has its own daily invocation so
+ * maintenance does not share its time budget with payment reconciliation and
+ * scheduled messages. This endpoint handles greetings, reminders and deletion.
  *
  * Note: deletions are applied in real time by the deletion flow itself (on
  * access and from the member's countdown), so this daily run is only a backstop.
  */
+export const maxDuration = 300
+
 export async function GET(req: Request) {
   const auth = req.headers.get('authorization')
   if (

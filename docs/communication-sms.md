@@ -71,11 +71,25 @@ purchases. `SMS_CREDIT_PRICE_KES` remains the operator's explicit price choice.
   historical sends do not create retroactive credit charges.
 - Use the same Supabase project and SMS environment on both API hosts. The
   shared dispatch implementation handles browser, API and automated sends.
-- Run `/api/cron/scheduled-messages` **every minute** with
-  `Authorization: Bearer CRON_SECRET`. The included `web/vercel.json` requires
-  a Vercel plan supporting minute-level cron. On Hobby, use an external minute
-  scheduler and remove that Vercel cron entry; daily cron cannot honor selected
-  send times. Scheduled sends normally start within one scheduler interval.
+- The included `web/vercel.json` supports **Vercel Hobby**. It uses two daily
+  cron jobs, both scheduled at `0 6 * * *` (06:00 UTC / 09:00 EAT), and enables
+  Fluid compute so the existing 300-second function durations fit Hobby's
+  Fluid compute limit. Scheduled messages/payment reconciliation and daily
+  maintenance run as separate requests with separate time budgets.
+- Hobby cron timing is approximate: a 06:00 UTC cron can run between 06:00 and
+  06:59 UTC (09:00–09:59 EAT). Only messages already due at that check can be
+  dispatched. Later messages wait for the next daily check, and a backlog may
+  require additional runs. The app displays this daily-delivery limitation.
+  Immediate sends and payment callbacks continue to run when requested.
+- Set `CRON_SECRET` in the Vercel production environment. Vercel sends
+  `Authorization: Bearer CRON_SECRET` to the protected cron endpoints. Cron jobs
+  run on production deployments, not preview deployments.
+- For precise scheduled sends while remaining on Hobby, an external scheduler
+  can call `/api/cron/scheduled-messages` every minute with that authorization
+  header. Once it is active, set `SMS_SCHEDULER_MODE=frequent` and redeploy to
+  remove the daily-delivery notice. The setting changes the notice only; it
+  does not provision a scheduler. On a paid plan, the same endpoint can use a
+  minute-level Vercel cron instead.
 - The scheduled route also reconciles pending M-Pesa checkouts if a callback
   is delayed or lost. The buyer can select **Check payment status** too.
 - `/api/cron/daily` sends birthday and event reminders and runs deletion

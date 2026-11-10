@@ -304,8 +304,9 @@ export function SMSComposer({
             {campaign
               ? 'Scheduled messages can be edited or cancelled before sending starts.'
               : 'Leave empty to send now.'}{' '}
-            The audience is checked again at send time; SMS credits are held
-            when sending starts.
+            The selected time is the earliest the message can be sent. The
+            audience is checked again at send time; SMS credits are held when
+            sending starts.
           </p>
         </div>
         {preview && (
