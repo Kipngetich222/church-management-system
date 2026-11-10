@@ -55,7 +55,8 @@ function fixture(
     campaigns = [],
     previews = []
   let purchase = stored ? { ...stored } : null,
-    confirmations = 0
+    confirmations = 0,
+    scheduledCalls = 0
   const database = createClient('https://sms.example.test', 'test-key', {
     auth: { persistSession: false, autoRefreshToken: false },
     global: {
@@ -174,7 +175,10 @@ function fixture(
         credits: 3,
       }
     },
-    runScheduled: async () => [],
+    runScheduled: async () => {
+      scheduledCalls++
+      return []
+    },
   }
   const mocks = {
     '@/lib/supabase/admin': { createAdminClient: () => database },
@@ -234,6 +238,9 @@ function fixture(
     get confirmations() {
       return confirmations
     },
+    get scheduledCalls() {
+      return scheduledCalls
+    },
   }
 }
 const post = (body, url = 'https://church.example.test/api/sms/purchases') =>
@@ -258,6 +265,43 @@ const pending = {
   status: 'pending',
   checkout_id: 'checkout-test',
 }
+
+test('Vercel Hobby deployment uses daily cron jobs and Fluid compute', () => {
+  const config = JSON.parse(
+    readFileSync(new URL('../vercel.json', import.meta.url), 'utf8')
+  )
+  assert.equal(config.fluid, true)
+  assert.equal(config.crons.length, 2)
+  assert.deepEqual(
+    new Set(config.crons.map((job) => job.path)),
+    new Set(['/api/cron/daily', '/api/cron/scheduled-messages'])
+  )
+  for (const job of config.crons) {
+    const [minute, hour, day, month, weekday] = job.schedule.split(' ')
+    assert.match(minute, /^\d{1,2}$/)
+    assert.match(hour, /^\d{1,2}$/)
+    assert(Number(minute) < 60 && Number(hour) < 24)
+    assert.deepEqual([day, month, weekday], ['*', '*', '*'])
+  }
+})
+
+test('the daily scheduled-message job still verifies payments and dispatches due campaigns', async (t) => {
+  const f = fixture(t, { stored: pending })
+  const response = await f
+    .load('app/api/cron/scheduled-messages/route')
+    .GET(
+      new Request('https://church.example.test/api/cron/scheduled-messages', {
+        headers: { Authorization: 'Bearer cron-test' },
+      })
+    )
+  assert.equal(response.status, 200)
+  assert.equal(f.confirmations, 1)
+  assert.equal(f.scheduledCalls, 1)
+  assert.deepEqual(await response.json(), {
+    results: [],
+    purchases: { checked: 1, confirmed: 1 },
+  })
+})
 
 test('purchase charges the server bundle price and uses the dedicated signed callback', async (t) => {
   const f = fixture(t),

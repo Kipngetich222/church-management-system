@@ -3,6 +3,8 @@ import { communicationFailure } from '@/lib/services/communication-api'
 import { reconcileSmsPurchases } from '@/lib/services/sms-purchases.service'
 
 export const maxDuration = 300
+// Vercel Hobby invokes this once daily. An external scheduler can use the same
+// authenticated endpoint more frequently without changing dispatch or billing.
 export async function GET(req: Request) {
   if (
     !process.env.CRON_SECRET ||
