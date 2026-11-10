@@ -144,9 +144,18 @@ Run from `web`:
 
 ```text
 npm run typecheck
-node --test test/communication.test.mjs
+npm run test:communication
 npm run build
+npm run build:isolated
 ```
+
+Vercel installs the web dependencies without the backend's `node_modules`.
+The web TypeScript configuration therefore resolves the shared communication
+module's Supabase types from `web/node_modules`. Keep that path mapping when
+changing the web build configuration. `build:isolated` verifies a fresh copy of
+the app outside the repository with only the existing web dependency install
+available, then removes the temporary copy. It does not install packages or
+modify either dependency installation.
 
 Before enabling production, perform one real low-value purchase and send with
 the configured accounts: approve an STK prompt, verify credit appears once,

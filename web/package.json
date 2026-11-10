@@ -5,10 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:isolated": "node scripts/verify-isolated-build.mjs",
     "start": "next start",
     "lint": "eslint",
     "test:notifications": "node --test test/notifications.test.mjs",
-    "test:communication": "node --test test/communication.test.mjs",
+    "test:communication": "node --test test/communication.test.mjs test/dependency-boundary.test.mjs",
     "test:volunteers": "node --test test/volunteers.test.mjs",
     "test:visitors": "node --test test/visitors.test.mjs",
     "typecheck": "next typegen && tsc --noEmit"
