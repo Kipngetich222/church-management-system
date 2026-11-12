@@ -2,13 +2,15 @@ import { NextResponse } from 'next/server'
 import { GET as runBirthdays } from '../birthdays/route'
 import { GET as runEventReminders } from '../event-reminders/route'
 import { GET as runFinalizeDeletions } from '../finalize-deletions/route'
+import { GET as reconcileGiving } from '../giving-payments/route'
 
 /**
  * Single daily maintenance job.
  *
  * On Vercel Hobby, scheduled communication has its own daily invocation so
- * maintenance does not share its time budget with payment reconciliation and
- * scheduled messages. This endpoint handles greetings, reminders and deletion.
+ * maintenance does not share its time budget with SMS-credit reconciliation and
+ * scheduled messages. This endpoint handles giving-payment reconciliation,
+ * greetings, reminders and deletion.
  *
  * Note: deletions are applied in real time by the deletion flow itself (on
  * access and from the member's countdown), so this daily run is only a backstop.
@@ -37,6 +39,7 @@ export async function GET(req: Request) {
   }
 
   const jobs: [string, (request: Request) => Promise<Response>][] = [
+    ['givingPayments', reconcileGiving],
     ['birthdays', runBirthdays],
     ['eventReminders', runEventReminders],
     ['deletions', runFinalizeDeletions],

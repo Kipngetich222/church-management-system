@@ -4,6 +4,7 @@ import { getChurchSetup } from '@/lib/utils/church-setup'
 import { getPlanUsage } from '@/lib/services/plan.service'
 import { prayerRetentionCutoff } from '@/lib/services/prayer.service'
 import { createClient } from '@/lib/supabase/server'
+import { allRows } from '@/lib/supabase/all-rows'
 import { getTimeOfDayGreeting } from '@/lib/utils/date'
 import { VolunteerOverview } from '@/components/volunteers/VolunteerOverview'
 import { VisitorOverview } from '@/components/visitors/VisitorOverview'
@@ -113,14 +114,19 @@ export default async function AdminDashboardPage() {
       .from('small_groups')
       .select('id', { count: 'exact', head: true })
       .eq('church_id', churchId),
-    supabase
-      .from('offerings')
-      .select('amount, given_at')
-      .eq('church_id', churchId)
-      .gte('given_at', weekAgo),
+    allRows((start, end) =>
+      supabase
+        .from('offerings')
+        .select('amount, given_at')
+        .eq('church_id', churchId)
+        .eq('status', 'completed')
+        .gte('given_at', weekAgo)
+        .order('id')
+        .range(start, end)
+    ),
   ])
 
-  const weekGiving = (offerings.data ?? []).reduce(
+  const weekGiving = offerings.reduce(
     (sum, o) => sum + Number(o.amount ?? 0),
     0
   )

@@ -40,4 +40,12 @@ export class CronController {
   finalizeDeletions() {
     return this.cronService.runFinalizeDeletions()
   }
+
+  @Post('giving-payments')
+  @ApiOperation({
+    summary: 'Reconcile pending giving payments (scheduler only)',
+  })
+  givingPayments() {
+    return this.cronService.reconcileGiving()
+  }
 }

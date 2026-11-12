@@ -1,3 +1,9 @@
+import type {
+  GivingTables,
+  GivingPayment,
+  GivingHistoryRow,
+} from '@/lib/giving'
+
 export type Json =
   | string
   | number
@@ -13,7 +19,7 @@ export type Database = {
     PostgrestVersion: '14.18'
   }
   public: {
-    Tables: {
+    Tables: GivingTables & {
       notifications: {
         Row: {
           id: string
@@ -1178,6 +1184,9 @@ export type Database = {
           notes: string | null
           pledge_id: string | null
           receipt_number: string | null
+          status: string
+          payment_id: string | null
+          receipt_details: Json | null
           recorded_by: string | null
           reference: string | null
           type: Database['public']['Enums']['offering_type']
@@ -1195,6 +1204,9 @@ export type Database = {
           notes?: string | null
           pledge_id?: string | null
           receipt_number?: string | null
+          status?: string
+          payment_id?: string | null
+          receipt_details?: Json | null
           recorded_by?: string | null
           reference?: string | null
           type?: Database['public']['Enums']['offering_type']
@@ -1212,6 +1224,9 @@ export type Database = {
           notes?: string | null
           pledge_id?: string | null
           receipt_number?: string | null
+          status?: string
+          payment_id?: string | null
+          receipt_details?: Json | null
           recorded_by?: string | null
           reference?: string | null
           type?: Database['public']['Enums']['offering_type']
@@ -2461,9 +2476,22 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      giving_history: { Row: GivingHistoryRow; Relationships: [] }
     }
     Functions: {
+      confirm_giving_payment: {
+        Args: {
+          p_id: string
+          p_checkout: string
+          p_receipt?: string | null
+          p_paid_at?: string | null
+        }
+        Returns: GivingPayment
+      }
+      has_giving_finance_permission: {
+        Args: { p_church: string; p_permission: string }
+        Returns: boolean
+      }
       is_visitor_admin: { Args: { p_church_id: string }; Returns: boolean }
       ensure_visitor_portal: {
         Args: { p_church_id: string }
@@ -2621,6 +2649,7 @@ export type Database = {
         | 'general'
         | 'missions'
         | 'building_fund'
+        | 'project_fund'
         | 'welfare'
         | 'thanksgiving'
         | 'pledge'
@@ -2786,6 +2815,7 @@ export const Constants = {
         'general',
         'missions',
         'building_fund',
+        'project_fund',
         'welfare',
         'thanksgiving',
         'pledge',

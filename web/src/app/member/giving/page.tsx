@@ -1,33 +1,37 @@
 import { getActiveChurch } from '@/lib/utils/church-scope'
+import { givingEngine } from '@/lib/services/giving.service'
 import { GivingForm } from '@/components/finance/GivingForm'
-import { MemberGivingHistory } from '@/components/finance/MemberGivingHistory'
-import { createClient } from '@/lib/supabase/server'
+import { GivingHistoryTable } from '@/components/finance/GivingHistoryTable'
 
 export default async function GivingPage() {
-  const { churchId, church } = await getActiveChurch()
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { data: membership } = await supabase
-    .from('church_memberships')
-    .select('id')
-    .eq('user_id', user!.id)
-    .eq('church_id', churchId)
-    .single()
-
-  const { data: history } = await supabase
-    .from('offerings')
-    .select('id, amount, currency, type, given_at, receipt_number')
-    .eq('membership_id', membership!.id)
-    .order('given_at', { ascending: false })
-    .limit(20)
-
+  const { churchId, church, user } = await getActiveChurch()
+  const engine = givingEngine()
+  const [settings, history, pending] = await Promise.all([
+    engine.getSettings(user.id, churchId),
+    engine.history(user.id, churchId, 'mine'),
+    engine.getPendingPayment(user.id, churchId),
+  ])
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Giving</h1>
-      <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-        <MemberGivingHistory offerings={history ?? []} />
-        <GivingForm churchId={churchId} churchName={church?.name ?? ''} />
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="order-2 min-w-0 xl:order-1">
+          <GivingHistoryTable
+            key={churchId}
+            churchId={churchId}
+            scope="mine"
+            initial={history}
+          />
+        </div>
+        <div className="order-1 xl:order-2">
+          <GivingForm
+            key={churchId}
+            churchId={churchId}
+            churchName={church.name}
+            settings={settings}
+            initialPayment={pending}
+          />
+        </div>
       </div>
     </div>
   )

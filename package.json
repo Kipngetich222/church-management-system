@@ -21,6 +21,7 @@
     "test:communication-db": "node --test test/communication.database.test.mjs",
     "test:volunteers-db": "node --test test/volunteers.database.test.mjs",
     "test:visitors-db": "node --test test/visitors.database.test.mjs",
+    "test:giving-db": "node --test test/giving.database.test.mjs",
     "prepare": "husky"
   },
   "lint-staged": {

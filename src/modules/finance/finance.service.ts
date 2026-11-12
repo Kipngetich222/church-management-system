@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { SupabaseService } from '../../supabase/supabase.service'
+import { allRows } from '../../common/utils/all-rows'
 import {
   CreateCampaignDto,
   CreateExpenseCategoryDto,
@@ -19,7 +20,7 @@ export class FinanceService {
       .from('offerings')
       .select(
         `id, church_id, membership_id, amount, currency, type, method, reference,
-         notes, receipt_number, given_at, church_memberships(users!church_memberships_user_id_fkey(full_name, email))`
+         notes, receipt_number, given_at, status, church_memberships(users!church_memberships_user_id_fkey(full_name, email))`
       )
       .eq('church_id', churchId)
       .order('given_at', { ascending: false })
@@ -77,11 +78,23 @@ export class FinanceService {
   }
 
   async removeOffering(churchId: string, offeringId: string) {
+    const { data: offering, error: lookupError } = await this.supabase.admin
+      .from('offerings')
+      .select('payment_id')
+      .eq('church_id', churchId)
+      .eq('id', offeringId)
+      .maybeSingle()
+    if (lookupError) this.supabase.unwrap(null, lookupError)
+    if (offering?.payment_id)
+      throw new BadRequestException(
+        'Confirmed online giving must remain in the payment history.'
+      )
     const { error } = await this.supabase.admin
       .from('offerings')
       .delete()
       .eq('church_id', churchId)
       .eq('id', offeringId)
+      .is('payment_id', null)
     if (error) this.supabase.unwrap(null, error)
     return { success: true }
   }
@@ -141,6 +154,7 @@ export class FinanceService {
       .from('campaigns')
       .select('*, offerings(amount)')
       .eq('church_id', churchId)
+      .eq('offerings.status', 'completed')
       .order('created_at', { ascending: false })
     return this.supabase.unwrap(data ?? [], error)
   }
@@ -176,6 +190,7 @@ export class FinanceService {
         `*, church_memberships(users!church_memberships_user_id_fkey(full_name, email)), campaigns(name), offerings(amount)`
       )
       .eq('church_id', churchId)
+      .eq('offerings.status', 'completed')
       .order('created_at', { ascending: false })
     return this.supabase.unwrap(data ?? [], error)
   }
@@ -226,19 +241,28 @@ export class FinanceService {
   // ------------------------------------------------------------------ summary
   async summary(churchId: string, from: string, to: string) {
     const admin = this.supabase.admin
-    const [{ data: offerings }, { data: expenses }] = await Promise.all([
-      admin
-        .from('offerings')
-        .select('amount, type, given_at')
-        .eq('church_id', churchId)
-        .gte('given_at', from)
-        .lte('given_at', to),
-      admin
-        .from('expenses')
-        .select('amount, spent_at, expense_categories(name, color)')
-        .eq('church_id', churchId)
-        .gte('spent_at', from)
-        .lte('spent_at', to),
+    const [offerings, expenses] = await Promise.all([
+      allRows((start, end) =>
+        admin
+          .from('offerings')
+          .select('amount, type, given_at')
+          .eq('church_id', churchId)
+          .eq('status', 'completed')
+          .gte('given_at', from)
+          .lte('given_at', to)
+          .order('id')
+          .range(start, end)
+      ),
+      allRows((start, end) =>
+        admin
+          .from('expenses')
+          .select('amount, spent_at, expense_categories(name, color)')
+          .eq('church_id', churchId)
+          .gte('spent_at', from)
+          .lte('spent_at', to)
+          .order('id')
+          .range(start, end)
+      ),
     ])
 
     const totalIncome = (offerings ?? []).reduce(

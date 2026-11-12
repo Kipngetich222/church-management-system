@@ -2,26 +2,23 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { formatInTimeZone, fromZonedTime } from 'date-fns-tz'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
+import { GIVING_TYPES, givingLabel, type GivingType } from '@/lib/giving'
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select'
 
-const TYPES = [
-  ['tithe', 'Tithe'],
-  ['general', 'General Offering'],
-  ['missions', 'Missions'],
-  ['building_fund', 'Building Fund'],
-  ['welfare', 'Welfare'],
-  ['thanksgiving', 'Thanksgiving'],
-  ['pledge', 'Pledge Payment'],
-  ['other', 'Other'],
-]
+const TYPES = GIVING_TYPES.map((type) => [type, givingLabel(type)])
 
 const METHODS = [
   ['cash', 'Cash'],
@@ -45,7 +42,11 @@ export function OfferingForm({ churchId }: { churchId: string }) {
     campaign_id: '',
     reference: '',
     notes: '',
-    given_at: new Date().toISOString().slice(0, 16),
+    given_at: formatInTimeZone(
+      new Date(),
+      'Africa/Nairobi',
+      "yyyy-MM-dd'T'HH:mm"
+    ),
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -58,7 +59,7 @@ export function OfferingForm({ churchId }: { churchId: string }) {
       .eq('church_id', churchId)
       .then(({ data }) => {
         setMembers(
-          (data ?? []).map((m: any) => ({
+          (data ?? []).map((m) => ({
             id: m.id,
             label: m.users?.full_name ?? m.users?.email ?? 'Unknown',
           }))
@@ -82,12 +83,19 @@ export function OfferingForm({ churchId }: { churchId: string }) {
       church_id: churchId,
       membership_id: form.membership_id || null,
       amount: parseFloat(form.amount),
-      type: form.type as 'tithe' | 'general' | 'missions' | 'building_fund' | 'welfare' | 'thanksgiving' | 'pledge' | 'other',
-      method: form.method as 'cash' | 'mpesa' | 'bank_transfer' | 'cheque' | 'card' | 'online' | 'other',
+      type: form.type as GivingType,
+      method: form.method as
+        | 'cash'
+        | 'mpesa'
+        | 'bank_transfer'
+        | 'cheque'
+        | 'card'
+        | 'online'
+        | 'other',
       campaign_id: form.campaign_id || null,
       reference: form.reference || null,
       notes: form.notes || null,
-      given_at: new Date(form.given_at).toISOString(),
+      given_at: fromZonedTime(form.given_at, 'Africa/Nairobi').toISOString(),
     })
 
     if (err) {
@@ -108,6 +116,7 @@ export function OfferingForm({ churchId }: { churchId: string }) {
               <Label>Amount</Label>
               <Input
                 type="number"
+                min="0.01"
                 step="0.01"
                 value={form.amount}
                 onChange={(e) => setForm({ ...form, amount: e.target.value })}
@@ -117,22 +126,36 @@ export function OfferingForm({ churchId }: { churchId: string }) {
             </div>
             <div className="space-y-2">
               <Label>Type</Label>
-              <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v ?? '' })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={form.type}
+                onValueChange={(v) => setForm({ ...form, type: v ?? '' })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {TYPES.map(([v, l]) => (
-                    <SelectItem key={v} value={v}>{l}</SelectItem>
+                    <SelectItem key={v} value={v}>
+                      {l}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label>Method</Label>
-              <Select value={form.method} onValueChange={(v) => setForm({ ...form, method: v ?? '' })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={form.method}
+                onValueChange={(v) => setForm({ ...form, method: v ?? '' })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {METHODS.map(([v, l]) => (
-                    <SelectItem key={v} value={v}>{l}</SelectItem>
+                    <SelectItem key={v} value={v}>
+                      {l}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -141,12 +164,18 @@ export function OfferingForm({ churchId }: { churchId: string }) {
               <Label>Member (optional)</Label>
               <Select
                 value={form.membership_id}
-                onValueChange={(v) => setForm({ ...form, membership_id: v ?? '' })}
+                onValueChange={(v) =>
+                  setForm({ ...form, membership_id: v ?? '' })
+                }
               >
-                <SelectTrigger><SelectValue placeholder="Anonymous" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Anonymous" />
+                </SelectTrigger>
                 <SelectContent>
                   {members.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -156,21 +185,28 @@ export function OfferingForm({ churchId }: { churchId: string }) {
                 <Label>Campaign (optional)</Label>
                 <Select
                   value={form.campaign_id}
-                  onValueChange={(v) => setForm({ ...form, campaign_id: v ?? '' })}
+                  onValueChange={(v) =>
+                    setForm({ ...form, campaign_id: v ?? '' })
+                  }
                 >
-                  <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
                   <SelectContent>
                     {campaigns.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             )}
             <div className="space-y-2">
-              <Label>Date & time</Label>
+              <Label>Date & time (East Africa Time)</Label>
               <Input
                 type="datetime-local"
+                required
                 value={form.given_at}
                 onChange={(e) => setForm({ ...form, given_at: e.target.value })}
               />
@@ -179,7 +215,9 @@ export function OfferingForm({ churchId }: { churchId: string }) {
               <Label>Reference (optional)</Label>
               <Input
                 value={form.reference}
-                onChange={(e) => setForm({ ...form, reference: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, reference: e.target.value })
+                }
                 placeholder="M-Pesa code, cheque #, etc."
               />
             </div>
@@ -199,7 +237,11 @@ export function OfferingForm({ churchId }: { churchId: string }) {
             <Button type="submit" disabled={loading}>
               {loading ? 'Saving...' : 'Record offering'}
             </Button>
-            <Button type="button" variant="outline" onClick={() => router.back()}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+            >
               Cancel
             </Button>
           </div>
@@ -208,4 +250,3 @@ export function OfferingForm({ churchId }: { churchId: string }) {
     </Card>
   )
 }
-

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { allRows } from '@/lib/supabase/all-rows'
 
 export type OfferingRow = {
   id: string
@@ -11,6 +12,7 @@ export type OfferingRow = {
   reference: string | null
   notes: string | null
   receipt_number: string | null
+  status: string
   given_at: string
   church_memberships?: {
     users: { full_name: string | null; email: string } | null
@@ -40,7 +42,7 @@ export async function listOfferings(
     .select(
       `
       id, church_id, membership_id, amount, currency, type, method,
-      reference, notes, receipt_number, given_at,
+      reference, notes, receipt_number, given_at, status,
       church_memberships(users!church_memberships_user_id_fkey(full_name, email))
     `
     )
@@ -57,6 +59,7 @@ export async function listOfferings(
         | 'general'
         | 'missions'
         | 'building_fund'
+        | 'project_fund'
         | 'welfare'
         | 'thanksgiving'
         | 'pledge'
@@ -105,6 +108,7 @@ export async function listCampaigns(churchId: string) {
     `
     )
     .eq('church_id', churchId)
+    .eq('offerings.status', 'completed')
     .order('created_at', { ascending: false })
   return data ?? []
 }
@@ -132,6 +136,7 @@ export async function listPledges(churchId: string) {
     `
     )
     .eq('church_id', churchId)
+    .eq('offerings.status', 'completed')
     .order('created_at', { ascending: false })
   return data ?? []
 }
@@ -152,19 +157,28 @@ export async function getFinanceSummary(
 ): Promise<FinanceSummary> {
   const supabase = await createClient()
 
-  const [{ data: offerings }, { data: expenses }] = await Promise.all([
-    supabase
-      .from('offerings')
-      .select('amount, type, given_at')
-      .eq('church_id', churchId)
-      .gte('given_at', from)
-      .lte('given_at', to),
-    supabase
-      .from('expenses')
-      .select('amount, spent_at, expense_categories(name, color)')
-      .eq('church_id', churchId)
-      .gte('spent_at', from)
-      .lte('spent_at', to),
+  const [offerings, expenses] = await Promise.all([
+    allRows((start, end) =>
+      supabase
+        .from('offerings')
+        .select('amount, type, given_at')
+        .eq('church_id', churchId)
+        .eq('status', 'completed')
+        .gte('given_at', from)
+        .lte('given_at', to)
+        .order('id')
+        .range(start, end)
+    ),
+    allRows((start, end) =>
+      supabase
+        .from('expenses')
+        .select('amount, spent_at, expense_categories(name, color)')
+        .eq('church_id', churchId)
+        .gte('spent_at', from)
+        .lte('spent_at', to)
+        .order('id')
+        .range(start, end)
+    ),
   ])
 
   const totalIncome = (offerings ?? []).reduce(
@@ -182,7 +196,7 @@ export async function getFinanceSummary(
   })
 
   const catMap = new Map<string, { color: string; total: number }>()
-  expenses?.forEach((e: any) => {
+  expenses?.forEach((e) => {
     const name = e.expense_categories?.name ?? 'Uncategorized'
     const color = e.expense_categories?.color ?? '#94a3b8'
     const prev = catMap.get(name) ?? { color, total: 0 }
@@ -198,8 +212,8 @@ export async function getFinanceSummary(
     m.income += Number(o.amount)
     monthMap.set(k, m)
   })
-  expenses?.forEach((e: any) => {
-    const k = monthKey(e.spent_at)
+  expenses?.forEach((e) => {
+    const k = monthKey(e.spent_at ?? '')
     const m = monthMap.get(k) ?? { income: 0, expense: 0 }
     m.expense += Number(e.amount)
     monthMap.set(k, m)

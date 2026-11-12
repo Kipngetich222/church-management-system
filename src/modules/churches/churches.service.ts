@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { SupabaseService } from '../../supabase/supabase.service'
+import { allRows } from '../../common/utils/all-rows'
 import type { AuthUser } from '../../common/interfaces/auth-user.interface'
 import { uniqueSlug } from '../../common/utils/slug'
 import { CreateChurchDto } from './create-church.dto'
@@ -129,11 +130,16 @@ export class ChurchesService {
         .eq('church_id', churchId),
     ])
 
-    const { data: offerings } = await admin
-      .from('offerings')
-      .select('amount')
-      .eq('church_id', churchId)
-      .gte('given_at', startOfMonth.toISOString())
+    const offerings = await allRows((start, end) =>
+      admin
+        .from('offerings')
+        .select('amount')
+        .eq('church_id', churchId)
+        .eq('status', 'completed')
+        .gte('given_at', startOfMonth.toISOString())
+        .order('id')
+        .range(start, end)
+    )
 
     const monthTotal = (offerings ?? []).reduce(
       (sum, row) => sum + Number(row.amount),
