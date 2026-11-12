@@ -73,15 +73,26 @@ export default async function PurchaseSmsPage({
           </p>
           {config.environment === 'sandbox' && (
             <p className="mt-3 text-sm font-medium">
-              Test mode: these are sandbox purchases and cannot fund live SMS.
+              Test mode: payments use the Daraja simulator, without a real phone
+              prompt. Test credits cannot fund live SMS.
+            </p>
+          )}
+          {config.pricingSource === 'africas-talking-basic' && (
+            <p className="mt-3 text-sm text-muted-foreground">
+              Kenya SMS pricing follows Africa’s Talking’s Basic rate: KES 0.80
+              per part plus 16% VAT (KES 0.928). Bundle totals include VAT and
+              are rounded up to a whole shilling for M-Pesa.
             </p>
           )}
         </CardContent>
       </Card>
       <SmsPurchaseForm
+        key={`${churchId}:${config.environment}`}
         churchId={churchId}
         enabled={config.enabled}
-        unitPrice={config.unitPrice}
+        bundles={config.bundles}
+        issues={config.issues}
+        environment={config.environment}
         initial={open}
       />
       <SmsOverview churchId={churchId} role={role} />

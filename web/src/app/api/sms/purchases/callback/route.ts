@@ -7,6 +7,8 @@ import {
   type SmsPurchase,
 } from '@/lib/services/sms-purchases.service'
 
+export const maxDuration = 60
+
 export async function POST(req: Request) {
   const url = new URL(req.url),
     id = url.searchParams.get('id') || ''

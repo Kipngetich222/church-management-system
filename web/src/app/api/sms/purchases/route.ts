@@ -5,11 +5,14 @@ import {
 } from '@/lib/services/communication-api'
 import { purchaseSms } from '@/lib/services/sms-purchases.service'
 
+export const maxDuration = 60
+
 const schema = z.object({
   churchId: z.string().uuid(),
   requestId: z.string().uuid(),
   credits: z.number().int().positive(),
   phone: z.string().min(8).max(30),
+  quotedAmountKes: z.number().int().positive().optional(),
 })
 export async function POST(req: Request) {
   try {

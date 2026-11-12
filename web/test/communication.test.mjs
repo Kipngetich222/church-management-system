@@ -22,6 +22,9 @@ const defaultEnv = {
   MPESA_CONSUMER_SECRET: 'test',
   MPESA_SHORTCODE: '174379',
   MPESA_PASSKEY: 'test',
+  MPESA_TRANSACTION_TYPE: 'CustomerPayBillOnline',
+  MPESA_PARTY_B: '',
+  NEXT_PUBLIC_DEFAULT_PHONE_COUNTRY: 'KE',
   SMS_CREDIT_PRICE_KES: '1.5',
   SMS_PAYMENT_CALLBACK_SECRET: 'a'.repeat(64),
   NEXT_PUBLIC_APP_URL: 'https://church.example.test',
@@ -35,7 +38,20 @@ function fixture(
     signedIn = true,
     active = true,
     stored = null,
-    providerResult = { ResponseCode: '0', ResultCode: '0' },
+    providerResult = {
+      ResponseCode: '0',
+      ResultCode: '0',
+      CheckoutRequestID: 'checkout-test',
+    },
+    initiationResult = {
+      ResponseCode: '0',
+      CheckoutRequestID: 'checkout-test',
+      MerchantRequestID: 'merchant-test',
+    },
+    initiationStatus = 200,
+    oauthStatus = 200,
+    saveCheckoutFailure = false,
+    confirmedBeforeSaveResponse = false,
     sendFailure = false,
     campaignActor = actorId,
   } = {}
@@ -77,6 +93,18 @@ function fixture(
           )
         if (parsed.pathname.endsWith('/sms_purchases')) {
           if (options.method === 'POST') {
+            if (
+              purchase &&
+              (purchase.request_id === body.request_id ||
+                (purchase.environment === body.environment &&
+                  ['initiating', 'pending', 'review'].includes(
+                    purchase.status
+                  )))
+            )
+              return Response.json(
+                { code: '23505', message: 'Duplicate purchase' },
+                { status: 409 }
+              )
             purchase = {
               ...body,
               id: purchaseId,
@@ -89,13 +117,37 @@ function fixture(
             return respond([purchase])
           }
           if (options.method === 'PATCH') {
+            const statusFilter = parsed.searchParams.get('status')
+            if (
+              statusFilter?.startsWith('eq.') &&
+              statusFilter !== `eq.${purchase.status}`
+            )
+              return respond([])
+            if (confirmedBeforeSaveResponse && body.status === 'pending') {
+              Object.assign(purchase, body, { status: 'paid' })
+              return Response.json(
+                { message: 'Save response interrupted after confirmation' },
+                { status: 503 }
+              )
+            }
+            if (saveCheckoutFailure && body.status === 'pending')
+              return Response.json(
+                { message: 'Temporary database outage' },
+                { status: 503 }
+              )
             Object.assign(purchase, body)
             return respond([purchase])
           }
           const churchFilter = parsed.searchParams.get('church_id')
+          const requestFilter = parsed.searchParams.get('request_id')
+          const environmentFilter = parsed.searchParams.get('environment')
           return respond(
             purchase &&
-              (!churchFilter || churchFilter === `eq.${purchase.church_id}`)
+              (!churchFilter || churchFilter === `eq.${purchase.church_id}`) &&
+              (!requestFilter ||
+                requestFilter === `eq.${purchase.request_id}`) &&
+              (!environmentFilter ||
+                environmentFilter === `eq.${purchase.environment}`)
               ? [purchase]
               : []
           )
@@ -130,16 +182,18 @@ function fixture(
     providerCalls.push({
       url: String(url),
       body: options.body ? JSON.parse(options.body) : null,
+      headers: options.headers,
     })
     if (String(url).includes('/oauth/'))
-      return Response.json({ access_token: 'provider-access-token' })
+      return Response.json(
+        oauthStatus === 200
+          ? { access_token: 'provider-access-token' }
+          : { errorCode: '401' },
+        { status: oauthStatus }
+      )
     if (String(url).includes('/processrequest')) {
       if (sendFailure) throw new Error('network timeout')
-      return Response.json({
-        ResponseCode: '0',
-        CheckoutRequestID: 'checkout-test',
-        MerchantRequestID: 'merchant-test',
-      })
+      return Response.json(initiationResult, { status: initiationStatus })
     }
     if (String(url).includes('/query')) return Response.json(providerResult)
     throw new Error(`Unexpected provider URL ${url}`)
@@ -203,8 +257,8 @@ function fixture(
         esModuleInterop: true,
       },
     }).outputText
-    const module = { exports: {} }
-    loaded.set(filename, module)
+    const testModule = { exports: {} }
+    loaded.set(filename, testModule)
     const localRequire = (name) => {
       if (name in mocks) return mocks[name]
       const resolved = name.startsWith('.')
@@ -221,10 +275,10 @@ function fixture(
     }
     new Function('require', 'module', 'exports', compiled)(
       localRequire,
-      module,
-      module.exports
+      testModule,
+      testModule.exports
     )
-    return module.exports
+    return testModule.exports
   }
   return {
     load,
@@ -287,13 +341,11 @@ test('Vercel Hobby deployment uses daily cron jobs and Fluid compute', () => {
 
 test('the daily scheduled-message job still verifies payments and dispatches due campaigns', async (t) => {
   const f = fixture(t, { stored: pending })
-  const response = await f
-    .load('app/api/cron/scheduled-messages/route')
-    .GET(
-      new Request('https://church.example.test/api/cron/scheduled-messages', {
-        headers: { Authorization: 'Bearer cron-test' },
-      })
-    )
+  const response = await f.load('app/api/cron/scheduled-messages/route').GET(
+    new Request('https://church.example.test/api/cron/scheduled-messages', {
+      headers: { Authorization: 'Bearer cron-test' },
+    })
+  )
   assert.equal(response.status, 200)
   assert.equal(f.confirmations, 1)
   assert.equal(f.scheduledCalls, 1)
@@ -334,6 +386,350 @@ test('repeated purchase requests do not issue another payment prompt', async (t)
       .length,
     1
   )
+})
+
+test('default prices match Africa’s Talking Kenya Basic including VAT and M-Pesa rounding', async (t) => {
+  for (const [credits, amount] of [
+    [100, 93],
+    [500, 464],
+    [1000, 928],
+    [5000, 4640],
+  ])
+    await t.test(`${credits} credits`, async (t) => {
+      const f = fixture(t)
+      delete process.env.SMS_CREDIT_PRICE_KES
+      const config = f
+        .load('lib/services/sms-purchases.service')
+        .smsPurchaseConfiguration()
+      assert.equal(config.enabled, true)
+      assert.equal(config.unitPrice, 0.928)
+      assert.equal(
+        config.bundles.find((b) => b.credits === credits).amountKes,
+        amount
+      )
+      const response = await f
+        .load('app/api/sms/purchases/route')
+        .POST(post({ ...buy, credits, quotedAmountKes: amount }))
+      assert.equal(response.status, 200)
+      assert.equal((await response.json()).amount_kes, amount)
+      const request = f.providerCalls.find((call) =>
+        call.url.includes('/processrequest')
+      )
+      assert.equal(request.body.Amount, amount)
+      assert.equal(
+        request.headers.Authorization,
+        'Bearer provider-access-token'
+      )
+      assert(request.body.AccountReference.length <= 12)
+      assert(request.body.TransactionDesc.length <= 13)
+    })
+})
+
+test('stale bundle quotes are rejected before requesting payment', async (t) => {
+  const f = fixture(t)
+  const response = await f
+    .load('app/api/sms/purchases/route')
+    .POST(post({ ...buy, quotedAmountKes: 93 }))
+  assert.equal(response.status, 409)
+  assert.match((await response.json()).error, /price has changed/)
+  assert.equal(f.providerCalls.length, 0)
+  assert.equal(f.purchase, null)
+})
+
+test('invalid prices, credentials and callback addresses disable payment with actionable reasons', async (t) => {
+  for (const [key, value] of [
+    ['SMS_CREDIT_PRICE_KES', 'NaN'],
+    ['SMS_CREDIT_PRICE_KES', '0'],
+    ['SMS_CREDIT_PRICE_KES', '-1'],
+    ['SMS_CREDIT_PRICE_KES', '1000000'],
+    ['MPESA_CONSUMER_KEY', 'your-consumer-key'],
+    ['MPESA_SHORTCODE', 'bad'],
+    ['AFRICAS_TALKING_API_KEY', 'your_api_key'],
+    ['SMS_PAYMENT_CALLBACK_SECRET', 'short'],
+    ['MPESA_ENV', 'prod'],
+    ['AFRICAS_TALKING_ENV', 'test'],
+    ['AFRICAS_TALKING_USERNAME', 'live-username'],
+    ['MPESA_TRANSACTION_TYPE', 'wrong'],
+    ['MPESA_PARTY_B', 'invalid'],
+    ['NEXT_PUBLIC_APP_URL', 'http://church.example.test'],
+    ['NEXT_PUBLIC_APP_URL', 'https://localhost'],
+    ['NEXT_PUBLIC_APP_URL', 'https://127.0.0.1'],
+    ['NEXT_PUBLIC_APP_URL', 'https://church.example.test?wrong=true'],
+  ])
+    await t.test(`${key}=${value}`, async (t) => {
+      const f = fixture(t)
+      process.env[key] = value
+      const config = f
+        .load('lib/services/sms-purchases.service')
+        .smsPurchaseConfiguration()
+      assert.equal(config.enabled, false)
+      assert(config.issues.length > 0)
+      assert.equal(
+        (await f.load('app/api/sms/purchases/route').POST(post(buy))).status,
+        503
+      )
+      assert.equal(f.providerCalls.length, 0)
+    })
+})
+
+test('valid Kenyan phone formats remain correct with a different app default country', async (t) => {
+  for (const [phone, normalized] of [
+    ['0712 345 678', '254712345678'],
+    ['+254712345678', '254712345678'],
+    ['254712345678', '254712345678'],
+    ['0112-345-678', '254112345678'],
+  ])
+    await t.test(phone, async (t) => {
+      const f = fixture(t)
+      process.env.NEXT_PUBLIC_DEFAULT_PHONE_COUNTRY = 'UG'
+      const response = await f
+        .load('app/api/sms/purchases/route')
+        .POST(post({ ...buy, phone }))
+      assert.equal(response.status, 200)
+      assert.equal(
+        f.providerCalls.find((call) => call.url.includes('/processrequest'))
+          .body.PhoneNumber,
+        normalized
+      )
+    })
+})
+
+test('invalid and overlong phone numbers never send a prompt to a truncated number', async (t) => {
+  for (const phone of [
+    '07123456789',
+    '+2547123456789',
+    '+256772123456',
+    '07123456',
+    'phone0712345678',
+    '0201234567',
+  ])
+    await t.test(phone, async (t) => {
+      const f = fixture(t)
+      assert.equal(
+        (
+          await f
+            .load('app/api/sms/purchases/route')
+            .POST(post({ ...buy, phone }))
+        ).status,
+        400
+      )
+      assert.equal(f.providerCalls.length, 0)
+      assert.equal(f.purchase, null)
+    })
+})
+
+test('buy-goods payments can use a receiving till distinct from the business shortcode', async (t) => {
+  const f = fixture(t)
+  process.env.MPESA_TRANSACTION_TYPE = 'CustomerBuyGoodsOnline'
+  process.env.MPESA_PARTY_B = '512345'
+  await f.load('app/api/sms/purchases/route').POST(post(buy))
+  const request = f.providerCalls.find((call) =>
+    call.url.includes('/processrequest')
+  ).body
+  assert.equal(request.TransactionType, 'CustomerBuyGoodsOnline')
+  assert.equal(request.BusinessShortCode, '174379')
+  assert.equal(request.PartyB, '512345')
+})
+
+test('live configuration targets the production M-Pesa endpoint', async (t) => {
+  const f = fixture(t)
+  process.env.MPESA_ENV = 'production'
+  process.env.AFRICAS_TALKING_ENV = 'production'
+  process.env.AFRICAS_TALKING_USERNAME = 'church-live'
+  await f.load('app/api/sms/purchases/route').POST(post(buy))
+  assert.equal(f.purchase.environment, 'production')
+  assert(
+    f.providerCalls.every((call) =>
+      call.url.startsWith('https://api.safaricom.co.ke/')
+    )
+  )
+})
+
+test('explicit STK rejection allows another purchase while ambiguous responses remain held', async (t) => {
+  for (const [initiationStatus, initiationResult, expected] of [
+    [400, { errorCode: '400.002.02' }, 'failed'],
+    [401, { errorCode: '401.002.01' }, 'failed'],
+    [200, { ResponseCode: '1' }, 'failed'],
+    [200, { errorCode: '400.002.02' }, 'failed'],
+    [500, { errorCode: '500.001.1001' }, 'review'],
+    [200, { ResponseCode: '0' }, 'review'],
+    [200, { ResponseCode: '0', CheckoutRequestID: '' }, 'review'],
+    [200, {}, 'review'],
+  ])
+    await t.test(
+      `${initiationStatus} ${JSON.stringify(initiationResult)}`,
+      async (t) => {
+        const f = fixture(t, { initiationStatus, initiationResult })
+        const response = await f
+          .load('app/api/sms/purchases/route')
+          .POST(post(buy))
+        assert.equal(response.status, 200)
+        assert.equal((await response.json()).status, expected)
+        assert.equal(f.confirmations, 0)
+      }
+    )
+})
+
+test('credential errors do not leave a purchase blocking subsequent attempts', async (t) => {
+  const f = fixture(t, { oauthStatus: 401 })
+  assert.equal(
+    (await f.load('app/api/sms/purchases/route').POST(post(buy))).status,
+    503
+  )
+  assert.equal(f.purchase, null)
+  assert.equal(f.providerCalls.length, 1)
+})
+
+test('a new request after an explicit rejection sends one new prompt', async (t) => {
+  const f = fixture(t, { initiationResult: { ResponseCode: '1' } })
+  const route = f.load('app/api/sms/purchases/route')
+  assert.equal((await (await route.POST(post(buy))).json()).status, 'failed')
+  assert.equal(
+    (await (await route.POST(post({ ...buy, requestId: id(998) }))).json())
+      .status,
+    'failed'
+  )
+  assert.equal(
+    f.providerCalls.filter((call) => call.url.includes('/processrequest'))
+      .length,
+    2
+  )
+})
+
+test('another buyer gets the open purchase without another prompt', async (t) => {
+  const f = fixture(t)
+  const route = f.load('app/api/sms/purchases/route')
+  await route.POST(post(buy))
+  const response = await route.POST(
+    post({ ...buy, requestId: id(998), credits: 500, phone: '0712345679' })
+  )
+  assert.equal(response.status, 200)
+  const result = await response.json()
+  assert.equal(result.status, 'pending')
+  assert.equal(result.credits, buy.credits)
+  assert.equal(result.phone, '254712345678')
+  assert.equal(
+    f.providerCalls.filter((call) => call.url.includes('/processrequest'))
+      .length,
+    1
+  )
+})
+
+test('a checkout survives a failed initial database save and can still be reconciled', async (t) => {
+  const f = fixture(t, { saveCheckoutFailure: true })
+  const response = await f.load('app/api/sms/purchases/route').POST(post(buy))
+  const purchase = await response.json()
+  assert.equal(purchase.status, 'review')
+  assert.equal(purchase.checkout_id, 'checkout-test')
+  assert.equal(
+    (
+      await f
+        .load('lib/services/sms-purchases.service')
+        .verifySmsPurchase(purchase)
+    ).status,
+    'paid'
+  )
+  assert.equal(f.confirmations, 1)
+})
+
+test('a lost save response never regresses a concurrently confirmed purchase', async (t) => {
+  const f = fixture(t, { confirmedBeforeSaveResponse: true })
+  const response = await f.load('app/api/sms/purchases/route').POST(post(buy))
+  assert.equal(response.status, 200)
+  assert.equal((await response.json()).status, 'paid')
+  assert.equal(f.purchase.status, 'paid')
+  assert.equal(f.purchase.checkout_id, 'checkout-test')
+})
+
+test('incomplete or mismatched query responses cannot credit or fail a purchase', async (t) => {
+  for (const providerResult of [
+    { ResponseCode: '0', ResultCode: '0' },
+    {
+      ResponseCode: '0',
+      ResultCode: '0',
+      CheckoutRequestID: 'another-checkout',
+    },
+    {
+      ResponseCode: '0',
+      ResultCode: '1032',
+      CheckoutRequestID: 'another-checkout',
+    },
+  ])
+    await t.test(JSON.stringify(providerResult), async (t) => {
+      const f = fixture(t, { stored: pending, providerResult })
+      await f
+        .load('lib/services/sms-purchases.service')
+        .verifySmsPurchase(f.purchase)
+      assert.equal(f.purchase.status, 'pending')
+      assert.equal(f.confirmations, 0)
+    })
+})
+
+test('issued payments remain verifiable when new purchases are disabled by pricing or SMS configuration', async (t) => {
+  const f = fixture(t, { stored: pending })
+  process.env.SMS_CREDIT_PRICE_KES = 'invalid'
+  delete process.env.AFRICAS_TALKING_API_KEY
+  const service = f.load('lib/services/sms-purchases.service')
+  assert.equal(service.smsPurchaseConfiguration().enabled, false)
+  assert.deepEqual(await service.reconcileSmsPurchases(), {
+    checked: 1,
+    confirmed: 1,
+  })
+})
+
+test('a purchase from another environment cannot be reused or confirmed', async (t) => {
+  const f = fixture(t, {
+    stored: {
+      ...pending,
+      environment: 'production',
+      request_id: buy.requestId,
+    },
+  })
+  assert.equal(
+    (await f.load('app/api/sms/purchases/route').POST(post(buy))).status,
+    409
+  )
+  await assert.rejects(
+    f.load('lib/services/sms-purchases.service').verifySmsPurchase(f.purchase),
+    /different SMS environment/
+  )
+  assert.equal(f.providerCalls.length, 0)
+})
+
+test('a successful payment callback verifies the checkout and records the matching receipt', async (t) => {
+  const f = fixture(t)
+  await f.load('app/api/sms/purchases/route').POST(post(buy))
+  const callbackUrl = f.providerCalls.find((call) =>
+    call.url.includes('/processrequest')
+  ).body.CallBackURL
+  const response = await f.load('app/api/sms/purchases/callback/route').POST(
+    post(
+      {
+        Body: {
+          stkCallback: {
+            CheckoutRequestID: 'checkout-test',
+            ResultCode: 0,
+            CallbackMetadata: {
+              Item: [
+                { Name: 'Amount', Value: 150 },
+                { Name: 'PhoneNumber', Value: 254712345678 },
+                { Name: 'MpesaReceiptNumber', Value: 'TEST-RECEIPT' },
+              ],
+            },
+          },
+        },
+      },
+      callbackUrl
+    )
+  )
+  assert.equal(response.status, 200)
+  assert.equal(f.purchase.status, 'paid')
+  assert.equal(f.purchase.receipt, 'TEST-RECEIPT')
+  assert.equal(f.confirmations, 1)
+  await f
+    .load('lib/services/sms-purchases.service')
+    .verifySmsPurchase(f.purchase)
+  assert.equal(f.confirmations, 1)
 })
 test('only active super admins can buy credits', async (t) => {
   for (const options of [
@@ -402,7 +798,11 @@ test('verification credits only an authenticated successful STK query', async (t
 })
 test('failed and pending provider responses never credit the wallet', async (t) => {
   for (const providerResult of [
-    { ResponseCode: '0', ResultCode: '1032' },
+    {
+      ResponseCode: '0',
+      ResultCode: '1032',
+      CheckoutRequestID: 'checkout-test',
+    },
     { errorCode: '500.001.1001' },
   ])
     await t.test(JSON.stringify(providerResult), async (t) => {

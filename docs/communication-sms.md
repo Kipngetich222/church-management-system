@@ -17,11 +17,27 @@ small group, category, custom list or leaders.
 2. Configure the platform's Safaricom Daraja STK Push account on the **web host**:
    `MPESA_CONSUMER_KEY`, `MPESA_CONSUMER_SECRET`, `MPESA_SHORTCODE`, `MPESA_PASSKEY`,
    and `MPESA_ENV`. `MPESA_TRANSACTION_TYPE` defaults to `CustomerPayBillOnline`;
-   set `CustomerBuyGoodsOnline` if the provisioned shortcode requires it.
-3. Set `SMS_CREDIT_PRICE_KES` to the price charged per SMS part. Bundles contain
-   100, 500, 1,000 or 5,000 credits; the total KES price is rounded up to a whole
-   shilling and calculated on the server. Choose a price that covers provider
-   rates for the destinations the platform supports, taxes and payment fees.
+   set `CustomerBuyGoodsOnline` if the provisioned shortcode requires it. Set
+   `MPESA_PARTY_B` to the receiving till/paybill when it differs from the business
+   shortcode used for the STK password; otherwise leave it blank.
+3. Leave `SMS_CREDIT_PRICE_KES` unset to use **Africa's Talking Kenya Basic**:
+   KES 0.80 per SMS part plus 16% VAT, or **KES 0.928**. The server calculates
+   bundle totals and rounds up to whole shillings for M-Pesa:
+
+   | SMS credits | Payment (KES, including VAT) |
+   | ----------- | ---------------------------: |
+   | 100         |                           93 |
+   | 500         |                          464 |
+   | 1,000       |                          928 |
+   | 5,000       |                        4,640 |
+
+   `SMS_CREDIT_PRICE_KES` remains an optional **final VAT-inclusive** override
+   for an agreed provider rate, other destinations or a platform margin. No
+   payment-fee margin is included in the default. Existing overrides must be
+   cleared or set to `0.928` to adopt these prices. Existing purchases keep
+   their original amounts. The browser displays server quotes; a stale quote
+   is rejected before sending a payment prompt.
+
 4. Set `NEXT_PUBLIC_APP_URL` to the canonical **HTTPS** web URL. Set independent
    random secrets of at least 32 bytes for `SMS_PAYMENT_CALLBACK_SECRET`,
    `SMS_DELIVERY_CALLBACK_SECRET` and `CRON_SECRET`. These stay server-side.
@@ -35,8 +51,14 @@ small group, category, custom list or leaders.
    operator replenishes that provider balance through its supported funding
    process and monitors it. No church administrator performs this step.
 
-Purchasing is disabled until configuration is complete. SMS and M-Pesa must use
-the same environment. Sandbox wallets, purchases and campaigns are separate
+Purchasing is disabled until configuration is complete; the purchase page lists
+missing or placeholder credentials, invalid prices and callback URL problems.
+SMS and M-Pesa must use the same environment. **Daraja sandbox payments are
+simulated and do not provide a real handset STK prompt.** For a real prompt,
+configure production Daraja credentials, the production shortcode/passkey,
+`MPESA_ENV=production`, `AFRICAS_TALKING_ENV=production`, the live SMS username
+and API key, and a public HTTPS app URL reachable by Safaricom. The sandbox SMS
+username must be `sandbox`. Sandbox wallets, purchases and campaigns are separate
 from production; test credit never becomes live credit. Use a separate test
 Supabase project as well when performing payment and SMS acceptance tests.
 
@@ -46,7 +68,7 @@ Supabase project as well when performing payment and SMS acceptance tests.
 
 Africa's Talking's [Bulk SMS Kenya article](https://help.africastalking.com/en/articles/12381163-bulk-sms-kenya),
 published 23 September 2025, links its 2025 Kenya price sheet. Checked on
-10 November 2026, that sheet lists the following **VAT-exclusive** rates per
+12 November 2026, that sheet lists the following **VAT-exclusive** rates per
 SMS part for domestic traffic:
 
 | Provider plan (listed KES band) | Safaricom | Airtel / other Kenyan networks |
@@ -57,10 +79,11 @@ SMS part for domestic traffic:
 | Max (400,000+)                  |      0.40 |                           0.60 |
 
 The sheet says 16% VAT is additional. At Basic, 1,000 single-part messages cost
-KES 928 including VAT. Sender-ID registration is a separate charge. Confirm
-your applicable plan and rates with the provider before setting the platform's
-selling price; the reference rates are not automatically applied to church
-purchases. `SMS_CREDIT_PRICE_KES` remains the operator's explicit price choice.
+KES 928 including VAT. Sender-ID registration is a separate charge. The default
+bundle price applies the Basic rate to all four bundles. A church's bundle size
+does not establish the shared platform account's provider plan, so larger
+bundles do not automatically receive Plus/Premium/Max discounts. Confirm the
+platform account's applicable plan and network mix before setting an override.
 
 ### Deployment steps
 
@@ -116,7 +139,10 @@ does not guarantee handset delivery. Delivery reports update the recipient
 history; a later delivery failure does not refund an already billed submission.
 
 Payment callbacks alone cannot mint credit. The server verifies the issued
-checkout with an authenticated Safaricom STK Query and credits it exactly once.
+checkout with an authenticated Safaricom STK Query, checks the echoed checkout
+ID, and credits it exactly once. Verification remains available if new purchases
+are disabled by a later pricing or SMS credential change. A known checkout ID
+is retained for reconciliation if its initial database save fails.
 The browser cannot supply the purchase price, edit credit balances, mark a
 payment successful or directly modify campaigns. Purchase and message records
 retain the original sender's name after their account is deleted.
@@ -129,6 +155,13 @@ stored checkout ID, confirm the payment outcome with Safaricom before repairing
 the purchase's checkout ID or marking it failed. Keep the supporting provider
 reference and reason in the operational audit. The application deliberately
 does not guess or automatically resubmit a potentially completed operation.
+
+Explicit Daraja rejections mark the purchase failed and permit a new attempt;
+transport failures and incomplete success responses remain under review.
+Cancellation and unreachable/expired phone prompts are shown after STK Query
+confirms failure. Buyers can check payment status manually; open purchases
+also refresh every ten seconds while the page is visible. Payment routes allow
+60 seconds for OAuth, STK and database work.
 
 ## Verification
 
@@ -158,7 +191,8 @@ available, then removes the temporary copy. It does not install packages or
 modify either dependency installation.
 
 Before enabling production, perform one real low-value purchase and send with
-the configured accounts: approve an STK prompt, verify credit appears once,
+the configured accounts: select 100 credits (KES 93 at the default rate), enter
+the payer's Kenyan number, approve the phone's STK prompt, verify credit appears once,
 send as a department admin, inspect the recipient history and usage balance,
 then edit and dispatch a scheduled message. Automated tests use mocked payment
 and SMS transports and cannot validate live credentials, provider funding,
