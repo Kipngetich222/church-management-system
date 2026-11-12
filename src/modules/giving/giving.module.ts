@@ -1,10 +1,10 @@
-import { Module } from "@nestjs/common";
-import { GivingController } from "./giving.controller";
-import { GivingService } from "./giving.service";
-import { MpesaService } from "./mpesa.service";
+import { Module } from '@nestjs/common'
+import { GivingController } from './giving.controller'
+import { GivingService } from './giving.service'
 
 @Module({
   controllers: [GivingController],
-  providers: [GivingService, MpesaService],
+  providers: [GivingService],
+  exports: [GivingService],
 })
 export class GivingModule {}

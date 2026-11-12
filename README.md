@@ -239,6 +239,8 @@ member of that church, and admin-only routes require the `super_admin` or `dept_
 | POST   | `/giving/mpesa`                                     | auth   | Initiate an M-Pesa STK push |
 | POST   | `/giving/mpesa/callback`                            | public | M-Pesa payment callback     |
 
+Giving setup, payment status, full history exports and receipts are described in [the giving deployment guide](docs/giving.md). Apply migrations **0045** and **0046** before deploying the updated pages. Super admins configure each church's destination at `/admin/settings/giving`; Daraja supports paybill/till STK. Pochi and direct mobile numbers can be saved, but require a compatible provider integration before STK can be enabled.
+
 ### Prayer, communication & engagement
 
 | Method | Path                                                          | Access      | Description                              |

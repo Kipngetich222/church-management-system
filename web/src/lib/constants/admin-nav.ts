@@ -157,6 +157,13 @@ export const ADMIN_NAV: NavItem[] = [
     section: 'System',
   },
   {
+    label: 'Giving settings',
+    href: '/admin/settings/giving',
+    icon: CreditCard,
+    roles: ['super_admin'],
+    section: 'System',
+  },
+  {
     label: 'Leadership',
     href: '/admin/settings/leadership',
     icon: Crown,

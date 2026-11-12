@@ -4,7 +4,7 @@ import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto'
 
 // Only the platform-owned Auth/Storage scaffolding is supplied here. All app
 // tables, permissions, constraints and triggers come from the real migrations.
-export async function createTestDatabase() {
+export async function createTestDatabase({ beforeMigration } = {}) {
   const db = new PGlite({ extensions: { pgcrypto } })
   try {
     await db.exec(`
@@ -43,6 +43,7 @@ export async function createTestDatabase() {
       .filter((name) => name.endsWith('.sql'))
       .sort()) {
       try {
+        if (beforeMigration) await beforeMigration(db, filename)
         const sql = await readFile(new URL(filename, directory), 'utf8')
         await db.exec(sql.replace(/^\uFEFF/, ''))
       } catch (error) {
