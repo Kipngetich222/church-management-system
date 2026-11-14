@@ -96,6 +96,8 @@ export function ReceiptDocument({
       }),
     ],
     ['Giving type', givingLabel(offering.type)],
+    ...(details.campaign_name ? [['Campaign', details.campaign_name]] : []),
+    ...(details.pledge_id ? [['Pledge', details.pledge_id]] : []),
     [
       'Payment method',
       offering.method === 'mpesa'

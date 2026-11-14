@@ -18,13 +18,11 @@ export class FinanceGuard implements CanActivate {
     const member = request.membership
     if (!member || member.status !== 'active')
       throw new ForbiddenException('An active church membership is required.')
-    if (
-      ['myGiving', 'listCampaigns', 'listCategories'].includes(
-        context.getHandler().name
-      )
-    )
+    if (['myGiving', 'listCampaigns'].includes(context.getHandler().name))
       return true
-    const required = request.method === 'GET' ? 'finance:read' : 'finance:write'
+    const required = ['GET', 'HEAD'].includes(request.method)
+      ? 'finance:read'
+      : 'finance:write'
     const { data, error } = await this.supabase.admin
       .from('role_permissions')
       .select('permissions')

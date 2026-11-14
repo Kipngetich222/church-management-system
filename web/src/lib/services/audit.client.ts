@@ -1,16 +1,19 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
+import type { Json } from '@/types/database'
 
 export async function logAuditClient(params: {
   churchId: string
   action: string
   entityType: string
   entityId?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, Json | undefined>
 }) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return
 
   await supabase.from('audit_logs').insert({

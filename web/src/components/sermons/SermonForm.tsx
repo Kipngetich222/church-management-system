@@ -10,13 +10,14 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { extractYoutubeId } from '@/lib/utils/youtube'
+import type { Tables } from '@/types/database'
 
 export function SermonForm({
   churchId,
   existing,
 }: {
   churchId: string
-  existing?: any
+  existing?: Tables<'sermons'>
 }) {
   const router = useRouter()
   const [form, setForm] = useState({

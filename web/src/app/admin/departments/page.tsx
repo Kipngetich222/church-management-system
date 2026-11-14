@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
-import { Plus, Users } from 'lucide-react'
+import { Users } from 'lucide-react'
 
 export default async function DepartmentsPage() {
   const { churchId, role } = await getActiveChurch()
@@ -34,7 +34,7 @@ export default async function DepartmentsPage() {
       .eq('is_leader', true)
 
     const allowed = new Set((leads ?? []).map((l) => l.department_id))
-    departments = departments.filter((d: any) => allowed.has(d.id))
+    departments = departments.filter((d) => allowed.has(d.id))
   }
 
   return (
@@ -43,11 +43,11 @@ export default async function DepartmentsPage() {
         <div className="space-y-6">
       <h1 className="text-2xl font-bold">Departments</h1>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {departments.map((d: any) => (
+        {departments.map((d) => (
           <Link key={d.id} href={`/admin/departments/${d.id}`}>
             <Card>
               <CardContent className="pt-6">
-                <div className="h-2 w-12 rounded-full mb-2" style={{ backgroundColor: d.color }} />
+                <div className="h-2 w-12 rounded-full mb-2" style={{ backgroundColor: d.color ?? undefined }} />
                 <div className="font-semibold">{d.name}</div>
                 <p className="text-sm text-muted-foreground">{d.department_members?.length ?? 0} members</p>
               </CardContent>

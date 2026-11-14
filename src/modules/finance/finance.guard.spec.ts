@@ -33,4 +33,35 @@ describe('Finance API permissions', () => {
       await expect(guard.canActivate(context as any)).resolves.toBe(true)
     else await expect(guard.canActivate(context as any)).rejects.toThrow()
   })
+
+  it.each([
+    ['GET', true],
+    ['HEAD', true],
+    ['POST', false],
+    ['PATCH', false],
+    ['DELETE', false],
+  ])('enforces read-only finance access for %s', async (method, allowed) => {
+    const f = givingFixture()
+    f.tables.role_permissions.find(
+      (row) => row.role === 'dept_admin'
+    )!.permissions = ['finance:read']
+    const guard = new FinanceGuard({ admin: f.db } as any)
+    const context = {
+      switchToHttp: () => ({
+        getRequest: () => ({
+          method,
+          membership: {
+            id: givingId(1006),
+            churchId: givingChurch,
+            role: 'dept_admin',
+            status: 'active',
+          },
+        }),
+      }),
+      getHandler: () => ({ name: 'export' }),
+    }
+    if (allowed)
+      await expect(guard.canActivate(context as any)).resolves.toBe(true)
+    else await expect(guard.canActivate(context as any)).rejects.toThrow()
+  })
 })

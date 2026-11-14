@@ -295,7 +295,7 @@ describe('Giving ledger, receipts and tenant privacy against the complete databa
         'INSERT INTO public.offerings(church_id, amount) VALUES ($1,100)',
         [church]
       ),
-      /row-level security/i
+      /permission denied/i
     )
   })
   it('does not allow authenticated callers to forge or edit an online receipt', async () => {
@@ -307,14 +307,16 @@ describe('Giving ledger, receipts and tenant privacy against the complete databa
         'INSERT INTO public.offerings(church_id,amount,payment_id) VALUES ($1,999,$2)',
         [church, payment.id]
       ),
-      /row-level security/i
+      /permission denied/i
     )
-    const changed = await queryAs(
-      admin,
-      'UPDATE public.offerings SET amount=1 WHERE id=$1 RETURNING id',
-      [confirmed.offering_id]
+    await assert.rejects(
+      queryAs(
+        admin,
+        'UPDATE public.offerings SET amount=1 WHERE id=$1 RETURNING id',
+        [confirmed.offering_id]
+      ),
+      /permission denied/i
     )
-    assert.equal(changed.rows.length, 0)
   })
   it('issues receipts for all giving categories, including anonymous manual giving', async () => {
     for (const type of [
@@ -328,8 +330,7 @@ describe('Giving ledger, receipts and tenant privacy against the complete databa
       'other',
     ]) {
       const row = (
-        await queryAs(
-          admin,
+        await service(
           'INSERT INTO public.offerings(church_id, amount, type) VALUES ($1,100,$2) RETURNING *',
           [church, type]
         )
@@ -338,27 +339,23 @@ describe('Giving ledger, receipts and tenant privacy against the complete databa
       assert.equal(row.receipt_details.donor.full_name, 'Anonymous')
     }
     await assert.rejects(
-      queryAs(
-        admin,
+      service(
         'INSERT INTO public.offerings(church_id, membership_id, amount) VALUES ($1,$2,100)',
         [church, id(1004)]
       ),
       /must belong to this church/i
     )
     await assert.rejects(
-      queryAs(
-        admin,
-        'INSERT INTO public.offerings(church_id, amount) VALUES ($1,0)',
-        [church]
-      ),
-      /must be positive/i
+      service('INSERT INTO public.offerings(church_id, amount) VALUES ($1,0)', [
+        church,
+      ]),
+      /must be greater than zero/i
     )
   })
   it('does not truncate receipt numbers when the sequence exceeds six digits', async () => {
     await service("SELECT setval('public.receipt_number_seq',999999,true)")
     const row = (
-      await queryAs(
-        admin,
+      await service(
         'INSERT INTO public.offerings(church_id, amount) VALUES ($1,100) RETURNING receipt_number',
         [church]
       )

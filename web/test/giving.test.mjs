@@ -198,25 +198,6 @@ test('history, exports and receipts enforce member and church scopes', async () 
   assert.equal((await response.text()).split('\r\n').filter(Boolean).length, 3)
 })
 
-test('web finance totals include every completed gift beyond the default row limit', async () => {
-  const f = fixture()
-  f.tables.offerings.push(
-    ...Array.from({ length: 1005 }, (_, n) => f.manualGivingRow(n)),
-    { ...f.manualGivingRow(2000), status: 'review', amount: 90000 },
-    { ...f.manualGivingRow(2001), status: 'test', amount: 90000 }
-  )
-  f.tables.expenses = []
-  const { getFinanceSummary } = f.load(
-    'web/src/lib/services/finance.service.ts'
-  )
-  const summary = await getFinanceSummary(
-    f.givingChurch,
-    '2026-01-01',
-    '2027-01-01'
-  )
-  assert.equal(summary.totalIncome, 10050)
-})
-
 test('real PDF download contains a church-branded document and unique receipt identity', async () => {
   const f = fixture(),
     offering = f.manualGivingRow(10)

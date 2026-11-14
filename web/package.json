@@ -13,6 +13,7 @@
     "test:volunteers": "node --test test/volunteers.test.mjs",
     "test:visitors": "node --test test/visitors.test.mjs",
     "test:giving": "node --test test/giving.test.mjs",
+    "test:finance": "node --test test/finance.test.mjs",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
 import { ImageIcon, Loader2, X } from 'lucide-react'
 
 export function PosterUpload({

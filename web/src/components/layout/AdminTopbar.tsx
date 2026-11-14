@@ -40,7 +40,8 @@ export function AdminTopbar({ user, memberships, activeChurchId }: Props) {
 
   function switchChurch(id: string) {
     setActiveChurch(id)
-    // Full navigation so server components re-resolve the active church.
+    // Reload to clear cached data and mounted client state from the previous church.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.assign('/admin/dashboard')
   }
 

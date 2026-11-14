@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PhoneInput } from '@/components/shared/PhoneInput'
 import { GivingDownloadButton } from './GivingDownloadButton'
+import type { FinanceCampaign, FinancePledge } from '@/lib/finance'
 import {
   GIVING_TYPES,
   MAX_GIVING_AMOUNT,
@@ -24,17 +25,23 @@ export function GivingForm({
   churchName,
   settings,
   initialPayment,
+  campaigns = [],
+  pledges = [],
 }: {
   churchId: string
   churchName: string
   settings: PublicGivingSettings | null
   initialPayment: PublicGivingPayment | null
+  campaigns?: FinanceCampaign[]
+  pledges?: FinancePledge[]
 }) {
   const router = useRouter()
   const [form, setForm] = useState({
     amount: '',
     phone: '',
     type: 'general' as GivingType,
+    campaignId: '',
+    pledgeId: '',
   })
   const [payment, setPayment] = useState(initialPayment)
   const [busy, setBusy] = useState(false),
@@ -128,6 +135,8 @@ export function GivingForm({
           amount,
           phone,
           type: form.type,
+          campaignId: form.campaignId || undefined,
+          pledgeId: form.pledgeId || undefined,
         }),
       })
       const result = await response.json()
@@ -283,15 +292,85 @@ export function GivingForm({
                   setForm({ ...form, type: event.target.value as GivingType })
                 }
               >
-                {GIVING_TYPES.filter((type) => type !== 'pledge').map(
-                  (type) => (
-                    <option key={type} value={type}>
-                      {givingLabel(type)}
-                    </option>
-                  )
-                )}
+                {GIVING_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {givingLabel(type)}
+                  </option>
+                ))}
               </select>
             </div>
+            {campaigns.some(
+              (c) => c.status === 'active' && c.currency === 'KES'
+            ) && (
+              <div className="space-y-2">
+                <Label htmlFor="giving-campaign">Campaign (optional)</Label>
+                <select
+                  id="giving-campaign"
+                  value={form.campaignId}
+                  disabled={busy}
+                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      campaignId: event.target.value,
+                      pledgeId: '',
+                    })
+                  }
+                >
+                  <option value="">No campaign</option>
+                  {campaigns
+                    .filter(
+                      (c) => c.status === 'active' && c.currency === 'KES'
+                    )
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
+            {pledges.some(
+              (p) => p.status === 'active' && p.currency === 'KES'
+            ) && (
+              <div className="space-y-2">
+                <Label htmlFor="giving-pledge">
+                  Apply to my pledge (optional)
+                </Label>
+                <select
+                  id="giving-pledge"
+                  value={form.pledgeId}
+                  disabled={busy}
+                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                  onChange={(event) => {
+                    const pledge = pledges.find(
+                      (p) => p.id === event.target.value
+                    )
+                    setForm({
+                      ...form,
+                      pledgeId: event.target.value,
+                      campaignId: pledge?.campaign_id || '',
+                    })
+                  }}
+                >
+                  <option value="">No pledge</option>
+                  {pledges
+                    .filter(
+                      (p) => p.status === 'active' && p.currency === 'KES'
+                    )
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.campaign_name || 'General pledge'} · KES{' '}
+                        {Math.max(
+                          0,
+                          Number(p.amount_pledged) - Number(p.received)
+                        ).toFixed(2)}{' '}
+                        remaining
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
             {error && (
               <p role="alert" className="text-sm text-destructive">
                 {error}
