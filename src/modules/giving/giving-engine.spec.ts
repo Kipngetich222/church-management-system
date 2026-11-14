@@ -71,6 +71,99 @@ describe('Member STK giving through the real provider and database adapters', ()
       f.engine.start(givingMember, { ...givingInput, amount: 501 })
     ).rejects.toMatchObject({ status: 409 })
   })
+  it('freezes the selected campaign and member pledge on the payment and receipt', async () => {
+    const f = givingFixture(),
+      campaign = givingId(20000),
+      pledge = givingId(30000)
+    f.tables.campaigns = [
+      {
+        id: campaign,
+        church_id: givingChurch,
+        name: 'Building fund',
+        currency: 'KES',
+        status: 'active',
+      },
+    ]
+    f.tables.pledges = [
+      {
+        id: pledge,
+        church_id: givingChurch,
+        membership_id: givingId(1002),
+        campaign_id: campaign,
+        currency: 'KES',
+        status: 'active',
+      },
+    ]
+    const input = { ...givingInput, campaignId: campaign, pledgeId: pledge }
+    const first = await f.engine.start(givingMember, input)
+    expect(f.payment()).toMatchObject({
+      campaign_id: campaign,
+      pledge_id: pledge,
+      receipt_details: { campaign_name: 'Building fund', pledge_id: pledge },
+    })
+    f.tables.campaigns[0].status = 'completed'
+    expect((await f.engine.start(givingMember, input)).id).toBe(first.id)
+    await expect(
+      f.engine.start(givingMember, { ...input, campaignId: undefined })
+    ).rejects.toMatchObject({ status: 409 })
+    await expect(
+      f.engine.start(givingMember, { ...input, pledgeId: undefined })
+    ).rejects.toMatchObject({ status: 409 })
+    expect(
+      f.providerRequests.filter((r) =>
+        r.url.pathname.includes('processrequest')
+      )
+    ).toHaveLength(1)
+  })
+  it.each([
+    'other_church',
+    'other_member',
+    'other_currency',
+    'cancelled',
+    'wrong_campaign',
+  ])(
+    'rejects invalid campaign/pledge allocation before any provider request (%s)',
+    async (variant) => {
+      const f = givingFixture(),
+        campaign = givingId(20000),
+        pledge = givingId(30000)
+      f.tables.campaigns = [
+        {
+          id: campaign,
+          church_id: givingChurch,
+          name: 'Building fund',
+          currency: 'KES',
+          status: 'active',
+        },
+      ]
+      f.tables.pledges = [
+        {
+          id: pledge,
+          church_id: givingChurch,
+          membership_id: givingId(1002),
+          campaign_id: campaign,
+          currency: 'KES',
+          status: 'active',
+        },
+      ]
+      if (variant === 'other_church')
+        f.tables.campaigns[0].church_id = givingId(200)
+      if (variant === 'other_member')
+        f.tables.pledges[0].membership_id = givingId(1003)
+      if (variant === 'other_currency') f.tables.campaigns[0].currency = 'USD'
+      if (variant === 'cancelled') f.tables.pledges[0].status = 'cancelled'
+      if (variant === 'wrong_campaign') f.tables.pledges[0].campaign_id = null
+      await expect(
+        f.engine.start(givingMember, {
+          ...givingInput,
+          campaignId: campaign,
+          pledgeId: pledge,
+        })
+      ).rejects.toMatchObject({ status: 400 })
+      expect(f.providerRequests).toHaveLength(0)
+      expect(f.tables.giving_payments).toHaveLength(0)
+    }
+  )
   it.each([givingId(4), givingId(5)])(
     'blocks nonmembers and inactive members before calling M-Pesa (%s)',
     async (user) => {
@@ -254,22 +347,16 @@ describe('Member STK giving through the real provider and database adapters', ()
 })
 
 describe('Church setup and complete giving history', () => {
-  it('calculates finance totals beyond the default database row limit and excludes unconfirmed/test giving', async () => {
+  it('requires finance permission before loading financial summaries', async () => {
     const f = givingFixture()
-    f.tables.offerings.push(
-      ...Array.from({ length: 1005 }, (_, n) => manualGivingRow(n)),
-      { ...manualGivingRow(2000), status: 'review', amount: 90000 },
-      { ...manualGivingRow(2001), status: 'test', amount: 90000 }
-    )
-    f.tables.expenses = []
     const finance = new FinanceService({ admin: f.db } as any)
-    const summary = await finance.summary(
-      givingChurch,
-      '2026-01-01',
-      '2027-01-01'
-    )
-    expect(summary.totalIncome).toBe(10050)
-    expect(summary.byType).toEqual([{ type: 'general', total: 10050 }])
+    // Full numeric totals and row-limit coverage live in finance.database.test.mjs.
+    await expect(
+      finance.run((engine) => engine.summary(givingMember, givingChurch))
+    ).rejects.toThrow('Finance permission')
+    expect(
+      f.dbRequests.some((r) => r.url.pathname.includes('/rpc/finance_summary'))
+    ).toBe(false)
   })
   it('accepts all categories and rejects fractional, out-of-range and non-Kenyan payments', () => {
     for (const type of GIVING_TYPES)

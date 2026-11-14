@@ -32,7 +32,7 @@ export async function GET(req: Request) {
       .select(
         `
         role, badges, is_baptized, joined_at,
-        full_name, email, phone, category,
+        full_name, email, phone,
         users!church_memberships_user_id_fkey(full_name, email, phone)
       `
       )
@@ -42,7 +42,7 @@ export async function GET(req: Request) {
 
   if (!church) return new Response('Church not found', { status: 404 })
 
-  const rows = (members ?? []).map((m: any) => ({
+  const rows = (members ?? []).map((m) => ({
     full_name: m.users?.full_name ?? m.full_name ?? null,
     email: m.users?.email ?? m.email ?? '',
     phone: m.users?.phone ?? m.phone ?? null,

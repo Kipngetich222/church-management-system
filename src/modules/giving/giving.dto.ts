@@ -33,6 +33,8 @@ export class MpesaStkPushDto {
   amount!: number
   @ApiProperty() @IsString() @MaxLength(30) phone!: string
   @ApiProperty({ enum: GIVING_TYPES }) @IsIn(GIVING_TYPES) type!: GivingType
+  @ApiPropertyOptional() @IsOptional() @IsUUID() campaignId?: string
+  @ApiPropertyOptional() @IsOptional() @IsUUID() pledgeId?: string
 }
 export class GivingSettingsDto {
   @ApiProperty() @IsBoolean() enabled!: boolean

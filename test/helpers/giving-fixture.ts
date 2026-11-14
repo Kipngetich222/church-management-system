@@ -50,7 +50,7 @@ function predicate(row: Row, expression: string): boolean {
       predicate(row, item)
     )
   const match = expression.match(
-    /^([^.]+)\.(eq|neq|is|gte|gt|lte|lt|in|not)\.(.*)$/
+    /^([^.]+)\.(eq|neq|is|gte|gt|lte|lt|in|not|ilike)\.(.*)$/
   )
   if (!match) throw new Error(`Unimplemented test filter: ${expression}`)
   const [, field, operator, value] = match,
@@ -66,6 +66,18 @@ function predicate(row: Row, expression: string): boolean {
       .includes(String(actual))
   if (operator === 'eq') return String(actual) === value
   if (operator === 'neq') return String(actual) !== value
+  if (operator === 'ilike') {
+    const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    let pattern = ''
+    for (let i = 0; i < value.length; i++) {
+      if (value[i] === '\\' && i + 1 < value.length)
+        pattern += escape(value[++i])
+      else
+        pattern +=
+          value[i] === '%' ? '.*' : value[i] === '_' ? '.' : escape(value[i])
+    }
+    return new RegExp(`^${pattern}$`, 'is').test(String(actual ?? ''))
+  }
   if (actual == null) return false
   if (operator === 'gte') return String(actual) >= value
   if (operator === 'gt') return String(actual) > value
@@ -141,6 +153,8 @@ export function givingFixture() {
     pushResponse?: Row
     queryResponse?: Row
     saveFailure?: boolean
+    financeSaveFailure?: boolean
+    financeSaveError?: { code: string; message: string }
     beforePushResponse?: (body: Row) => Promise<void>
   } = {}
   const history = () => [
@@ -233,11 +247,45 @@ export function givingFixture() {
           })
         )
         if (method === 'POST') {
+          if (controls.financeSaveError && table !== 'giving_payments') {
+            const error = controls.financeSaveError
+            controls.financeSaveError = undefined
+            return Response.json(error, { status: 400 })
+          }
+          if (controls.financeSaveFailure && table !== 'giving_payments') {
+            controls.financeSaveFailure = false
+            return Response.json(
+              { message: 'Simulated finance database failure', code: 'XX000' },
+              { status: 500 }
+            )
+          }
+          if (
+            table !== 'giving_payments' &&
+            body.request_id &&
+            source.some(
+              (row) =>
+                row.church_id === body.church_id &&
+                row.request_id === body.request_id
+            )
+          )
+            return Response.json(
+              { message: 'Duplicate request', code: '23505' },
+              { status: 409 }
+            )
           if (table === 'church_giving_settings') {
             Object.assign(source[0], body)
             rows = [source[0]]
           } else {
             const created: Row = {
+              id:
+                body.id ??
+                givingId(
+                  90_000 +
+                    Object.values(tables).reduce(
+                      (sum, rows) => sum + rows.length,
+                      0
+                    )
+                ),
               status: 'initiating',
               error: null,
               checkout_request_id: null,
@@ -247,6 +295,7 @@ export function givingFixture() {
               last_checked_at: null,
               confirmed_at: null,
               created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
               ...body,
             }
             source.push(created)

@@ -1,221 +1,80 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { ApiPropertyOptional } from '@nestjs/swagger'
+import { Type } from 'class-transformer'
 import {
   IsIn,
-  IsISO8601,
-  IsNumber,
+  IsInt,
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
   Min,
 } from 'class-validator'
+import {
+  FINANCE_KINDS,
+  FINANCE_STATUSES,
+  PAYMENT_METHODS,
+} from './finance.types'
 import { GIVING_TYPES } from '../giving/giving.types'
 
-const OFFERING_TYPES = GIVING_TYPES
-
-const PAYMENT_METHODS = [
-  'cash',
-  'mpesa',
-  'bank_transfer',
-  'cheque',
-  'card',
-  'online',
-  'other',
-] as const
-
-export class CreateOfferingDto {
-  @ApiPropertyOptional()
+/** Bodies are validated by FinanceEngine in both clients; this DTO documents query filters. */
+export class FinanceRangeDto {
+  @ApiPropertyOptional({ example: '2026-01-01' })
   @IsOptional()
-  @IsUUID()
-  membershipId?: string
-
-  @ApiProperty()
-  @IsNumber()
-  @Min(0.01)
-  amount!: number
-
-  @ApiPropertyOptional()
+  @IsString()
+  from?: string
+  @ApiPropertyOptional({ example: '2026-12-31' })
+  @IsOptional()
+  @IsString()
+  to?: string
+  @ApiPropertyOptional({ example: 'KES' })
   @IsOptional()
   @IsString()
   currency?: string
-
-  @ApiPropertyOptional({ enum: OFFERING_TYPES })
+  @ApiPropertyOptional({ enum: FINANCE_KINDS })
   @IsOptional()
-  @IsIn(OFFERING_TYPES)
-  type?: (typeof OFFERING_TYPES)[number]
-
+  @IsIn(FINANCE_KINDS)
+  kind?: string
+  @ApiPropertyOptional({ enum: FINANCE_STATUSES })
+  @IsOptional()
+  @IsIn(FINANCE_STATUSES)
+  status?: string
+  @ApiPropertyOptional({ enum: GIVING_TYPES })
+  @IsOptional()
+  @IsIn(GIVING_TYPES)
+  type?: string
   @ApiPropertyOptional({ enum: PAYMENT_METHODS })
   @IsOptional()
   @IsIn(PAYMENT_METHODS)
-  method?: (typeof PAYMENT_METHODS)[number]
-
+  method?: string
+  @ApiPropertyOptional() @IsOptional() @IsString() source?: string
+  @ApiPropertyOptional() @IsOptional() @IsUUID() categoryId?: string
+  @ApiPropertyOptional() @IsOptional() @IsUUID() campaignId?: string
+  @ApiPropertyOptional({ enum: ['yes', 'no'] })
+  @IsOptional()
+  @IsIn(['yes', 'no'])
+  reconciled?: string
+  @ApiPropertyOptional({ enum: ['missing', 'attached'] })
+  @IsOptional()
+  @IsIn(['missing', 'attached'])
+  documents?: string
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
-  campaignId?: string
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsUUID()
-  pledgeId?: string
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  reference?: string
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  notes?: string
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsISO8601()
-  givenAt?: string
-}
-
-export class CreateExpenseDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsUUID()
-  categoryId?: string
-
-  @ApiProperty()
-  @IsNumber()
-  amount!: number
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  currency?: string
-
-  @ApiProperty()
-  @IsString()
-  @MaxLength(300)
-  description!: string
-
-  @ApiPropertyOptional({ enum: PAYMENT_METHODS })
-  @IsOptional()
-  @IsIn(PAYMENT_METHODS)
-  method?: (typeof PAYMENT_METHODS)[number]
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  reference?: string
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsISO8601()
-  spentAt?: string
-}
-
-export class CreateCampaignDto {
-  @ApiProperty()
-  @IsString()
-  @MaxLength(200)
-  name!: string
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  description?: string
-
-  @ApiProperty()
-  @IsNumber()
-  goalAmount!: number
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  currency?: string
-
-  @ApiProperty()
-  @IsString()
-  startDate!: string
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  endDate?: string
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  imageUrl?: string
-}
-
-export class CreatePledgeDto {
-  @ApiProperty()
-  @IsUUID()
-  membershipId!: string
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsUUID()
-  campaignId?: string
-
-  @ApiProperty()
-  @IsNumber()
-  amountPledged!: number
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  currency?: string
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  frequency?: string
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  startsOn?: string
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  endsOn?: string
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  notes?: string
-}
-
-export class CreateExpenseCategoryDto {
-  @ApiProperty()
   @IsString()
   @MaxLength(120)
-  name!: string
-
-  @ApiPropertyOptional()
+  search?: string
+  @ApiPropertyOptional({ default: 1 })
   @IsOptional()
-  @IsString()
-  color?: string
-}
-
-export class FinanceRangeDto {
-  @ApiPropertyOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(1000000)
+  page?: number
+  @ApiPropertyOptional({ default: 50 })
   @IsOptional()
-  @IsISO8601()
-  from?: string
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsISO8601()
-  to?: string
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  type?: string
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  categoryId?: string
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  pageSize?: number
 }

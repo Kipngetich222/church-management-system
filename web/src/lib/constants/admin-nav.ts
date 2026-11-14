@@ -95,7 +95,7 @@ export const ADMIN_NAV: NavItem[] = [
   },
   {
     label: 'Finance',
-    href: '/admin/finance/offerings',
+    href: '/admin/finance',
     icon: DollarSign,
     permission: 'finance:read',
     section: 'Ministry',

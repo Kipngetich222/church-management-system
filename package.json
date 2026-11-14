@@ -22,6 +22,7 @@
     "test:volunteers-db": "node --test test/volunteers.database.test.mjs",
     "test:visitors-db": "node --test test/visitors.database.test.mjs",
     "test:giving-db": "node --test test/giving.database.test.mjs",
+    "test:finance-db": "node --test test/finance.database.test.mjs",
     "prepare": "husky"
   },
   "lint-staged": {

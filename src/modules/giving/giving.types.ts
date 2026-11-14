@@ -39,6 +39,7 @@ export const HISTORY_STATUSES = [
   'pending',
   'failed',
   'review',
+  'voided',
 ] as const
 
 export class GivingError extends Error {
@@ -70,6 +71,8 @@ export type GivingInput = {
   amount: number
   phone: string
   type: GivingType
+  campaignId?: string
+  pledgeId?: string
 }
 export function validateGiving(input: GivingInput): GivingInput {
   if (!UUID_PATTERN.test(input.churchId) || !UUID_PATTERN.test(input.requestId))
@@ -90,6 +93,9 @@ export function validateGiving(input: GivingInput): GivingInput {
     )
   if (!GIVING_TYPES.includes(input.type))
     throw new GivingError('Select a valid giving type.')
+  for (const id of [input.campaignId, input.pledgeId])
+    if (id !== undefined && (typeof id !== 'string' || !UUID_PATTERN.test(id)))
+      throw new GivingError('Select a valid campaign or pledge.')
   return { ...input, phone }
 }
 
@@ -142,6 +148,8 @@ export type ReceiptDetails = {
   destination_number?: string | null
   account_reference?: string | null
   environment?: 'sandbox' | 'production'
+  campaign_name?: string | null
+  pledge_id?: string | null
 }
 export type GivingPayment = {
   id: string
@@ -152,6 +160,8 @@ export type GivingPayment = {
   amount: number
   phone: string
   type: GivingType
+  campaign_id?: string | null
+  pledge_id?: string | null
   status: 'initiating' | 'pending' | 'succeeded' | 'failed' | 'review'
   environment: 'sandbox' | 'production'
   destination_type: DestinationType

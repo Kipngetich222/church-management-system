@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -31,6 +32,7 @@ const STATUS_LABELS: Record<GivingHistoryRow['status'], string> = {
   pending: 'Pending',
   failed: 'Failed',
   review: 'Needs review',
+  voided: 'Voided',
 }
 export function GivingHistoryTable({
   churchId,
@@ -248,6 +250,14 @@ export function GivingHistoryTable({
               {history.rows.map((row) => (
                 <TableRow key={row.id}>
                   <TableCell className="whitespace-nowrap text-sm">
+                    {scope === 'church' && row.offering_id && (
+                      <Link
+                        className="block text-primary underline"
+                        href={`/admin/finance/records/giving/${row.offering_id}`}
+                      >
+                        View record
+                      </Link>
+                    )}
                     {new Date(row.given_at).toLocaleDateString('en-KE', {
                       timeZone: 'Africa/Nairobi',
                       day: 'numeric',

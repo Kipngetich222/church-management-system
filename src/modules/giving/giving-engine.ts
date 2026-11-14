@@ -299,7 +299,9 @@ export class GivingEngine {
       existing &&
       (Number(existing.amount) !== input.amount ||
         existing.phone !== input.phone ||
-        existing.type !== input.type)
+        existing.type !== input.type ||
+        (existing.campaign_id ?? null) !== (input.campaignId ?? null) ||
+        (existing.pledge_id ?? null) !== (input.pledgeId ?? null))
     )
       throw new GivingError(
         'This request already belongs to another payment. Check your giving history before starting again.',
@@ -330,6 +332,46 @@ export class GivingEngine {
       (await this.repeatedPayment(userId, input)) ??
       (await this.pendingPayment(userId, input.churchId))
     if (existing) return publicPayment(existing)
+    let campaignName: string | null = null
+    if (input.campaignId) {
+      const campaign = checked(
+        await this.db
+          .from('campaigns')
+          .select('id, name, currency, status')
+          .eq('church_id', input.churchId)
+          .eq('id', input.campaignId)
+          .maybeSingle()
+      )
+      if (
+        !campaign ||
+        campaign.status !== 'active' ||
+        (campaign.currency ?? 'KES') !== 'KES'
+      )
+        throw new GivingError(
+          'Select an active campaign in KES for this church.'
+        )
+      campaignName = campaign.name
+    }
+    if (input.pledgeId) {
+      const pledge = checked(
+        await this.db
+          .from('pledges')
+          .select('id, currency, status, campaign_id')
+          .eq('church_id', input.churchId)
+          .eq('membership_id', member.id)
+          .eq('id', input.pledgeId)
+          .maybeSingle()
+      )
+      if (
+        !pledge ||
+        pledge.status !== 'active' ||
+        (pledge.currency ?? 'KES') !== 'KES' ||
+        (pledge.campaign_id ?? null) !== (input.campaignId ?? null)
+      )
+        throw new GivingError(
+          'Select one of your active KES pledges and its matching campaign.'
+        )
+    }
     const recent = await this.db
       .from('giving_payments')
       .select('id', { count: 'exact', head: true })
@@ -386,6 +428,8 @@ export class GivingEngine {
         amount: input.amount,
         phone: input.phone,
         type: input.type,
+        campaign_id: input.campaignId ?? null,
+        pledge_id: input.pledgeId ?? null,
         environment: settings.environment,
         destination_type: settings.destination_type,
         destination_number: settings.destination_number,
@@ -404,6 +448,8 @@ export class GivingEngine {
           destination_number: settings.destination_number,
           account_reference: reference,
           environment: settings.environment,
+          campaign_name: campaignName,
+          pledge_id: input.pledgeId ?? null,
         },
       })
       .select('*')

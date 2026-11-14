@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server'
 import { getActiveChurch } from '@/lib/utils/church-scope'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { MapPin, CalendarDays, Crown, Users } from 'lucide-react'
 import { JoinGroupButton } from '@/components/small-groups/JoinGroupButton'
 import { BackLink } from '@/components/shared/BackLink'
@@ -36,8 +35,8 @@ export default async function MemberGroupsPage() {
       <h1 className="text-2xl font-bold">Small groups</h1>
 
       <div className="grid gap-4 md:grid-cols-2">
-        {groups?.map((g: any) => {
-          const memberIds = (g.small_group_members ?? []).map((m: any) => m.membership_id)
+        {groups?.map((g) => {
+          const memberIds = (g.small_group_members ?? []).map((m) => m.membership_id)
           const isMember = memberIds.includes(membership!.id)
           const count = memberIds.length
 

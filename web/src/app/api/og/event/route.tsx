@@ -1,5 +1,6 @@
 import { ImageResponse } from '@vercel/og'
 import { createClient } from '@supabase/supabase-js'
+import type { Database } from '@/types/database'
 
 export const runtime = 'edge'
 
@@ -8,7 +9,7 @@ export async function GET(req: Request) {
   const eventId = searchParams.get('id')
   if (!eventId) return new Response('Missing id', { status: 400 })
 
-  const supabase = createClient(
+  const supabase = createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
   )
@@ -41,7 +42,7 @@ export async function GET(req: Request) {
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: 22, opacity: 0.8, marginBottom: 12 }}>
-              {(event as any).churches?.name ?? 'Church Event'}
+              {event.churches?.name ?? 'Church Event'}
             </div>
             <div style={{ fontSize: 64, fontWeight: 700, lineHeight: 1.1 }}>
               {event.title}

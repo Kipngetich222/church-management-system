@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { format } from 'date-fns'
 import { Lock } from 'lucide-react'
+import type { Tables } from '@/types/database'
 
 export function PastoralNotesPanel({
   churchId,
@@ -16,7 +17,7 @@ export function PastoralNotesPanel({
 }: {
   churchId: string
   membershipId: string
-  notes: any[]
+  notes: Pick<Tables<'pastoral_notes'>, 'id' | 'body' | 'created_at'>[]
 }) {
   const router = useRouter()
   const [body, setBody] = useState('')
@@ -60,7 +61,9 @@ export function PastoralNotesPanel({
           <div key={n.id} className="border-l-2 border-amber-500 pl-3">
             <p className="text-sm">{n.body}</p>
             <p className="text-xs text-muted-foreground">
-              {format(new Date(n.created_at), 'MMM d, yyyy · h:mm a')}
+              {n.created_at
+                ? format(new Date(n.created_at), 'MMM d, yyyy · h:mm a')
+                : 'Date unavailable'}
             </p>
           </div>
         ))}

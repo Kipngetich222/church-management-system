@@ -43,6 +43,8 @@ export function MemberTopbar({
 
   function switchChurch(id: string) {
     setActiveChurch(id)
+    // Reload to clear cached data and mounted client state from the previous church.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.assign('/member/home')
   }
 

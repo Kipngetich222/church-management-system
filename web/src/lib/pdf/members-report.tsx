@@ -36,7 +36,7 @@ export function MembersReportDocument({
     role: string
     badges: string[]
     is_baptized: boolean
-    joined_at: string
+    joined_at: string | null
   }>
 }) {
   const generated = new Date().toLocaleString()

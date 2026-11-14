@@ -43,7 +43,7 @@ export async function GET(req: Request) {
 
   if (!church) return new Response('Church not found', { status: 404 })
 
-  const rows = (attendance ?? []).map((e: any) => ({
+  const rows = (attendance ?? []).map((e) => ({
     event_title: e.title,
     event_date: e.start_time,
     count: e.event_attendance?.length ?? 0,

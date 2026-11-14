@@ -220,26 +220,38 @@ member of that church, and admin-only routes require the `super_admin` or `dept_
 
 ### Finance & giving
 
-| Method | Path                                                | Access | Description                 |
-| ------ | --------------------------------------------------- | ------ | --------------------------- |
-| GET    | `/churches/:churchId/finance/offerings`             | admin  | List offerings              |
-| POST   | `/churches/:churchId/finance/offerings`             | admin  | Record an offering          |
-| DELETE | `/churches/:churchId/finance/offerings/:offeringId` | admin  | Delete an offering          |
-| GET    | `/churches/:churchId/finance/my-giving`             | member | Current member's giving     |
-| GET    | `/churches/:churchId/finance/expenses`              | admin  | List expenses               |
-| POST   | `/churches/:churchId/finance/expenses`              | admin  | Record an expense           |
-| DELETE | `/churches/:churchId/finance/expenses/:expenseId`   | admin  | Delete an expense           |
-| GET    | `/churches/:churchId/finance/campaigns`             | member | List giving campaigns       |
-| POST   | `/churches/:churchId/finance/campaigns`             | admin  | Create a campaign           |
-| GET    | `/churches/:churchId/finance/pledges`               | admin  | List pledges                |
-| POST   | `/churches/:churchId/finance/pledges`               | admin  | Create a pledge             |
-| GET    | `/churches/:churchId/finance/expense-categories`    | member | List expense categories     |
-| POST   | `/churches/:churchId/finance/expense-categories`    | admin  | Create a category           |
-| GET    | `/churches/:churchId/finance/summary` (`?from&to`)  | admin  | Financial summary           |
-| POST   | `/giving/mpesa`                                     | auth   | Initiate an M-Pesa STK push |
-| POST   | `/giving/mpesa/callback`                            | public | M-Pesa payment callback     |
+| Method      | Path                                                      | Access | Description                                        |
+| ----------- | --------------------------------------------------------- | ------ | -------------------------------------------------- |
+| GET         | `/churches/:churchId/finance/offerings`                   | admin  | List offerings                                     |
+| POST        | `/churches/:churchId/finance/offerings`                   | admin  | Record an offering                                 |
+| DELETE      | `/churches/:churchId/finance/offerings/:offeringId`       | admin  | Void an offering with a reason and current version |
+| GET         | `/churches/:churchId/finance/my-giving`                   | member | Own pledges and giving-history URL                 |
+| GET         | `/churches/:churchId/finance/expenses`                    | admin  | List expenses                                      |
+| POST        | `/churches/:churchId/finance/expenses`                    | admin  | Record an expense                                  |
+| DELETE      | `/churches/:churchId/finance/expenses/:expenseId`         | admin  | Void an expense with a reason and current version  |
+| POST        | `/churches/:churchId/finance/income`                      | admin  | Record other income                                |
+| GET         | `/churches/:churchId/finance/transactions`                | admin  | Filtered giving, income, expenses and bills        |
+| GET / PATCH | `/churches/:churchId/finance/entries/:kind/:id`           | admin  | Record details / audited changes                   |
+| GET         | `/churches/:churchId/finance/campaigns`                   | member | List giving campaigns                              |
+| POST        | `/churches/:churchId/finance/campaigns`                   | admin  | Create a campaign                                  |
+| GET         | `/churches/:churchId/finance/pledges`                     | admin  | List pledges                                       |
+| POST        | `/churches/:churchId/finance/pledges`                     | admin  | Create a pledge                                    |
+| GET         | `/churches/:churchId/finance/expense-categories`          | admin  | List expense categories                            |
+| POST        | `/churches/:churchId/finance/expense-categories`          | admin  | Create a category                                  |
+| GET         | `/churches/:churchId/finance/summary` (`?from&to`)        | admin  | Financial summary                                  |
+| GET / POST  | `/churches/:churchId/finance/budgets`                     | admin  | Budget progress / create budget                    |
+| PATCH       | `/churches/:churchId/finance/plans/:kind/:id`             | admin  | Change campaign, pledge or budget status           |
+| GET         | `/churches/:churchId/finance/export`                      | admin  | Complete filtered transaction CSV                  |
+| GET         | `/churches/:churchId/finance/audit`                       | admin  | Finance change history                             |
+| GET         | `/churches/:churchId/finance/audit/export`                | admin  | Complete finance history CSV                       |
+| POST        | `/churches/:churchId/finance/entries/:kind/:id/documents` | admin  | Attach a private supporting document               |
+| GET         | `/churches/:churchId/finance/documents/:id`               | admin  | Authorized supporting-document URL                 |
+| POST        | `/giving/mpesa`                                           | auth   | Initiate an M-Pesa STK push                        |
+| POST        | `/giving/mpesa/callback`                                  | public | M-Pesa payment callback                            |
 
-Giving setup, payment status, full history exports and receipts are described in [the giving deployment guide](docs/giving.md). Apply migrations **0045** and **0046** before deploying the updated pages. Super admins configure each church's destination at `/admin/settings/giving`; Daraja supports paybill/till STK. Pochi and direct mobile numbers can be saved, but require a compatible provider integration before STK can be enabled.
+Finance setup, bill payments, document filing, budgets, corrections, reports, and API contracts are described in [the finance guide](docs/finance.md). Apply all migrations through **0048** before deploying. Finance reads require `finance:read`, writes require `finance:write`, and `finance:*` grants both; the caller must be an active church admin.
+
+Giving setup, payment status, full history exports and receipts are described in [the giving deployment guide](docs/giving.md). Super admins configure each church's destination at `/admin/settings/giving`; Daraja supports paybill/till STK. Pochi and direct mobile numbers can be saved, but require a compatible provider integration before STK can be enabled.
 
 ### Prayer, communication & engagement
 

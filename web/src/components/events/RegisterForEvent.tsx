@@ -20,7 +20,6 @@ export function RegisterForEvent({
   price,
   currency,
   deadline,
-  capacity,
   paymentMethod,
   paymentNumber,
   paymentAccount,

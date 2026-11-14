@@ -4,8 +4,18 @@ import { Badge } from '@/components/ui/badge'
 import { youtubeThumb } from '@/lib/utils/youtube'
 import { format } from 'date-fns'
 import { Play } from 'lucide-react'
+import type { Tables } from '@/types/database'
 
-export function SermonCard({ sermon, basePath }: { sermon: any; basePath: string }) {
+export function SermonCard({
+  sermon,
+  basePath,
+}: {
+  sermon: Pick<
+    Tables<'sermons'>,
+    'id' | 'title' | 'speaker' | 'youtube_id' | 'thumbnail_url' | 'series' | 'preached_at'
+  >
+  basePath: string
+}) {
   return (
     <Link href={`${basePath}/${sermon.id}`}>
       <Card className="overflow-hidden hover:shadow-md transition">

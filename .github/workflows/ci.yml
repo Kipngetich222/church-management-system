@@ -27,6 +27,8 @@ jobs:
       - run: npm run test:volunteers-db
       - run: npm run test:visitors-db
       - run: npm run test:giving-db
+      - run: npm run test:finance-db
+      - run: npm run test:communication-db
 
   web:
     name: Web (Next.js)
@@ -44,8 +46,11 @@ jobs:
           cache-dependency-path: web/package-lock.json
 
       - run: npm install --no-audit --no-fund
+      - run: npm run lint
       - run: npm run typecheck
       - run: npm run test:notifications
       - run: npm run test:volunteers
       - run: npm run test:visitors
       - run: npm run test:giving
+      - run: npm run test:finance
+      - run: npm run test:communication
